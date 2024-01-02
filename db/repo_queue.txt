@@ -1,0 +1,63 @@
+# ************************************************************
+# Sequel Pro SQL dump
+# Version 4541
+#
+# http://www.sequelpro.com/
+# https://github.com/sequelpro/sequelpro
+#
+# Host: 127.0.0.1 (MySQL 5.7.26)
+# Database: repo_queue
+# Generation Time: 2023-12-21 21:42:20 +0000
+# ************************************************************
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+
+# Dump of table tbl_ingest_queue
+# ------------------------------------------------------------
+
+DROP TABLE IF EXISTS `tbl_ingest_queue`;
+
+CREATE TABLE `tbl_ingest_queue` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `status` varchar(100) NOT NULL DEFAULT 'PENDING',
+  `batch` varchar(255) NOT NULL DEFAULT '0' COMMENT 'collection package name',
+  `package` varchar(255) NOT NULL DEFAULT '0' COMMENT 'package name',
+  `collection_uuid` varchar(255) NOT NULL DEFAULT '0' COMMENT 'repository collection uuid',
+  `batch_size` varchar(255) NOT NULL DEFAULT '0',
+  `file_count` int(11) NOT NULL DEFAULT '0',
+  `metadata_uri` varchar(100) DEFAULT 'PENDING',
+  `metadata` longtext,
+  `transfer_folder` varchar(255) NOT NULL DEFAULT 'PENDING' COMMENT 'archivematica transfer folder',
+  `transfer_uuid` varchar(255) NOT NULL DEFAULT 'PENDING' COMMENT 'archivematica transfer uuid',
+  `sip_uuid` varchar(255) NOT NULL DEFAULT '0',
+  `dip_path` varchar(255) DEFAULT 'PENDING',
+  `file_data` longtext,
+  `master_data` longtext,
+  `object_parts` longtext,
+  `transcript_data` longtext,
+  `index_record` longtext,
+  `handle` varchar(255) DEFAULT '',
+  `micro_service` varchar(255) DEFAULT 'PENDING',
+  `error` longtext,
+  `is_complete` tinyint(1) DEFAULT '0',
+  `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+
+
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
