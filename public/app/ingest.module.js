@@ -76,8 +76,9 @@ const ingestModule = (function () {
                 domModule.html('#batch', '');
                 return false;
             } else {
-                // error
                 clearInterval(status_timer);
+                let message = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; An ingest error occurred.</strong></div>';
+                domModule.html('#message', message);
             }
 
             domModule.html('#message', '');
@@ -130,10 +131,12 @@ const ingestModule = (function () {
                 html += '<td>' + data[i].batch_size + '</td>';
                 html += '<td>' + data[i].status + '</td>';
                 html += '<td>' + data[i].micro_service + '</td>';
-                if (data[i].error !== '[]') {
+
+                if (data[i].error !== 'NONE') {
+                    // TODO: loop through errors
                     html += '<td>' + data[i].error + '</td>';
                 } else {
-                    html += '<td>None</td>';
+                    html += '<td>' + data[i].error + '</td>';
                 }
 
                 html += '</tr>';
