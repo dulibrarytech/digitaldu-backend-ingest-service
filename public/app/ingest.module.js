@@ -68,7 +68,8 @@ const ingestModule = (function () {
             let data = await get_ingest_status();
             domModule.html('#message', '');
             console.log('data ', data);
-            if (data.length === 0 && data[0].error === 'NONE') {
+            // TODO
+            if (data.length === 0 || data[0].error === 'NONE') {
                 clearInterval(status_timer);
                 document.querySelector('#ingest-status-table').style.visibility = 'hidden';
                 let message = '<div class="alert alert-success"><strong><i class="fa fa-info-circle"></i>&nbsp; No Ingests in progress.</strong></div>';

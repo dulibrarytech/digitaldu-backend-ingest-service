@@ -39,4 +39,7 @@ module.exports = async function (app) {
 
     app.route('/dashboard/ingest/status')
     .get(CONTROLLER.get_dashboard_ingest_status_view);
+
+    app.route('/dashboard/ingest/complete')
+    .get(CONTROLLER.get_dashboard_ingest_complete);
 };

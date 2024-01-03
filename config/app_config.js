@@ -26,7 +26,8 @@ const APP_CONFIG = {
     organization: process.env.ORGANIZATION,
     app_host: process.env.APP_HOST,
     app_port: process.env.APP_PORT,
-    api_url: process.env.API_URL
+    api_url: process.env.API_URL,
+    repo: process.env.REPO
 };
 
 module.exports = function () {

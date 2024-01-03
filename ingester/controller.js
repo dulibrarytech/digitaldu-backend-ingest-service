@@ -87,6 +87,15 @@ const Ingest_controller = class {
             organization: CONFIG.organization
         });
     };
+
+    /**
+     * Redirects to repo completed ingests view
+     * @param req
+     * @param res
+     */
+    get_dashboard_ingest_complete(req, res) {
+        res.redirect(CONFIG.repo + '/dashboard/import/complete');
+    }
 }
 
 module.exports = Ingest_controller;
