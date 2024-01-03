@@ -335,6 +335,7 @@ const Ingest_service_tasks = class {
 
             let token = await ARCHIVESSPACE_LIB.get_session_token();
             let errors = [];
+            let error = 'NONE';
 
             LOGGER.module().info('INFO: [/qa/service_tasks (check_metadata)] Checking record ' + uri);
 
@@ -396,11 +397,15 @@ const Ingest_service_tasks = class {
                 }
             }
 
+            if (errors.length > 0) {
+                error = JSON.stringify(errors)
+            }
+
             await this.update_ingest_queue({
                 metadata_uri: uri
             }, {
                 metadata: JSON.stringify(record.metadata),
-                error: JSON.stringify(errors)
+                error: error //JSON.stringify(errors)
             });
 
             let result = await ARCHIVESSPACE_LIB.destroy_session_token(token);
