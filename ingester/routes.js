@@ -35,10 +35,10 @@ module.exports = async function (app) {
     .get(CONTROLLER.get_status);
 
     app.route('/dashboard/ingest')
-    .get(CONTROLLER.get_dashboard_ingest_view);
+    .get(TOKEN.verify, CONTROLLER.get_dashboard_ingest_view);
 
     app.route('/dashboard/ingest/status')
-    .get(CONTROLLER.get_dashboard_ingest_status_view);
+    .get(TOKEN.verify, CONTROLLER.get_dashboard_ingest_status_view);
 
     app.route('/dashboard/ingest/complete')
     .get(CONTROLLER.get_dashboard_ingest_complete);

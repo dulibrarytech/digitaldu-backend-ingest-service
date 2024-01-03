@@ -1,6 +1,6 @@
 /**
 
- Copyright 2019 University of Denver
+ Copyright 2024 University of Denver
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 'use strict';
 
 const TOKEN_CONFIG = require('../config/token_config')();
-const WEBSERVICES_CONFIG = require('../config/webservices_config')();
+const APP_CONFIG = require('../config/app_config')();
 const JWT = require('jsonwebtoken');
 const LOGGER = require('../libs/log4');
 const VALIDATOR = require('validator');
@@ -43,31 +43,16 @@ exports.create = function (username) {
 };
 
 /**
- * Verifies session token
+ * Verifies api key
  * @param req
  * @param res
  * @param next
  */
 exports.verify = (req, res, next) => {
 
-    const TOKEN = req.headers['x-access-token'] || req.query.t;
     const key = req.query.api_key;
 
-    if (TOKEN !== undefined && VALIDATOR.isJWT(TOKEN)) {
-
-        JWT.verify(TOKEN, TOKEN_CONFIG.token_secret, function (error, decoded) {
-
-            if (error) {
-                LOGGER.module().error('ERROR: [/libs/tokens lib (verify)] unable to verify token ' + error);
-                res.redirect(WEBSERVICES_CONFIG.ssoUrl + '?app_url=' + WEBSERVICES_CONFIG.ssoResponseUrl);
-                return false;
-            }
-
-            req.decoded = decoded;
-            next();
-        });
-
-    } else if (key !== undefined && key === TOKEN_CONFIG.api_key)  {
+    if (key !== undefined && key === TOKEN_CONFIG.api_key)  {
 
         let api_key = key;
 
@@ -76,7 +61,7 @@ exports.verify = (req, res, next) => {
         }
 
         if (!VALIDATOR.isAlphanumeric(api_key)) {
-            res.redirect(WEBSERVICES_CONFIG.ssoUrl + '?app_url=' + WEBSERVICES_CONFIG.ssoResponseUrl);
+            res.redirect(APP_CONFIG.repo + '/login');
             return false;
         }
 
@@ -85,6 +70,6 @@ exports.verify = (req, res, next) => {
 
     } else {
         LOGGER.module().error('ERROR: [/libs/tokens lib (verify)] unable to verify api key');
-        res.redirect(WEBSERVICES_CONFIG.ssoUrl + '?app_url=' + WEBSERVICES_CONFIG.ssoResponseUrl);
+        res.redirect(APP_CONFIG.repo + '/login');
     }
 };
