@@ -133,8 +133,9 @@ const Ingest_service = class {
                     batch: batch,
                     is_complete: 0
                 }, {
-                    status: 'INGEST HALTED',
-                    error: 'Unable to queue packages'
+                    status: 'INGEST_HALTED',
+                    error: 'Unable to queue packages',
+                    is_complete: 1
                 });
 
                 return false;
@@ -168,17 +169,18 @@ const Ingest_service = class {
                 LOGGER.module().info('INFO: [/ingester/service module (check_collection)] Collection does not exist');
 
                 const collection = await INGEST_TASKS.create_collection(HELPER, HANDLES_LIB, ARCHIVEASSPACE_LIB, INDEX_LIB, uri);
-                console.log('collection ', collection);
+
                 if (collection === false) {
 
                     LOGGER.module().error('ERROR: [/ingester/service module (check_collection)] Ingest halted');
 
                     await INGEST_TASKS.update_ingest_queue({
                         batch: batch,
-                        is_complete: 1
+                        is_complete: 0
                     }, {
-                        status: 'INGEST HALTED',
-                        error: 'Unable to create collection'
+                        status: 'INGEST_HALTED',
+                        error: 'Unable to create collection',
+                        is_complete: 1
                     });
 
                     return false;
@@ -215,8 +217,9 @@ const Ingest_service = class {
                     batch: batch,
                     is_complete: 0
                 }, {
-                    status: 'INGEST HALTED',
-                    error: 'Unable to set collection'
+                    status: 'INGEST_HALTED',
+                    error: 'Unable to set collection',
+                    is_complete: 1
                 });
 
                 return false;
@@ -234,8 +237,9 @@ const Ingest_service = class {
                     batch: batch,
                     is_complete: 0
                 }, {
-                    status: 'INGEST HALTED',
-                    error: 'Unable to check collection folder name'
+                    status: 'INGEST_HALTED',
+                    error: 'Unable to check collection folder name',
+                    is_complete: 1
                 });
 
                 return false;
@@ -269,7 +273,8 @@ const Ingest_service = class {
                     is_complete: 0
                 }, {
                     status: 'INGEST HALTED',
-                    error: 'Unable to check package names'
+                    error: 'Unable to check package names',
+                    is_complete: 1
                 });
 
                 return false;
@@ -303,7 +308,8 @@ const Ingest_service = class {
                     is_complete: 0
                 }, {
                     status: 'INGEST HALTED',
-                    error: 'Unable to check uri txt files'
+                    error: 'Unable to check uri txt files',
+                    is_complete: 1
                 });
 
                 return false;
@@ -338,7 +344,8 @@ const Ingest_service = class {
                     is_complete: 0
                 }, {
                     status: 'INGEST HALTED',
-                    error: 'Unable to get total batch size'
+                    error: 'Unable to get total batch size',
+                    is_complete: 1
                 });
 
                 return false;
@@ -406,8 +413,9 @@ const Ingest_service = class {
                     batch: batch,
                     is_complete: 0
                 }, {
-                    status: 'INGEST HALTED',
-                    error: 'Unable to get archival package'
+                    status: 'INGEST_HALTED',
+                    error: 'Unable to get archival package',
+                    is_complete: 1
                 });
 
                 return false;
@@ -433,8 +441,9 @@ const Ingest_service = class {
                     batch: batch,
                     is_complete: 0
                 }, {
-                    status: 'INGEST HALTED',
-                    error: 'Unable to get package file count'
+                    status: 'INGEST_HALTED',
+                    error: 'Unable to get package file count',
+                    is_complete: 1
                 });
 
                 return false;
@@ -460,8 +469,9 @@ const Ingest_service = class {
                     batch: batch,
                     is_complete: 0
                 }, {
-                    status: 'INGEST HALTED',
-                    error: 'Unable to get metadata uri'
+                    status: 'INGEST_HALTED',
+                    error: 'Unable to get metadata uri',
+                    is_complete: 1
                 });
 
                 return false;
@@ -490,8 +500,9 @@ const Ingest_service = class {
                     batch: batch,
                     is_complete: 0
                 }, {
-                    status: 'INGEST HALTED',
-                    error: 'Unable to move package to ingest folder'
+                    status: 'INGEST_HALTED',
+                    error: 'Unable to move package to ingest folder',
+                    is_complete: 1
                 });
 
                 return false;
@@ -595,7 +606,8 @@ const Ingest_service = class {
                     is_complete: 0
                 }, {
                     status: 'INGEST_HALTED',
-                    error: 'Package transfer failed.'
+                    error: 'Package transfer failed.',
+                    is_complete: 1
                 });
 
                 return false;
@@ -826,7 +838,9 @@ const Ingest_service = class {
                     sip_uuid: sip_uuid,
                     is_complete: 0
                 }, {
-                    status: 'UNABLE_TO_PROCESS_METADATA'
+                    status: 'INGEST_HALTED',
+                    error: 'Unable to process metadata',
+                    is_complete: 1
                 });
             }
 

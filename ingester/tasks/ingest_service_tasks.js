@@ -30,7 +30,7 @@ const CLIENT = new Client({
 });
 
 /**
- *
+ * Ingest service tasks
  * @type {Ingest_service_tasks}
  */
 const Ingest_service_tasks = class {
@@ -62,7 +62,6 @@ const Ingest_service_tasks = class {
     /**
      * Adds packages to ingest queue
      * @param packages
-     * @return {Promise<void>}
      */
     async queue_packages(packages) {
 
@@ -211,7 +210,8 @@ const Ingest_service_tasks = class {
                     is_complete: 0
                 }, {
                     status: 'INGEST_HALTED',
-                    error: 'Unable to save collection record'
+                    error: 'Unable to save collection record',
+                    is_complete: 1
                 });
 
                 return false;

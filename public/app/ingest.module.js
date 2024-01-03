@@ -29,10 +29,16 @@ const ingestModule = (function () {
 
         try {
 
+            let batch = helperModule.getParameterByName('batch');
+
+            if (batch === null) {
+                await status_checks();
+                return false;
+            }
+
             let message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; Starting Ingest...</strong></div>';
             domModule.html('#message', message);
 
-            let batch = helperModule.getParameterByName('batch');
             let url = '/api/v1/ingest?batch=' + batch;
             let response = await httpModule.req({
                 method: 'POST',
@@ -44,34 +50,41 @@ const ingestModule = (function () {
             });
 
             if (response.status === 200) {
-
-                let status_timer = setInterval(async () => {
-
-                    let data = await get_ingest_status();
-
-                    if (data.length === 0) {
-                        clearInterval(status_timer);
-                        let message = '<div class="alert alert-success"><strong><i class="fa fa-info-circle"></i>&nbsp; Ingest complete.</strong></div>';
-                        domModule.html('#message', message);
-                        domModule.html('#batch', '');
-                        document.querySelector('#ingest-status-table').style.visibility = 'hidden';
-                        setTimeout(() => {
-                            console.log('redirect to completed records screen');
-
-                        }, 3000);
-                        return false;
-                    }
-
-                    domModule.html('#message', '');
-                    display_status_records(data);
-
-                }, 5000);
+                await status_checks();
             }
 
         } catch(error) {
             console.log(error);
         }
     };
+
+    async function status_checks () {
+
+        let message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; Checking ingest status...</strong></div>';
+        domModule.html('#message', message);
+
+        let status_timer = setInterval(async () => {
+
+            let data = await get_ingest_status();
+            domModule.html('#message', '');
+            console.log('data ', data);
+            if (data.length === 0 && data[0].error === '[]') {
+                clearInterval(status_timer);
+                document.querySelector('#ingest-status-table').style.visibility = 'hidden';
+                let message = '<div class="alert alert-success"><strong><i class="fa fa-info-circle"></i>&nbsp; No Ingests in progress.</strong></div>';
+                domModule.html('#message', message);
+                domModule.html('#batch', '');
+                return false;
+            } else {
+                // error
+                clearInterval(status_timer);
+            }
+
+            domModule.html('#message', '');
+            display_status_records(data);
+
+        }, 5000);
+    }
 
     /**
      * Gets ingest status
@@ -117,6 +130,12 @@ const ingestModule = (function () {
                 html += '<td>' + data[i].batch_size + '</td>';
                 html += '<td>' + data[i].status + '</td>';
                 html += '<td>' + data[i].micro_service + '</td>';
+                if (data[i].error !== '[]') {
+                    html += '<td>' + data[i].error + '</td>';
+                } else {
+                    html += '<td>None</td>';
+                }
+
                 html += '</tr>';
             }
 
