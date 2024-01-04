@@ -29,6 +29,7 @@ const VALIDATOR = require('validator');
  * @param username
  * @returns {*}
  */
+/*
 exports.create = function (username) {
 
     let tokenData = {
@@ -41,6 +42,8 @@ exports.create = function (username) {
         expiresIn: TOKEN_CONFIG.token_expires
     });
 };
+
+ */
 
 /**
  * Verifies api key

@@ -328,8 +328,9 @@ const Ingest_service = class {
     /**
      * Gets total batch size
      * @param batch
+     * @param archival_package
      */
-    async get_batch_size(batch) {
+    async get_batch_size(batch, archival_package) {
 
         try {
 
@@ -352,9 +353,24 @@ const Ingest_service = class {
             }
 
             let batch_size_results = HELPER.format_bytes(batch_size.total_batch_size.result);
-            // TODO: check if batch > 250GB
+
+            if (batch_size_results.size_type === 'GB' && batch_size_results.batch_size > 250) {
+
+                await INGEST_TASKS.update_ingest_queue({
+                    batch: batch,
+                    is_complete: 0
+                }, {
+                    status: 'INGEST HALTED',
+                    error: 'Package must be under 250GB',
+                    is_complete: 1
+                });
+
+                return false;
+            }
+
             await INGEST_TASKS.update_ingest_queue({
                 batch: batch,
+                package: archival_package,
                 is_complete: 0
             }, {
                 batch_size: batch_size_results.batch_size + batch_size_results.size_type
@@ -384,10 +400,6 @@ const Ingest_service = class {
         }
 
         if (await this.check_uri_txt(batch) === false) {
-            return false;
-        }
-
-        if (await this.get_batch_size(batch) === false) {
             return false;
         }
 
@@ -430,6 +442,10 @@ const Ingest_service = class {
             });
 
             LOGGER.module().info('INFO: [/ingester/service module (start_ingest)] Processing archival package');
+
+            if (await this.get_batch_size(batch, archival_package.package) === false) {
+                return false;
+            }
 
             let package_file_count = await QA_TASKS.get_package_file_count(batch, archival_package.package);
 

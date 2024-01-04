@@ -49,10 +49,13 @@ const Ingest_service_tasks = class {
 
         try {
             return await this.DB_QUEUE(this.TABLES.repo_queue.repo_ingest_queue)
-            .select('id', 'status', 'batch', 'package', 'batch_size', 'file_count', 'metadata_uri', 'micro_service', 'error')
+            .select('id', 'status', 'batch', 'package', 'batch_size', 'file_count', 'metadata_uri', 'micro_service', 'error', 'is_complete')
+            .orderBy('created', 'desc');
+            /*
             .where({
                 is_complete: 0
             });
+             */
         } catch (error) {
             LOGGER.module().error('ERROR: [/ingester/ingest_service_tasks (get_status)] Unable get status ' + error.message);
             return false;
@@ -405,7 +408,7 @@ const Ingest_service_tasks = class {
                 metadata_uri: uri
             }, {
                 metadata: JSON.stringify(record.metadata),
-                error: error //JSON.stringify(errors)
+                error: error
             });
 
             let result = await ARCHIVESSPACE_LIB.destroy_session_token(token);

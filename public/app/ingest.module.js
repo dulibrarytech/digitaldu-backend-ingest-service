@@ -21,6 +21,7 @@ const ingestModule = (function () {
     'use strict';
 
     let obj = {};
+    set_api_key();
 
     /**
      * Starts ingest process
@@ -30,6 +31,7 @@ const ingestModule = (function () {
         try {
 
             let batch = helperModule.getParameterByName('batch');
+            const key = helperModule.getParameterByName('api_key');
 
             if (batch === null) {
                 await status_checks();
@@ -39,13 +41,12 @@ const ingestModule = (function () {
             let message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; Starting Ingest...</strong></div>';
             domModule.html('#message', message);
 
-            let url = '/api/v1/ingest?batch=' + batch;
+            let url = '/api/v1/ingest?batch=' + batch + '&api_key=' + key;
             let response = await httpModule.req({
                 method: 'POST',
                 url: url,
                 headers: {
                     'Content-Type': 'application/json'
-                    // 'x-access-token': token
                 }
             });
 
@@ -67,19 +68,25 @@ const ingestModule = (function () {
 
             let data = await get_ingest_status();
             domModule.html('#message', '');
-            console.log('data ', data);
-            // TODO
-            if (data.length === 0 || data[0].error === 'NONE') {
+
+            if (data.length === 0) {
                 clearInterval(status_timer);
                 document.querySelector('#ingest-status-table').style.visibility = 'hidden';
                 let message = '<div class="alert alert-success"><strong><i class="fa fa-info-circle"></i>&nbsp; No Ingests in progress.</strong></div>';
                 domModule.html('#message', message);
                 domModule.html('#batch', '');
                 return false;
-            } else {
-                clearInterval(status_timer);
-                let message = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; An ingest error occurred.</strong></div>';
-                domModule.html('#message', message);
+            } else if (data.length > 0) {
+
+                for (let i=0;i<data.length;i++) {
+                    if (data[i].error !== null) {
+                        clearInterval(status_timer);
+                        let message = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; An ingest error occurred.</strong></div>';
+                        domModule.html('#message', message);
+                        display_status_records(data);
+                        return false;
+                    }
+                }
             }
 
             domModule.html('#message', '');
@@ -95,13 +102,13 @@ const ingestModule = (function () {
 
         try {
 
-            let url = '/api/v1/ingest/status';
+            const key = helperModule.getParameterByName('api_key');
+            let url = '/api/v1/ingest/status?api_key=' + key;
             let response = await httpModule.req({
                 method: 'GET',
                 url: url,
                 headers: {
                     'Content-Type': 'application/json'
-                    // 'x-access-token': token
                 }
             });
 
@@ -133,11 +140,11 @@ const ingestModule = (function () {
                 html += '<td>' + data[i].status + '</td>';
                 html += '<td>' + data[i].micro_service + '</td>';
 
-                if (data[i].error !== 'NONE') {
+                if (data[i].error !== null) {
                     // TODO: loop through errors
                     html += '<td>' + data[i].error + '</td>';
                 } else {
-                    html += '<td>' + data[i].error + '</td>';
+                    html += '<td>NONE</td>';
                 }
 
                 html += '</tr>';
@@ -157,13 +164,27 @@ const ingestModule = (function () {
 
         try {
 
-            let url = '/api/v1/ingest/packages';
+            let data = await get_ingest_status();
+            let ingest_status = false;
+
+            for (let i=0;i<data.length;i++) {
+                if (data[i].is_complete === 0) {
+                    ingest_status = true;
+                    break;
+                }
+            }
+
+            if (ingest_status === true) {
+                return false;
+            }
+
+            const key = helperModule.getParameterByName('api_key');
+            let url = '/api/v1/ingest/packages?api_key=' + key;
             let response = await httpModule.req({
                 method: 'GET',
                 url: url,
                 headers: {
                     'Content-Type': 'application/json'
-                    // 'x-access-token': token
                 }
             });
 
@@ -181,8 +202,16 @@ const ingestModule = (function () {
      */
     async function display_packages() {
 
+        const key = helperModule.getParameterByName('api_key');
         const packages = await get_packages();
         let html = '';
+
+        if (packages === false) {
+            let message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; An ingest is in progress. Please try again later.</strong></div>';
+            domModule.html('#message', message);
+            document.querySelector('#import-table').style.visibility = 'hidden';
+            return false;
+        }
 
         if (packages.length === 0) {
             html = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; Ingest service is not available.</strong></div>';
@@ -215,11 +244,20 @@ const ingestModule = (function () {
             html += '<small>' + packages.result[prop] + '</small>';
             html += '</td>';
             // Action button column
-            html += '<td style="text-align: center;vertical-align: middle; width: 15%"><a href="/dashboard/ingest/status?batch=' + prop + '" type="button" class="btn btn-sm btn-default run-qa"><i class="fa fa-cogs"></i> <span>Start</span></a></td>';
+            html += '<td style="text-align: center;vertical-align: middle; width: 15%"><a href="/dashboard/ingest/status?batch=' + prop + '&api_key=' + key + '" type="button" class="btn btn-sm btn-default run-qa"><i class="fa fa-cogs"></i> <span>Start</span></a></td>';
             html += '</tr>';
         }
 
         domModule.html('#packages', html);
+    }
+
+    /**
+     * Sets api key in menu item links
+     */
+    function set_api_key() {
+        const key = helperModule.getParameterByName('api_key');
+        document.querySelector('#ingest').href = '/dashboard/ingest?api_key=' + key;
+        document.querySelector('#ingest-status').href = '/dashboard/ingest/status?api_key=' + key;
     }
 
     obj.init = async function () {

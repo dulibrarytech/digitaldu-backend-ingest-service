@@ -1,6 +1,6 @@
 /**
 
- Copyright 2019 University of Denver
+ Copyright 2024 University of Denver
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -26,13 +26,13 @@ const CONTROLLER = new INGEST_CONTROLLER();
 module.exports = async function (app) {
 
     app.route('/api/v1/ingest/packages')
-    .get(await CONTROLLER.get_collection_packages);  // TOKEN.verify,
+    .get(TOKEN.verify, await CONTROLLER.get_collection_packages);
 
     app.route('/api/v1/ingest')
-    .post(INIT.ingest_init);
+    .post(TOKEN.verify, INIT.ingest_init);
 
     app.route('/api/v1/ingest/status')
-    .get(CONTROLLER.get_status);
+    .get(TOKEN.verify, CONTROLLER.get_status);
 
     app.route('/dashboard/ingest')
     .get(TOKEN.verify, CONTROLLER.get_dashboard_ingest_view);
