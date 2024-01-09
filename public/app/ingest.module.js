@@ -59,6 +59,9 @@ const ingestModule = (function () {
         }
     };
 
+    /**
+     * Checks queue to determine ingest status
+     */
     async function status_checks () {
 
         let message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; Checking ingest status...</strong></div>';
@@ -67,32 +70,37 @@ const ingestModule = (function () {
         let status_timer = setInterval(async () => {
 
             let data = await get_ingest_status();
+            let message = '';
             domModule.html('#message', '');
 
-            if (data.length === 0) {
+            if (data.length > 0) {
+
+                for (let i=0;i<data.length;i++) {
+                    if (data[i].error !== null && data[i].is_complete === 0) {
+                        message = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; An ingest error occurred.</strong></div>';
+                        break;
+                    } else if (data[i].error === null && data[i].is_complete === 0) {
+                        message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; An ingest is in progress.</strong></div>';
+                    } else if (data[i].error === null && data[i].is_complete === 1) {
+                        message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; No Ingests are currently in progress.</strong></div>';
+                    }
+                }
+
+                clearInterval(status_timer);
+                domModule.html('#message', message);
+                display_status_records(data);
+                return false;
+
+            } else {
                 clearInterval(status_timer);
                 document.querySelector('#ingest-status-table').style.visibility = 'hidden';
-                let message = '<div class="alert alert-success"><strong><i class="fa fa-info-circle"></i>&nbsp; No Ingests in progress.</strong></div>';
+                let message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; No Ingests are currently in progress.</strong></div>';
                 domModule.html('#message', message);
                 domModule.html('#batch', '');
                 return false;
-            } else if (data.length > 0) {
-
-                for (let i=0;i<data.length;i++) {
-                    if (data[i].error !== null) {
-                        clearInterval(status_timer);
-                        let message = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; An ingest error occurred.</strong></div>';
-                        domModule.html('#message', message);
-                        display_status_records(data);
-                        return false;
-                    }
-                }
             }
 
-            domModule.html('#message', '');
-            display_status_records(data);
-
-        }, 5000);
+        }, 7000);
     }
 
     /**
@@ -216,6 +224,7 @@ const ingestModule = (function () {
         if (packages.length === 0) {
             html = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; Ingest service is not available.</strong></div>';
             domModule.html('#message', html);
+            document.querySelector('#import-table').style.visibility = 'hidden';
             return false;
         }
 

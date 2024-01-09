@@ -22,6 +22,7 @@ const HTTP = require('axios');
 const KA = require('http');
 const {Client} = require('@elastic/elasticsearch');
 const ES_CONFIG = require('../../config/elasticsearch_config')();
+const WEBSERVICES_CONFIG = require('../../config/webservices_config')();
 const LOGGER = require('../../libs/log4');
 const QA_ENDPOINT_PATH = '/api/v2/qa/';
 const TIMEOUT = 60000 * 25;
@@ -51,11 +52,6 @@ const Ingest_service_tasks = class {
             return await this.DB_QUEUE(this.TABLES.repo_queue.repo_ingest_queue)
             .select('id', 'status', 'batch', 'package', 'batch_size', 'file_count', 'metadata_uri', 'micro_service', 'error', 'is_complete')
             .orderBy('created', 'desc');
-            /*
-            .where({
-                is_complete: 0
-            });
-             */
         } catch (error) {
             LOGGER.module().error('ERROR: [/ingester/ingest_service_tasks (get_status)] Unable get status ' + error.message);
             return false;
@@ -101,7 +97,7 @@ const Ingest_service_tasks = class {
 
         try {
 
-            const result = await this.DB_QUEUE(this.TABLES.repo_queue.repo_ingest_queue)
+            await this.DB_QUEUE(this.TABLES.repo_queue.repo_ingest_queue)
             .where(where_obj)
             .update(data);
             LOGGER.module().info('INFO: [/ingester/tasks (update_ingest_queue)] Queue updated');
@@ -338,7 +334,7 @@ const Ingest_service_tasks = class {
 
             let token = await ARCHIVESSPACE_LIB.get_session_token();
             let errors = [];
-            let error = 'NONE';
+            let error = null;
 
             LOGGER.module().info('INFO: [/qa/service_tasks (check_metadata)] Checking record ' + uri);
 
@@ -393,7 +389,6 @@ const Ingest_service_tasks = class {
             } else {
 
                 for (let i = 0; i < record.metadata.parts.length; i++) {
-
                     if (record.metadata.parts[i].type === null || record.metadata.parts[i].type.length === 0) {
                         errors.push('Mime-type is missing (' + record.metadata.parts[i].title + ')');
                     }
@@ -401,7 +396,7 @@ const Ingest_service_tasks = class {
             }
 
             if (errors.length > 0) {
-                error = JSON.stringify(errors)
+                error = JSON.stringify(errors);
             }
 
             await this.update_ingest_queue({
@@ -425,7 +420,7 @@ const Ingest_service_tasks = class {
         }
     }
 
-    /**
+    /** TODO:
      * Gets record transcript if one is available
      * @param data
      */
@@ -439,13 +434,15 @@ const Ingest_service_tasks = class {
                     return node.identifier;
                 }
             });
-
-            let endpoint = CONFIG.transcriptService + '/api/v1/transcript?call_number=' + call_number + '&api_key=' + CONFIG.transcriptServiceApiKey;
+            // TODO: get transcript service config
+            let endpoint = WEBSERVICES_CONFIG.transcript_service + '/api/v1/transcript?call_number=' + call_number + '&api_key=' + WEBSERVICES_CONFIG.transcript_service_api_key;
             let response = await HTTP.get(endpoint, {
                 headers: {
                     'Content-Type': 'application/json'
                 }
             });
+
+            console.log('transcript ', response);
 
             if (response.status === 200) {
                 let transcript_search = response.data.transcript_search;  // for search - save to index
