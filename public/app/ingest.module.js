@@ -79,6 +79,7 @@ const ingestModule = (function () {
 
                 for (let i=0;i<data.length;i++) {
                     if (data[i].error !== null && data[i].is_complete === 0) {
+                        clearInterval(status_timer);
                         message = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; An ingest error occurred.</strong></div>';
                         break;
                     } else if (data[i].error === null && data[i].is_complete === 0) {
@@ -88,12 +89,11 @@ const ingestModule = (function () {
                     }
                 }
 
-                clearInterval(status_timer);
                 domModule.html('#message', message);
                 display_status_records(data);
                 return false;
 
-            } else {
+            } else if (data.length === 0) {
                 clearInterval(status_timer);
                 document.querySelector('#ingest-status-table').style.visibility = 'hidden';
                 let message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; No Ingests are currently in progress.</strong></div>';
