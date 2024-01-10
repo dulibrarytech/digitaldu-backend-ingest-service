@@ -258,7 +258,7 @@ const ingestModule = (function () {
             html += '<small>' + packages.result[prop] + '</small>';
             html += '</td>';
             // Action button column
-            html += '<td style="text-align: center;vertical-align: middle; width: 15%"><a href="/dashboard/ingest/status?batch=' + prop + '&api_key=' + key + '" type="button" class="btn btn-sm btn-default run-qa"><i class="fa fa-cogs"></i> <span>Start</span></a></td>';
+            html += '<td style="text-align: center;vertical-align: middle; width: 15%"><a href="' + nginx_path + '/dashboard/ingest/status?batch=' + prop + '&api_key=' + key + '" type="button" class="btn btn-sm btn-default run-qa"><i class="fa fa-cogs"></i> <span>Start</span></a></td>';
             html += '</tr>';
         }
 
