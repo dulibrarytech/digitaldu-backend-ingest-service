@@ -53,16 +53,16 @@
         </div>
         <%- include('partials/footer.ejs'); %>
     </div>
-    <script src="../../libs/jquery/dist/jquery.min.js"></script>
-    <script src="../../libs/axios-2.x/dist/axios.min.js"></script>
-    <script src="../../libs/bootstrap/dist/js/bootstrap.min.js"></script>
-    <script src="../../libs/nprogress/nprogress.js"></script>
-    <script src="../../libs/dompurify/purify.min.js"></script>
-    <script src="../../assets/js/theme_sidebar.js"></script>
-    <script src="../../app/dom.module.js"></script>
-    <script src="../../app/http.module.js"></script>
-    <script src="../../app/helper.module.js"></script>
-    <script src="../../app/ingest.module.js"></script>
+    <script src="<%=host%>libs/jquery/dist/jquery.min.js"></script>
+    <script src="<%=host%>libs/axios-2.x/dist/axios.min.js"></script>
+    <script src="<%=host%>libs/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="<%=host%>libs/nprogress/nprogress.js"></script>
+    <script src="<%=host%>libs/dompurify/purify.min.js"></script>
+    <script src="<%=host%>assets/js/theme_sidebar.js"></script>
+    <script src="<%=host%>app/dom.module.js"></script>
+    <script src="<%=host%>app/http.module.js"></script>
+    <script src="<%=host%>app/helper.module.js"></script>
+    <script src="<%=host%>app/ingest.module.js"></script>
     <script>ingestModule.start_ingest();</script>
 </body>
 </html>
