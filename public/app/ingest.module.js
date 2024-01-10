@@ -84,9 +84,9 @@ const ingestModule = (function () {
                         break;
                     } else if (data[i].error === null && data[i].is_complete === 0) {
                         message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; An ingest is in progress.</strong></div>';
-                    } else if (data[i].error === null && data[i].is_complete === 1) {
-                        message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; No Ingests are currently in progress.</strong></div>';
-                    }
+                    } /*else if (data[i].error === null && data[i].is_complete === 1) {
+                        // message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; No Ingests are currently in progress.</strong></div>';
+                    }*/
                 }
 
                 domModule.html('#message', message);
