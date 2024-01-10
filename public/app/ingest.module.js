@@ -21,6 +21,7 @@ const ingestModule = (function () {
     'use strict';
 
     let obj = {};
+    let nginx_path = '/ingester';
     set_api_key();
 
     /**
@@ -41,7 +42,7 @@ const ingestModule = (function () {
             let message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; Starting Ingest...</strong></div>';
             domModule.html('#message', message);
 
-            let url = '/api/v1/ingest?batch=' + batch + '&api_key=' + key;
+            let url = nginx_path + '/api/v1/ingest?batch=' + batch + '&api_key=' + key;
             let response = await httpModule.req({
                 method: 'POST',
                 url: url,
@@ -55,7 +56,8 @@ const ingestModule = (function () {
             }
 
         } catch(error) {
-            console.log(error);
+            let message = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; ' + error.message + '</strong></div>';
+            domModule.html('#message', message);
         }
     };
 
@@ -111,7 +113,7 @@ const ingestModule = (function () {
         try {
 
             const key = helperModule.getParameterByName('api_key');
-            let url = '/api/v1/ingest/status?api_key=' + key;
+            let url = nginx_path + '/api/v1/ingest/status?api_key=' + key;
             let response = await httpModule.req({
                 method: 'GET',
                 url: url,
@@ -125,7 +127,8 @@ const ingestModule = (function () {
             }
 
         } catch(error) {
-            console.log(error);
+            let message = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; ' + error.message + '</strong></div>';
+            domModule.html('#message', message);
         }
     }
 
@@ -161,7 +164,8 @@ const ingestModule = (function () {
             domModule.html('#batch', html);
 
         } catch(error) {
-            console.log(error);
+            let message = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; ' + error.message + '</strong></div>';
+            domModule.html('#message', message);
         }
     }
 
@@ -187,7 +191,7 @@ const ingestModule = (function () {
             }
 
             const key = helperModule.getParameterByName('api_key');
-            let url = '/api/v1/ingest/packages?api_key=' + key;
+            let url = nginx_path + '/api/v1/ingest/packages?api_key=' + key;
             let response = await httpModule.req({
                 method: 'GET',
                 url: url,
@@ -201,7 +205,8 @@ const ingestModule = (function () {
             }
 
         } catch(error) {
-            console.log(error);
+            let message = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; ' + error.message + '</strong></div>';
+            domModule.html('#message', message);
         }
     }
 
@@ -265,8 +270,8 @@ const ingestModule = (function () {
      */
     function set_api_key() {
         const key = helperModule.getParameterByName('api_key');
-        document.querySelector('#ingest').href = '/dashboard/ingest?api_key=' + key;
-        document.querySelector('#ingest-status').href = '/dashboard/ingest/status?api_key=' + key;
+        document.querySelector('#ingest').href = nginx_path + '/dashboard/ingest?api_key=' + key;
+        document.querySelector('#ingest-status').href = nginx_path + '/dashboard/ingest/status?api_key=' + key;
     }
 
     obj.init = async function () {
