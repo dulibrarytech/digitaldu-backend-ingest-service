@@ -5,9 +5,9 @@
 # http://www.sequelpro.com/
 # https://github.com/sequelpro/sequelpro
 #
-# Host: 127.0.0.1 (MySQL 5.7.26)
+# Host: 127.0.0.1 (MySQL 5.5.65-MariaDB)
 # Database: repo_queue
-# Generation Time: 2023-12-21 21:42:20 +0000
+# Generation Time: 2024-01-11 03:32:15 +0000
 # ************************************************************
 
 
@@ -28,16 +28,16 @@ DROP TABLE IF EXISTS `tbl_ingest_queue`;
 CREATE TABLE `tbl_ingest_queue` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `status` varchar(100) NOT NULL DEFAULT 'PENDING',
-  `batch` varchar(255) NOT NULL DEFAULT '0' COMMENT 'collection package name',
-  `package` varchar(255) NOT NULL DEFAULT '0' COMMENT 'package name',
-  `collection_uuid` varchar(255) NOT NULL DEFAULT '0' COMMENT 'repository collection uuid',
-  `batch_size` varchar(255) NOT NULL DEFAULT '0',
+  `batch` varchar(255) NOT NULL DEFAULT 'PENDING' COMMENT 'collection package name',
+  `package` varchar(255) NOT NULL DEFAULT 'PENDING' COMMENT 'package name',
+  `collection_uuid` varchar(255) NOT NULL DEFAULT 'PENDING' COMMENT 'repository collection uuid',
+  `batch_size` varchar(255) NOT NULL DEFAULT 'PENDING',
   `file_count` int(11) NOT NULL DEFAULT '0',
   `metadata_uri` varchar(100) DEFAULT 'PENDING',
   `metadata` longtext,
   `transfer_folder` varchar(255) NOT NULL DEFAULT 'PENDING' COMMENT 'archivematica transfer folder',
   `transfer_uuid` varchar(255) NOT NULL DEFAULT 'PENDING' COMMENT 'archivematica transfer uuid',
-  `sip_uuid` varchar(255) NOT NULL DEFAULT '0',
+  `sip_uuid` varchar(255) NOT NULL DEFAULT 'PENDING',
   `dip_path` varchar(255) DEFAULT 'PENDING',
   `file_data` longtext,
   `master_data` longtext,
