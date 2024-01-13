@@ -115,7 +115,8 @@ const Index_record_lib = class {
             if (data.transcript_search !== null && data.transcript_search.length > 0) {
                 index_record.transcript_search = data.transcript_search;
             }
-
+            // TODO:...
+            /*
             if (metadata.parts !== undefined && metadata.parts.length > 0) {
 
                 if (data.is_compound === 1 && data.compound_parts !== null) {
@@ -129,6 +130,18 @@ const Index_record_lib = class {
                     }
                 }
             }
+
+             */
+
+            if (metadata.parts !== undefined && metadata.parts.length > 0) {
+                for (let i=0;i<metadata.parts.length;i++) {
+                    if (metadata.parts[i].kaltura_id !== undefined) {
+                        index_record.entry_id = metadata.parts[i].kaltura_id;
+                    }
+                }
+            }
+
+            index_record.parts = metadata.parts;
         }
 
         if (metadata.names !== undefined) {
@@ -151,7 +164,7 @@ const Index_record_lib = class {
             }
 
             if (subjectsArr.length > 0) {
-                index_record.facets = subjectsArr;
+                index_record.f_subjects = subjectsArr;
             }
         }
 
