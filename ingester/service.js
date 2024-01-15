@@ -833,8 +833,20 @@ const Ingest_service = class {
                 micro_service: '',
             });
 
-            let metadata = await INGEST_TASKS.process_metadata(ARCHIVEASSPACE_LIB, this.metadata_uri)
+            // let metadata = await INGEST_TASKS.process_metadata(ARCHIVEASSPACE_LIB, this.metadata_uri);
+            this.metadata = await INGEST_TASKS.process_metadata(ARCHIVEASSPACE_LIB, this.metadata_uri);
+            await INGEST_TASKS.update_ingest_queue({
+                sip_uuid: sip_uuid,
+                is_complete: 0
+            }, {
+                status: 'METADATA_PROCESSED'
+            });
 
+            setTimeout(async () => {
+                await this.import_object_data(sip_uuid);
+            }, 5000);
+
+            /*
             if (metadata !== false) {
                 this.metadata = metadata;
                 await INGEST_TASKS.update_ingest_queue({
@@ -859,6 +871,8 @@ const Ingest_service = class {
                     is_complete: 1
                 });
             }
+
+             */
 
         } catch (error) {
             LOGGER.module().error('ERROR: [/ingester/service module (process_metadata)] Unable to process metadata ' + error.message);
@@ -1111,15 +1125,11 @@ const Ingest_service = class {
             let tmp = data[0].metadata_uri.split('/');
             const aspace_id = tmp[tmp.length - 1];
 
-            /*
             INGEST_TASKS.add_handle(handle, aspace_id, (response) => {
-
                 if (response === false) {
                     LOGGER.module().error('ERROR: [/ingester/service module (create_repo_record)] Unable to add ArchivesSpace handle');
                 }
             });
-
-             */
 
             await INGEST_TASKS.update_ingest_queue({
                 package: this.archival_package,

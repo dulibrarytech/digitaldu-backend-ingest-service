@@ -416,11 +416,10 @@ const Ingest_service_tasks = class {
 
         } catch (error) {
             LOGGER.module().error('ERROR: [/ingester/tasks (process_metadata)] Unable to process metadata - ' + error.message);
-            return false;
         }
     }
 
-    /** TODO:
+    /**
      * Gets record transcript if one is available
      * @param data
      */
