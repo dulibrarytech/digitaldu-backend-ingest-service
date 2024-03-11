@@ -341,32 +341,34 @@ const Ingest_service_tasks = class {
             let record = await ARCHIVESSPACE_LIB.get_record(uri, token);
 
             if (record.metadata.title === undefined || record.metadata.title.length === 0) {
-                errors.push('Title is missing');
+                errors.push('Title field is missing');
             }
 
             if (record.metadata.uri === undefined || record.metadata.uri.length === 0) {
-                errors.push('URI is missing');
+                errors.push('URI field is missing');
             }
 
             if (record.metadata.identifiers === undefined || record.metadata.identifiers.length === 0) {
-                errors.push('Identifier is missing');
+                errors.push('Identifier field is missing');
             }
 
+            /*
             if (record.metadata.notes === undefined || record.metadata.notes.length === 0) {
-                errors.push('Notes is missing');
+                errors.push('Notes field is missing - The notes field contains the abstract and rights statement');
             } else {
 
                 for (let i = 0; i < record.metadata.notes.length; i++) {
 
                     if (record.metadata.notes[i].type === 'abstract' && record.metadata.notes[i].content.length === 0) {
-                        errors.push('Abstract is missing');
+                        errors.push('Abstract field is missing');
                     }
 
                     if (record.metadata.notes[i].type === 'userestrict' && record.metadata.notes[i].content.length === 0) {
-                        errors.push('Rights statement is missing');
+                        errors.push('Rights statement field is missing');
                     }
                 }
             }
+             */
 
             if (record.metadata.dates !== undefined) {
 
