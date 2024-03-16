@@ -787,11 +787,15 @@ const Ingest_service = class {
 
                     setTimeout(async () => {
 
-                        let is_moved = await INGEST_TASKS.move_to_ingested(this.collection_uuid);
+                        // let is_moved =
+                        await INGEST_TASKS.move_to_ingested(this.collection_uuid);
+                        await this.process_metadata(sip_uuid);
 
+                        /*
                         if (is_moved === true) {
                             await this.process_metadata(sip_uuid);
                         }
+                         */
 
                     }, 10000);
 
