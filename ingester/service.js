@@ -772,6 +772,19 @@ const Ingest_service = class {
 
                 let ingest = await ARCHIVEMATICA_LIB.get_ingest_status(sip_uuid);
 
+                if (ingest.status === 'FAILED') {
+
+                    await INGEST_TASKS.update_ingest_queue({
+                        sip_uuid: sip_uuid,
+                        is_complete: 1
+                    }, {
+                        status: ingest.status,
+                        micro_service: ingest.microservice
+                    });
+
+                    return false;
+                }
+
                 if (ingest.status === 'COMPLETE') {
 
                     clearInterval(ingest_status_timer);
@@ -786,9 +799,8 @@ const Ingest_service = class {
                     });
 
                     setTimeout(async () => {
-
-                        // let is_moved =
-                        await INGEST_TASKS.move_to_ingested(this.collection_uuid);
+                        // moved to end of create repo function
+                        // let is_moved = await INGEST_TASKS.move_to_ingested(this.collection_uuid);
                         await this.process_metadata(sip_uuid);
 
                         /*
@@ -849,34 +861,6 @@ const Ingest_service = class {
             setTimeout(async () => {
                 await this.import_object_data(sip_uuid);
             }, 5000);
-
-            /*
-            if (metadata !== false) {
-                this.metadata = metadata;
-                await INGEST_TASKS.update_ingest_queue({
-                    sip_uuid: sip_uuid,
-                    is_complete: 0
-                }, {
-                    status: 'METADATA_PROCESSED'
-                });
-
-                setTimeout(async () => {
-                    await this.import_object_data(sip_uuid);
-                }, 5000);
-
-            } else {
-
-                await INGEST_TASKS.update_ingest_queue({
-                    sip_uuid: sip_uuid,
-                    is_complete: 0
-                }, {
-                    status: 'INGEST_HALTED',
-                    error: 'Unable to process metadata',
-                    is_complete: 1
-                });
-            }
-
-             */
 
         } catch (error) {
             LOGGER.module().error('ERROR: [/ingester/service module (process_metadata)] Unable to process metadata ' + error.message);
@@ -1210,6 +1194,8 @@ const Ingest_service = class {
             }
 
             await this.next();
+            await INGEST_TASKS.move_to_ingested(record.is_member_of_collection);
+
 
         } catch (error) {
             LOGGER.module().error('ERROR: [/ingester/service module (create_repo_record)] Unable to create repository record ' + error.message);
