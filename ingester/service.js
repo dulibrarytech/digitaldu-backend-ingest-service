@@ -798,18 +798,8 @@ const Ingest_service = class {
                         micro_service: ingest.microservice,
                     });
 
-                    setTimeout(async () => {
-                        // moved to end of create repo function
-                        // let is_moved = await INGEST_TASKS.move_to_ingested(this.collection_uuid);
-                        await this.process_metadata(sip_uuid);
-
-                        /*
-                        if (is_moved === true) {
-                            await this.process_metadata(sip_uuid);
-                        }
-                         */
-
-                    }, 10000);
+                    await this.process_metadata(sip_uuid);
+                    await INGEST_TASKS.move_to_ingested(this.collection_uuid);
 
                     return false;
                 }
@@ -1194,8 +1184,6 @@ const Ingest_service = class {
             }
 
             await this.next();
-            await INGEST_TASKS.move_to_ingested(record.is_member_of_collection);
-
 
         } catch (error) {
             LOGGER.module().error('ERROR: [/ingester/service module (create_repo_record)] Unable to create repository record ' + error.message);
