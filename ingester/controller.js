@@ -61,19 +61,6 @@ const Ingest_controller = class {
     }
 
     /**
-     * Used if ingest has stalled
-     */
-    async process_metadata(req, res) {
-
-        if (req.query.sip_uuid === undefined) {
-            res.status(400).send({});
-        }
-
-        const sip_uuid = req.query.sip_uuid;
-        await INGEST_SERVICE.process_metadata(sip_uuid);
-    }
-
-    /**
      * Renders ingest dashboard view
      * @param req
      * @param res

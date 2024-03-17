@@ -34,9 +34,6 @@ module.exports = async function (app) {
     app.route('/api/v1/ingest/status')
     .get(TOKEN.verify, CONTROLLER.get_status);
 
-    app.route('/api/v1/process_metadata')
-    .post(TOKEN.verify, CONTROLLER.process_metadata);
-
     app.route('/dashboard/ingest')
     .get(TOKEN.verify, CONTROLLER.get_dashboard_ingest_view);
 
