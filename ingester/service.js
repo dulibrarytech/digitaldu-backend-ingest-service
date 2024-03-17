@@ -768,11 +768,17 @@ const Ingest_service = class {
 
         try {
 
+            setTimeout(async () => {
+                await INGEST_TASKS.move_to_ingested(this.collection_uuid);
+            }, 50);
+
             let ingest_status_timer = setInterval(async () => {
 
                 let ingest = await ARCHIVEMATICA_LIB.get_ingest_status(sip_uuid);
 
                 if (ingest.status === 'FAILED') {
+
+                    LOGGER.module().error('ERROR: [/ingester/service module (get_ingest_status)] Archivematica ingest failed');
 
                     await INGEST_TASKS.update_ingest_queue({
                         sip_uuid: sip_uuid,
@@ -790,17 +796,7 @@ const Ingest_service = class {
                     clearInterval(ingest_status_timer);
                     LOGGER.module().info('INFO: [/ingester/service module (get_ingest_status)] Archivematica ingest complete');
                     await ARCHIVEMATICA_LIB.clear_ingest(sip_uuid);
-                    await INGEST_TASKS.update_ingest_queue({
-                        sip_uuid: sip_uuid,
-                        is_complete: 0
-                    }, {
-                        status: 'MOVING_PACKAGE_TO_INGESTED_FOLDER',
-                        micro_service: ingest.microservice,
-                    });
-
                     await this.process_metadata(sip_uuid);
-                    await INGEST_TASKS.move_to_ingested(this.collection_uuid);
-
                     return false;
                 }
 
@@ -839,7 +835,6 @@ const Ingest_service = class {
                 micro_service: '',
             });
 
-            // let metadata = await INGEST_TASKS.process_metadata(ARCHIVEASSPACE_LIB, this.metadata_uri);
             this.metadata = await INGEST_TASKS.process_metadata(ARCHIVEASSPACE_LIB, this.metadata_uri);
             await INGEST_TASKS.update_ingest_queue({
                 sip_uuid: sip_uuid,
@@ -1113,6 +1108,7 @@ const Ingest_service = class {
                 package: this.archival_package,
                 is_complete: 0
             }, {
+                status: 'HANDLE_CREATED',
                 handle: handle
             });
 
@@ -1183,6 +1179,16 @@ const Ingest_service = class {
                 });
             }
 
+            await INGEST_TASKS.update_ingest_queue({
+                package: this.archival_package,
+                is_complete: 0
+            }, {
+                status: 'COMPLETE',
+                is_complete: 1
+            });
+
+            // TODO: check if ingest folder is empty
+
             await this.next();
 
         } catch (error) {
@@ -1192,6 +1198,7 @@ const Ingest_service = class {
 
     async next() {
 
+        /*
         await INGEST_TASKS.update_ingest_queue({
             package: this.archival_package,
             is_complete: 0
@@ -1199,6 +1206,8 @@ const Ingest_service = class {
             status: 'COMPLETE',
             is_complete: 1
         });
+
+         */
 
         const data = await INGEST_TASKS.get_package(this.batch);
 
