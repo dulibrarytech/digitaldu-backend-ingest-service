@@ -354,19 +354,21 @@ const Ingest_service = class {
 
             let batch_size_results = HELPER.format_bytes(batch_size.total_batch_size.result);
 
-            if (batch_size_results.size_type === 'GB' && batch_size_results.batch_size > 250) {
+            if (batch_size_results.size_type === 'GB' && batch_size_results.batch_size > 500) {
 
                 await INGEST_TASKS.update_ingest_queue({
                     batch: batch,
                     is_complete: 0
                 }, {
                     status: 'INGEST HALTED',
-                    error: 'Package must be under 250GB',
+                    error: 'Batch is too large', // 'Package must be under 250GB'
                     is_complete: 1
                 });
 
                 return false;
             }
+
+            // TODO: check package size
 
             await INGEST_TASKS.update_ingest_queue({
                 batch: batch,
