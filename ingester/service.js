@@ -1091,6 +1091,13 @@ const Ingest_service = class {
 
             LOGGER.module().info('INFO: [/ingester/service module (create_repo_record)] Creating repository record');
 
+            await INGEST_TASKS.update_ingest_queue({
+                package: this.archival_package,
+                is_complete: 0
+            }, {
+                status: 'CREATING_REPOSITORY_RECORD'
+            });
+
             let record = {};
             let transcript_data;
             const data = await INGEST_TASKS.get_queue_data(this.archival_package);
@@ -1102,14 +1109,6 @@ const Ingest_service = class {
                 if (response === false) {
                     LOGGER.module().error('ERROR: [/ingester/service module (create_repo_record)] Unable to add ArchivesSpace handle');
                 }
-            });
-
-            await INGEST_TASKS.update_ingest_queue({
-                package: this.archival_package,
-                is_complete: 0
-            }, {
-                status: 'HANDLE_CREATED',
-                handle: handle
             });
 
             const master_data = JSON.parse(data[0].master_data);
@@ -1151,8 +1150,7 @@ const Ingest_service = class {
             record.display_record = JSON.stringify(index_record);
             record.mods_id = aspace_id;
 
-            let is_saved = await INGEST_TASKS.save_repo_record(record);
-            console.log('repo_record_is_saved ', is_saved);
+            await INGEST_TASKS.save_repo_record(record);
 
             await INGEST_TASKS.update_ingest_queue({
                 package: this.archival_package,
@@ -1162,8 +1160,7 @@ const Ingest_service = class {
                 status: 'REPOSITORY_RECORD_CREATED'
             });
 
-            let is_indexed = await INGEST_TASKS.index_repo_record(record.pid, record.display_record);
-            console.log('repo_record_is_indexed', is_indexed);
+            await INGEST_TASKS.index_repo_record(record.pid, record.display_record);
 
             await INGEST_TASKS.update_ingest_queue({
                 package: this.archival_package,
@@ -1187,8 +1184,6 @@ const Ingest_service = class {
                 is_complete: 1
             });
 
-            // TODO: check if ingest folder is empty
-
             await this.next();
 
         } catch (error) {
@@ -1197,17 +1192,6 @@ const Ingest_service = class {
     }
 
     async next() {
-
-        /*
-        await INGEST_TASKS.update_ingest_queue({
-            package: this.archival_package,
-            is_complete: 0
-        }, {
-            status: 'COMPLETE',
-            is_complete: 1
-        });
-
-         */
 
         const data = await INGEST_TASKS.get_package(this.batch);
 
