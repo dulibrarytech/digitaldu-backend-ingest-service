@@ -142,12 +142,15 @@ const ingestModule = (function () {
             let html = '';
 
             for (let i=0;i<data.length;i++) {
-                html += '<tr>';
-                html += '<td>' + data[i].batch + '</td>';
-                html += '<td>' + data[i].package + '</td>';
-                html += '<td>' + data[i].batch_size + '</td>';
-                html += '<td>' + data[i].status + '</td>';
-                html += '<td>' + data[i].micro_service + '</td>';
+
+                if (data[i].status !== 'PENDING') {
+                    html += '<tr>';
+                    html += '<td>' + data[i].batch + '</td>';
+                    html += '<td>' + data[i].package + '</td>';
+                    // html += '<td>' + data[i].batch_size + '</td>';
+                    html += '<td>' + data[i].status + '</td>';
+                    html += '<td>' + data[i].micro_service + '</td>';
+                }
 
                 if (data[i].error !== null) {
                     // TODO: loop through errors
