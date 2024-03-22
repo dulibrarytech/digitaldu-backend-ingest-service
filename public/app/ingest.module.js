@@ -150,13 +150,13 @@ const ingestModule = (function () {
                     // html += '<td>' + data[i].batch_size + '</td>';
                     html += '<td>' + data[i].status + '</td>';
                     html += '<td>' + data[i].micro_service + '</td>';
-                }
 
-                if (data[i].error !== null) {
-                    // TODO: loop through errors
-                    html += '<td>' + data[i].error + '</td>';
-                } else {
-                    html += '<td>NONE</td>';
+                    if (data[i].error !== null) {
+                        // TODO: loop through errors
+                        html += '<td>' + data[i].error + '</td>';
+                    } else {
+                        html += '<td>NONE</td>';
+                    }
                 }
 
                 html += '</tr>';
