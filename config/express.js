@@ -43,7 +43,8 @@ module.exports = function () {
     APP.use(BODYPARSER.json());
     APP.use(METHODOVERRIDE());
     APP.use(HELMET());
-    APP.use(EXPRESS.static('./public'));
+    // APP.use(EXPRESS.static('./public'));
+    APP.use('/ingester/static', EXPRESS.static('./public'));
     APP.use(XSS.sanitize_req_query);
     APP.use(XSS.sanitize_req_body);
     APP.use(XSS.validate_uuid);

@@ -1145,7 +1145,7 @@ const Ingest_service = class {
             record.mime_type = master_data.mime_type;
             record.checksum = master_data.checksum;
             record.file_size = master_data.file_size;
-            record.sip_uuid = data[0].sip_uuid;
+            record.sip_uuid = data[0].sip_uuid; // TODO remove
             record.is_published = 0;
 
             let index_record = INDEX_LIB.create_index_record(record);
