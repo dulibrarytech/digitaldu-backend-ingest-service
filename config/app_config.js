@@ -22,6 +22,7 @@ const HELPER = require('../libs/helper');
 const APP_CONFIG = {
     host: process.env.HOST,
     app_name: process.env.APP_NAME,
+    app_path: process.env.APP_PATH,
     app_version: process.env.APP_VERSION,
     organization: process.env.ORGANIZATION,
     app_host: process.env.APP_HOST,

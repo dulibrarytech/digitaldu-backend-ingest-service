@@ -227,16 +227,26 @@ const ingestModule = (function () {
             return false;
         }
 
-        if (packages.length === 0) {
+        if (packages === undefined) {
             html = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; Ingest service is not available.</strong></div>';
             domModule.html('#message', html);
             document.querySelector('#import-table').style.visibility = 'hidden';
             return false;
         }
 
+        if (Object.keys(packages.result).length === 0) {
+            html = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; There are no ingest packages ready for ingest.</strong></div>';
+            domModule.html('#message', html);
+            document.querySelector('#import-table').style.visibility = 'hidden';
+            return false;
+        }
+
+        console.log(Object.keys(packages.result).length);
+
         if (packages.errors.length > 0) {
             html = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; The collection folder contains errors.</strong></div>';
 
+            // TODO
             console.log(packages.errors);
 
             for (let i=0;i<packages.errors.length;i++) {

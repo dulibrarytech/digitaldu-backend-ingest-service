@@ -18,6 +18,7 @@
 
 'use strict';
 
+const APP_CONFIG = require('../config/app_config')();
 const TOKEN = require('../libs/tokens');
 const INGEST_CONTROLLER = require('../ingester/controller');
 const INIT = require('../ingester/ingest_init');
@@ -25,21 +26,21 @@ const CONTROLLER = new INGEST_CONTROLLER();
 
 module.exports = async function (app) {
 
-    app.route('/api/v1/ingest/packages')
+    app.route(`${APP_CONFIG.app_path}/api/v1/ingest/packages`)
     .get(TOKEN.verify, await CONTROLLER.get_collection_packages);
 
-    app.route('/api/v1/ingest')
+    app.route(`${APP_CONFIG.app_path}/api/v1/ingest`)
     .post(TOKEN.verify, INIT.ingest_init);
 
-    app.route('/api/v1/ingest/status')
+    app.route(`${APP_CONFIG.app_path}/api/v1/ingest/status`)
     .get(TOKEN.verify, CONTROLLER.get_status);
 
-    app.route('/dashboard/ingest')
+    app.route(`${APP_CONFIG.app_path}/dashboard/ingest`)
     .get(TOKEN.verify, CONTROLLER.get_dashboard_ingest_view);
 
-    app.route('/dashboard/ingest/status')
+    app.route(`${APP_CONFIG.app_path}/dashboard/ingest/status`)
     .get(TOKEN.verify, CONTROLLER.get_dashboard_ingest_status_view);
 
-    app.route('/dashboard/ingest/complete')
+    app.route(`${APP_CONFIG.app_path}/dashboard/ingest/complete`)
     .get(CONTROLLER.get_dashboard_ingest_complete);
 };
