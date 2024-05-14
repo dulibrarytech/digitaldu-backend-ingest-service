@@ -35,6 +35,9 @@ module.exports = async function (app) {
     app.route(`${APP_CONFIG.app_path}/api/v1/ingest/status`)
     .get(TOKEN.verify, CONTROLLER.get_status);
 
+    app.route(`${APP_CONFIG.app_path}/api/v1/collections`)
+    .get(CONTROLLER.get_collections);
+
     app.route(`${APP_CONFIG.app_path}/dashboard/ingest`)
     .get(TOKEN.verify, CONTROLLER.get_dashboard_ingest_view);
 
@@ -43,4 +46,7 @@ module.exports = async function (app) {
 
     app.route(`${APP_CONFIG.app_path}/dashboard/ingest/complete`)
     .get(CONTROLLER.get_dashboard_ingest_complete);
+
+    app.route(`${APP_CONFIG.app_path}/dashboard/collections`)
+    .get(CONTROLLER.get_dashboard_collections_view); // TOKEN.verify,
 };

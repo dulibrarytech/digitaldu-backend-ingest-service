@@ -352,7 +352,6 @@ const Ingest_service_tasks = class {
                 errors.push('Identifier field is missing');
             }
 
-            /*
             if (record.metadata.notes === undefined || record.metadata.notes.length === 0) {
                 errors.push('Notes field is missing - The notes field contains the abstract and rights statement');
             } else {
@@ -368,7 +367,6 @@ const Ingest_service_tasks = class {
                     }
                 }
             }
-             */
 
             if (record.metadata.dates !== undefined) {
 

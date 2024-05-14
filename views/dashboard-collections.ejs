@@ -1,0 +1,83 @@
+<%- include('partials/header.ejs'); %>
+<body class="nav-md">
+<div class="container body">
+    <div class="main_container">
+        <div class="col-md-3 left_col">
+            <div class="left_col scroll-view">
+                <div class="navbar nav_title" style="border: 0;">
+                    <%- include('partials/app-name.ejs'); %>
+                </div>
+                <div class="clearfix"></div>
+                <%- include('partials/menu-profile.ejs'); %>
+                <br>
+                <%- include('partials/nav.ejs'); %>
+                <%- include('partials/sidebar-footer.ejs'); %>
+            </div>
+        </div>
+        <%- include('partials/top-nav.ejs'); %>
+        <div class="right_col" role="main">
+            <div class="">
+
+                <div class="page-title">
+                    <div class="title_left">
+                        <h3 id="collection-type"> Add Collection</h3>
+                    </div>
+                    <div class="title_right"></div>
+                </div>
+                <div class="clearfix"></div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="x_panel">
+                            <div class="x_title">
+                                <h2 id="collection-name"></h2>
+                                <ul class="nav navbar-right"></ul>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="x_content">
+                                <div id="message"></div>
+                                <div class="row" id="collection-form-details">
+                                    <div class="col-xs-12">
+
+                                        <form name="collection-form" id="collection-form">
+
+                                            <input name="is_member_of_collection" type="hidden" id="is-member-of-collection">
+
+                                            <div class="form-group">
+                                                <!-- /repositories/2/resources/(archivespace ID) -->
+                                                <label for="uri">* Archivesspace URI  e.g. (/repositories/2/resources/771)</label>
+                                                <input name="uri" type="text" class="form-control" id="uri" required>
+                                            </div>
+
+                                            <br>
+                                            <button type="submit" class="btn btn-primary" id="add-collection-button"><i class="fa fa-save"></i>&nbsp;Save</button>
+                                        </form>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/repo/static/libs/jquery/dist/jquery.min.js"></script>
+    <script src="/repo/static/libs/bootstrap-4.6.2/js/bootstrap.bundle.js"></script>
+    <script src="/repo/static/libs/nprogress/nprogress.js"></script>
+    <script src="/repo/static/libs/validator/jquery.validate.js"></script>
+    <script src="/repo/static/libs/dompurify/purify.min.js"></script>
+    <script src="/repo/static/assets/js/theme_sidebar.js"></script>
+    <script src="/repo/static/app/dom.module.js"></script>
+    <script src="/repo/static/app/config.module.js"></script>
+    <script src="/repo/static/app/api.module.js"></script>
+    <script src="/repo/static/app/helper.module.js"></script>
+    <script src="/repo/static/app/http.module.js"></script>
+    <script src="/repo/static/app/user.module.js"></script>
+    <script src="/repo/static/app/collections.module.js"></script>
+    <script src="/repo/static/app/objects.module.js"></script>
+    <script>
+        collectionsModule.collectionFormValidation();
+        collectionsModule.getIsMemberOfCollection();
+    </script>
+</body>
+</html>

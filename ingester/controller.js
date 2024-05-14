@@ -61,6 +61,16 @@ const Ingest_controller = class {
     }
 
     /**
+     * Gets repository collections
+     * @param req
+     * @param res
+     */
+    async get_collections(req, res) {
+
+
+    }
+
+    /**
      * Renders ingest dashboard view
      * @param req
      * @param res
@@ -70,7 +80,8 @@ const Ingest_controller = class {
             host: CONFIG.host,
             appname: CONFIG.app_name,
             appversion: CONFIG.app_version,
-            organization: CONFIG.organization
+            organization: CONFIG.organization,
+            app_path: CONFIG.app_path
         });
     };
 
@@ -84,7 +95,23 @@ const Ingest_controller = class {
             host: CONFIG.host,
             appname: CONFIG.app_name,
             appversion: CONFIG.app_version,
-            organization: CONFIG.organization
+            organization: CONFIG.organization,
+            app_path: CONFIG.app_path
+        });
+    };
+
+    /**
+     * Renders collections view
+     * @param req
+     * @param res
+     */
+    get_dashboard_collections_view(req, res) {
+        res.render('dashboard-collections', {
+            host: CONFIG.host,
+            appname: CONFIG.app_name,
+            appversion: CONFIG.app_version,
+            organization: CONFIG.organization,
+            app_path: CONFIG.app_path
         });
     };
 
