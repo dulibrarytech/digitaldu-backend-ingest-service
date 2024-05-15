@@ -77,14 +77,6 @@ const helperModule = (function () {
     };
 
     /**
-     * Gets current year
-     */
-    obj.getCurrentYear = function () {
-        let cdate = new Date().getFullYear();
-        domModule.html('#cdate', DOMPurify.sanitize(cdate));
-    };
-
-    /**
      * Makes content visible only after it is fully rendered on page
      * @param selector
      * @param timeout

@@ -20,9 +20,15 @@ const collectionsModule = (function () {
 
     'use strict';
 
-    const api = configModule.getApi();
-    const endpoints = apiModule.endpoints();
     let obj = {};
+
+    /**
+     * Gets collections
+     */
+    obj.get_collections = function () {
+
+
+    };
 
     /**
      * Adds collection

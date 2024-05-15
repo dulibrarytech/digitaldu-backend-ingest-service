@@ -19,7 +19,10 @@
 'use strict';
 
 const CONFIG = require('../config/app_config')();
+const DB = require('../config/db_config')();
+const DB_TABLES = require('../config/db_tables_config')();
 const SERVICE = require('../ingester/service');
+const COLLECTION_TASKS = require('../ingester/tasks/collection_tasks');
 const INGEST_SERVICE = new SERVICE();
 
 /**
@@ -66,8 +69,9 @@ const Ingest_controller = class {
      * @param res
      */
     async get_collections(req, res) {
-
-
+        const TASK = new COLLECTION_TASKS(DB, DB_TABLES);
+        const collections = await TASK.get_collections();
+        res.status(200).send(collections);
     }
 
     /**

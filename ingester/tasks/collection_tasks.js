@@ -40,6 +40,10 @@ const Collection_tasks = class {
 
             return await this.DB(this.TABLES.repo.repo_objects)
             .select('is_member_of_collection', 'pid', 'mods')
+            .where({
+               object_type: 'collection',
+               is_active: 1
+            });
 
         } catch (error) {
             LOGGER.module().error('ERROR: [/ingester/tasks (get_collections)] Unable to get collections ' + error.message);

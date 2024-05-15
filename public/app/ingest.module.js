@@ -74,7 +74,7 @@ const ingestModule = (function () {
             let data = await get_ingest_status();
             let message = '';
             domModule.html('#message', '');
-
+            console.log('data ', data); // undefined
             if (data.length > 0) {
 
                 for (let i=0;i<data.length;i++) {
@@ -112,6 +112,7 @@ const ingestModule = (function () {
 
             const key = helperModule.getParameterByName('api_key');
             let url = nginx_path + '/api/v1/ingest/status?api_key=' + key;
+
             let response = await httpModule.req({
                 method: 'GET',
                 url: url,
