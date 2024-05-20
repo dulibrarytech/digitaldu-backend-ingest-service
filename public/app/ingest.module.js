@@ -21,7 +21,7 @@ const ingestModule = (function () {
     'use strict';
 
     let obj = {};
-    let nginx_path = '/ingester';
+    const nginx_path = '/ingester';
     set_api_key();
 
     /**

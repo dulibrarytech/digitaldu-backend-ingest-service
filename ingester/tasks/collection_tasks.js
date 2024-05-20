@@ -18,10 +18,11 @@
 
 'use strict';
 
+const INGEST_TASKS = require('../tasks/ingest_service_tasks');
 const LOGGER = require('../../libs/log4');
 
 /**
- *
+ * Collection tasks
  * @type {Collection_tasks}
  */
 const Collection_tasks = class {
@@ -50,6 +51,72 @@ const Collection_tasks = class {
         }
     }
 
+    /**
+     * Creates collection in repository
+     * @param HELPER
+     * @param HANDLES_LIB
+     * @param ARCHIVESSPACE_LIB
+     * @param INDEX_LIB
+     * @param uri
+     * @param is_member_of_collection
+     */
+    async create_collection(HELPER, HANDLES_LIB, ARCHIVESSPACE_LIB, INDEX_LIB, uri, is_member_of_collection) {
+
+        try {
+
+            LOGGER.module().info('INFO: [/ingester/collection_tasks (create_collection)] Getting collection record ' + uri);
+
+            let token = await ARCHIVESSPACE_LIB.get_session_token();
+            let record = await ARCHIVESSPACE_LIB.get_record(uri, token);
+            let result = await ARCHIVESSPACE_LIB.destroy_session_token(token);
+
+            if (result.data.status === 'session_logged_out') {
+                LOGGER.module().info('INFO: [/ingester/tasks (create_collection)] ArchivesSpace session terminated');
+            }
+
+            let tmp = uri.split('/');
+            const aspace_id = tmp[tmp.length - 1];
+
+            let collection_record = {};
+            collection_record.is_member_of_collection = is_member_of_collection;
+            collection_record.pid = HELPER.create_uuid();
+            collection_record.handle = await HANDLES_LIB.create_handle(collection_record.pid);
+            collection_record.object_type = 'collection';
+            collection_record.mods = JSON.stringify(record.metadata);
+            collection_record.mods_id = aspace_id;
+            collection_record.uri = uri;
+            collection_record.sip_uuid = collection_record.pid;
+
+            let index_record = INDEX_LIB.create_index_record(collection_record);
+            collection_record.display_record = JSON.stringify(index_record);
+
+            // TODO: Save to repo_objects
+            // TODO: import function from ingests service task
+            const TASKS = new INGEST_TASKS();
+            let is_saved = await TASKS.save_repo_record(record)
+            // let is_saved = await this.save_repo_record(collection_record);
+
+            if (is_saved !== true) {
+                // TODO log
+                return false;
+            }
+
+            // TODO: index collection record
+            // TODO: import function from ingests service task
+            let is_indexed = await TASKS.index_repo_record(uuid, index_record);
+            // let is_indexed = await this.index_repo_record(collection_record.pid, JSON.parse(collection_record.display_record));
+
+            if (is_indexed !== true) {
+                LOGGER.module().error('ERROR: [/ingester/ingest_service_tasks (create_collection)] Unable to index collection record ');
+            }
+
+            return collection_record.pid;
+
+        } catch (error) {
+            LOGGER.module().error('ERROR: [/ingester/collection_tasks (create_collection)] Unable to create collection ' + error.message);
+            return false
+        }
+    }
 };
 
 module.exports = Collection_tasks;

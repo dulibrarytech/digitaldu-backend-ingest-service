@@ -597,9 +597,7 @@ const Ingest_service_tasks = class {
         }, 9000);
     }
 
-    //=============================================//
-
-    /**
+    /** TODO: deprecate
      * Checks file names in QA service
      * @param folder_name
      */

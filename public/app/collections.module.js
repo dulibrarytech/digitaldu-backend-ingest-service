@@ -21,34 +21,90 @@ const collectionsModule = (function () {
     'use strict';
 
     let obj = {};
+    const nginx_path = '/ingester';
 
     /**
      * Gets collections
      */
-    obj.get_collections = function () {
+    async function get_collections() {
 
+        try {
 
-    };
+            const key = helperModule.getParameterByName('api_key');
+            const url = nginx_path + '/api/v1/collections?api_key=' + key;
+            const response = await httpModule.req({
+                method: 'GET',
+                url: url,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response !== undefined && response.status === 200) {
+                return response.data;
+            }
+
+        } catch (error) {
+            console.log('ERROR: ', error.message);
+        }
+    }
+
+    /**
+     * Displays collections
+     */
+    async function display_collections() {
+
+        try {
+
+            const collections = await get_collections();
+            let html = `<option value="0">Select a top level collection</option>`;
+
+            for (let i=0;i<collections.length;i++) {
+
+                const json = JSON.parse(collections[i].mods);
+
+                if (collections[i].is_member_of_collection === 'codu:root') {
+                    html += `<option value="${collections[i].pid}">${json.title}</option>`;
+                } else {
+                    html += `<option value="${collections[i].pid}">${json.title} <small>(sub-collection)</small></option>`;
+                }
+            }
+
+            document.querySelector('#collections').innerHTML = html;
+
+        } catch (error) {
+            console.log(error.message);
+        }
+    }
 
     /**
      * Adds collection
      */
-    const add_collection = function () {
+    obj.add_collection = function () {
 
         domModule.hide('#collection-form');
-        domModule.html('#message', '<div class="alert alert-info">Saving Collection...</div>');
+        domModule.html('#message', '<div class="alert alert-info"><i class=""></i> Creating Repository Collection...</div>');
 
-        let collection = getCollectionFormData();
-        let arr = collection.split('&');
+        return false;
+
+
+        let collection_uri = document.querySelector('#uri').value; // getCollectionFormData();
         let obj = {};
+
+        /*
+        // let arr = collection.split('&');
 
         for (let i=0;i<arr.length;i++) {
             let propsVal = decodeURIComponent(arr[i]).split('=');
             obj[propsVal[0]] = propsVal[1];
         }
 
-        let token = userModule.getUserToken();
-        let url = api + endpoints.repo_object,
+         */
+
+        let token = window.sessionStorage.getItem('repo_token'); // userModule.getUserToken();
+        let url = api + endpoints.repo_object;
+
+        /* TODO: axiosjs
             request = new Request(url, {
                 method: 'POST',
                 headers: {
@@ -98,18 +154,24 @@ const collectionsModule = (function () {
         };
 
         httpModule.req(request, callback);
+
+         */
     };
 
     /**
      * Gets collection form data
      */
+    /*
     const get_collection_form_data = function () {
         return domModule.serialize('#collection-form');
     };
 
+     */
+
     /**
      * Enable validation on add collection form
      */
+    /*
     obj.collectionFormValidation = function () {
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -120,6 +182,8 @@ const collectionsModule = (function () {
             });
         });
     };
+
+     */
 
     /**
      * Gets collection name
@@ -199,6 +263,15 @@ const collectionsModule = (function () {
         collectionsModule.getCollectionName(is_member_of_collection);
     };
 
+    obj.init = async function () {
+        await display_collections();
+        document.querySelector('#add-collection-button').addEventListener('click', collectionsModule.add_collection)
+    };
+
     return obj;
 
 }());
+
+(async function() {
+    await collectionsModule.init();
+})();

@@ -20,7 +20,7 @@
 
                 <div class="page-title">
                     <div class="title_left">
-                        <h3 id="collection-type"> Add Collection</h3>
+                        <h3 id="collection-type"> </h3>
                     </div>
                     <div class="title_right"></div>
                 </div>
@@ -29,7 +29,7 @@
                     <div class="col-md-12">
                         <div class="x_panel">
                             <div class="x_title">
-                                <h2 id="collection-name"></h2>
+                                <h2 id="collection-name">Collections</h2>
                                 <ul class="nav navbar-right"></ul>
                                 <div class="clearfix"></div>
                             </div>
@@ -38,20 +38,59 @@
                                 <div class="row" id="collection-form-details">
                                     <div class="col-xs-12">
 
-                                        <form name="collection-form" id="collection-form">
+                                        <!-- Nav tabs -->
+                                        <ul class="nav nav-tabs" id="collection-tabs" role="tablist">
+                                            <li class="nav-item">
+                                                <a class="nav-link active" id="collection-tab" data-toggle="tab" href="#add-collection" role="tab" aria-controls="add_collection" aria-selected="true">Add Collection</a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a class="nav-link" id="sub-collection-tab" data-toggle="tab" href="#add-sub-collection" role="tab" aria-controls="add_sub_collection" aria-selected="false">Add Sub-Collection</a>
+                                            </li>
+                                        </ul>
 
-                                            <input name="is_member_of_collection" type="hidden" id="is-member-of-collection">
+                                        <!-- Tab panes -->
+                                        <div class="tab-content">
+                                            <div class="tab-pane active" id="add-collection" role="tabpanel" aria-labelledby="collection-tab">
 
-                                            <div class="form-group">
-                                                <!-- /repositories/2/resources/(archivespace ID) -->
-                                                <label for="uri">* Archivesspace URI  e.g. (/repositories/2/resources/771)</label>
-                                                <input name="uri" type="text" class="form-control" id="uri" required>
+                                                <br>
+
+                                                <form name="collection-form" id="collection-form">
+
+                                                    <input name="is_member_of_collection" type="hidden" id="is-member-of-collection">
+
+                                                    <div class="form-group">
+                                                        <label for="uri">* Archivesspace URI  e.g. (/repositories/2/resources/771)</label>
+                                                        <input name="uri" type="text" class="form-control" id="uri" required>
+                                                    </div>
+
+                                                    <br>
+                                                    <button type="button" class="btn btn-primary" id="add-collection-button"><i class="fa fa-save"></i>&nbsp;Save</button>
+
+                                                </form>
+
                                             </div>
+                                            <div class="tab-pane" id="add-sub-collection" role="tabpanel" aria-labelledby="sub-collection-tab">
+                                                <br>
+                                                <form name="sub-collection-form" id="sub-collection-form"><!--onselect="select_collection(); addEventListener -->
+                                                    <select id="collections" class="form-control form-control-lg" aria-label="Collections"></select>
+                                                    <br>
+                                                    <br>
+                                                    <div class="form-group">
+                                                        <!-- /repositories/2/resources/(archivespace ID) form-select -->
+                                                        <label for="uri">* Archivesspace URI  e.g. (/repositories/2/resources/771)</label>
+                                                        <input name="uri" type="text" class="form-control" id="uri" required>
+                                                    </div>
 
-                                            <br>
-                                            <button type="submit" class="btn btn-primary" id="add-collection-button"><i class="fa fa-save"></i>&nbsp;Save</button>
-                                        </form>
+                                                    <br>
+                                                    <button type="submit" class="btn btn-primary" id="add-collection-button"><i class="fa fa-save"></i>&nbsp;Save</button>
 
+                                                </form>
+
+                                            </div>
+                                        </div>
+
+                                        </div>
+                                        <!-- Tabs content -->
                                     </div>
                                 </div>
                             </div>
@@ -71,9 +110,5 @@
     <script src="/ingester/static/app/helper.module.js"></script>
     <script src="/ingester/static/app/http.module.js"></script>
     <script src="/ingester/static/app/collections.module.js"></script>
-    <script>
-        // collectionsModule.collectionFormValidation();
-        // collectionsModule.getIsMemberOfCollection();
-    </script>
 </body>
 </html>
