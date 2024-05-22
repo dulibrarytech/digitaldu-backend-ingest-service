@@ -92,12 +92,13 @@ const collectionsModule = (function () {
                 return false;
             }
 
-            if (document.querySelector('#collections').value === '0') {
-                domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> Select a top level collection</div>');
-                return false;
-            }
-
             if (document.querySelector('#sub_collection_uri').value.length > 0) {
+
+                if (document.querySelector('#collections').value === '0') {
+                    domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> Select a top level collection</div>');
+                    return false;
+                }
+
                 data.is_member_of_collection = document.querySelector('#parent').value;
                 data.collection_uri = document.querySelector('#sub_collection_uri').value;
             } else {
