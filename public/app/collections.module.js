@@ -80,15 +80,53 @@ const collectionsModule = (function () {
     /**
      * Adds collection
      */
-    obj.add_collection = function () {
+    obj.add_collection = async function () {
 
-        domModule.hide('#collection-form');
-        domModule.html('#message', '<div class="alert alert-info"><i class=""></i> Creating Repository Collection...</div>');
+        try {
+
+            const api_key = helperModule.getParameterByName('api_key');
+            const data = {
+                is_member_of_collection: document.querySelector('#is-member-of-collection').value,
+                collection_uri: document.querySelector('#collection-uri').value
+            };
+
+            if (api_key === null) {
+                domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> Permission Denied</div>');
+                return false;
+            }
+
+            if (data.collection_uri.length === 0) {
+                domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> Please enter a ArchivesSpace URI</div>');
+                return false;
+            }
+
+            domModule.hide('#collection-forms');
+            domModule.html('#message', '<div class="alert alert-info"><i class=""></i> Creating Repository Collection...</div>');
+
+            const response = await httpModule.req({
+                method: 'POST',
+                url: '/ingester/api/v1/collections?api_key=' + api_key,
+                data: data,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.status === 200) {
+                domModule.html('#message', '<div class="alert alert-info"><i class=""></i> ' + response.data.message + '</div>');
+                setTimeout(() => {
+                    location.reload();
+                }, 3000);
+            }
+
+
+        } catch(error) {
+            domModule.html('#message', '<div class="alert alert-info"><i class=""></i> ' + error.message + '</div>');
+        }
 
         return false;
 
-
-        let collection_uri = document.querySelector('#uri').value; // getCollectionFormData();
+        // let collection_uri = document.querySelector('#uri').value; // getCollectionFormData();
         let obj = {};
 
         /*
@@ -99,10 +137,9 @@ const collectionsModule = (function () {
             obj[propsVal[0]] = propsVal[1];
         }
 
-         */
-
         let token = window.sessionStorage.getItem('repo_token'); // userModule.getUserToken();
         let url = api + endpoints.repo_object;
+        */
 
         /* TODO: axiosjs
             request = new Request(url, {
@@ -265,7 +302,7 @@ const collectionsModule = (function () {
 
     obj.init = async function () {
         await display_collections();
-        document.querySelector('#add-collection-button').addEventListener('click', collectionsModule.add_collection)
+        document.querySelector('#add-collection-button').addEventListener('click', await collectionsModule.add_collection)
     };
 
     return obj;

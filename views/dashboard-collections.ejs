@@ -35,7 +35,7 @@
                             </div>
                             <div class="x_content">
                                 <div id="message"></div>
-                                <div class="row" id="collection-form-details">
+                                <div class="row" id="collection-forms">
                                     <div class="col-xs-12">
 
                                         <!-- Nav tabs -->
@@ -56,11 +56,10 @@
 
                                                 <form name="collection-form" id="collection-form">
 
-                                                    <input name="is_member_of_collection" type="hidden" id="is-member-of-collection">
-
                                                     <div class="form-group">
-                                                        <label for="uri">* Archivesspace URI  e.g. (/repositories/2/resources/771)</label>
-                                                        <input name="uri" type="text" class="form-control" id="uri" required>
+                                                        <input name="is_member_of_collection" type="hidden" id="is-member-of-collection" value="codu:root">
+                                                        <label for="collection-uri">* Archivesspace URI  e.g. (/repositories/2/resources/771)</label>
+                                                        <input name="collection-uri" type="text" class="form-control" id="collection-uri" required>
                                                     </div>
 
                                                     <br>
@@ -72,13 +71,15 @@
                                             <div class="tab-pane" id="add-sub-collection" role="tabpanel" aria-labelledby="sub-collection-tab">
                                                 <br>
                                                 <form name="sub-collection-form" id="sub-collection-form"><!--onselect="select_collection(); addEventListener -->
-                                                    <select id="collections" class="form-control form-control-lg" aria-label="Collections"></select>
-                                                    <br>
-                                                    <br>
+
                                                     <div class="form-group">
+                                                        <input name="is_member_of_collection" type="hidden" id="is-member-of-collection">
+                                                        <select id="collections" class="form-control form-control-lg" aria-label="Collections"></select>
+                                                        <br>
+                                                        <br>
                                                         <!-- /repositories/2/resources/(archivespace ID) form-select -->
-                                                        <label for="uri">* Archivesspace URI  e.g. (/repositories/2/resources/771)</label>
-                                                        <input name="uri" type="text" class="form-control" id="uri" required>
+                                                        <label for="sub-collection-uri">* Archivesspace URI  e.g. (/repositories/2/resources/771)</label>
+                                                        <input name="sub-collection-uri" type="text" class="form-control" id="sub-collection-uri" required>
                                                     </div>
 
                                                     <br>

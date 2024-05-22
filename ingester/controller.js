@@ -18,12 +18,15 @@
 
 'use strict';
 
+const VALIDATOR = require('validator');
 const CONFIG = require('../config/app_config')();
-const DB = require('../config/db_config')();
-const DB_TABLES = require('../config/db_tables_config')();
-const SERVICE = require('../ingester/service');
-const COLLECTION_TASKS = require('../ingester/tasks/collection_tasks');
-const INGEST_SERVICE = new SERVICE();
+// const DB = require('../config/db_config')();
+// const DB_TABLES = require('../config/db_tables_config')();
+const I_SERVICE = require('../ingester/ingest_service');
+const C_SERVICE = require('../ingester/collection_service');
+const INGEST_SERVICE = new I_SERVICE();
+const COLLECTION_SERVICE = new C_SERVICE();
+// const COLLECTION_TASKS = require('../ingester/tasks/collection_tasks');
 
 /**
  *
@@ -69,9 +72,43 @@ const Ingest_controller = class {
      * @param res
      */
     async get_collections(req, res) {
-        const TASK = new COLLECTION_TASKS(DB, DB_TABLES);
-        const collections = await TASK.get_collections();
+        const collections = await COLLECTION_SERVICE.get_collections();
         res.status(200).send(collections);
+    }
+
+    /**
+     * Creates repository collection
+     * @param req
+     * @param res
+     */
+    async create_collection(req, res) {
+
+        if (req.body.collection_uri === undefined || req.body.is_member_of_collection === undefined) {
+            res.status(400).send('Bad Request');
+            return false;
+        }
+
+        const uri = VALIDATOR.unescape(req.body.collection_uri);
+        const is_member_of_collection = req.body.is_member_of_collection;
+        const uuid = await COLLECTION_SERVICE.create_collection(uri, is_member_of_collection);
+
+        if (typeof uuid === 'object') {
+            res.status(200).send({
+                message: 'Collection Already Exists'
+            });
+
+            return false;
+        }
+
+        if (uuid) {
+            res.status(201).send({
+                uuid: uuid
+            });
+        } else {
+            res.status(200).send({
+                message: 'Unable to create collection'
+            });
+        }
     }
 
     /**
