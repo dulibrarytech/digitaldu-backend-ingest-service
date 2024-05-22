@@ -85,14 +85,24 @@ const collectionsModule = (function () {
         try {
 
             const api_key = helperModule.getParameterByName('api_key');
-            const data = {
-                is_member_of_collection: document.querySelector('#is-member-of-collection').value,
-                collection_uri: document.querySelector('#collection-uri').value
-            };
+            let data = {};
 
             if (api_key === null) {
                 domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> Permission Denied</div>');
                 return false;
+            }
+
+            if (document.querySelector('#collections').value === '0') {
+                domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> Select a top level collection</div>');
+                return false;
+            }
+
+            if (document.querySelector('#sub_collection_uri').value.length > 0) {
+                data.is_member_of_collection = document.querySelector('#parent').value;
+                data.collection_uri = document.querySelector('#sub_collection_uri').value;
+            } else {
+                data.is_member_of_collection = document.querySelector('#parent').value;
+                data.collection_uri = document.querySelector('#collection_uri').value;
             }
 
             if (data.collection_uri.length === 0) {
@@ -112,6 +122,13 @@ const collectionsModule = (function () {
                 }
             });
 
+            if (response.status === 201) {
+                domModule.html('#message', '<div class="alert alert-info"><i class=""></i> Collection created. (' + response.data.uuid + ')</div>');
+                setTimeout(() => {
+                    location.reload();
+                }, 3000);
+            }
+
             if (response.status === 200) {
                 domModule.html('#message', '<div class="alert alert-info"><i class=""></i> ' + response.data.message + '</div>');
                 setTimeout(() => {
@@ -119,176 +136,11 @@ const collectionsModule = (function () {
                 }, 3000);
             }
 
-
         } catch(error) {
             domModule.html('#message', '<div class="alert alert-info"><i class=""></i> ' + error.message + '</div>');
         }
 
         return false;
-
-        // let collection_uri = document.querySelector('#uri').value; // getCollectionFormData();
-        let obj = {};
-
-        /*
-        // let arr = collection.split('&');
-
-        for (let i=0;i<arr.length;i++) {
-            let propsVal = decodeURIComponent(arr[i]).split('=');
-            obj[propsVal[0]] = propsVal[1];
-        }
-
-        let token = window.sessionStorage.getItem('repo_token'); // userModule.getUserToken();
-        let url = api + endpoints.repo_object;
-        */
-
-        /* TODO: axiosjs
-            request = new Request(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-access-token': token
-                },
-                body: JSON.stringify(obj),
-                mode: 'cors'
-            });
-
-        const callback = function (response) {
-
-            if (response.status === 201) {
-
-                response.json().then(function (data) {
-                    domModule.html('#message', '<div class="alert alert-success">Collection created ( <a href="' + configModule.getApi() + '/dashboard/objects/?pid=' + DOMPurify.sanitize(data[0].pid) + '">' + DOMPurify.sanitize(data[0].pid) + '</a> )');
-                    domModule.hide('#collection-form');
-                });
-
-                return false;
-
-            } else if (response.status === 401) {
-
-                response.json().then(function (response) {
-
-                    helperModule.renderError('Error: (HTTP status ' + response.status + '). Your session has expired.  You will be redirected to the login page momentarily.');
-
-                    setTimeout(function () {
-                        window.location.replace('/repo');
-                    }, 4000);
-                });
-
-            } else if (response.status === 200) {
-
-                domModule.html('#message', '<div class="alert alert-warning">This collection object is already in the repository.</div>');
-                domModule.show('#collection-form');
-
-                setTimeout(function () {
-                    domModule.html('#message', null);
-                }, 5000);
-
-            } else if (response.status === 403) {
-                authModule.refresh_token();
-            } else {
-                helperModule.renderError('Error: (HTTP status ' + response.status + ').  Unable to add collection.');
-            }
-        };
-
-        httpModule.req(request, callback);
-
-         */
-    };
-
-    /**
-     * Gets collection form data
-     */
-    /*
-    const get_collection_form_data = function () {
-        return domModule.serialize('#collection-form');
-    };
-
-     */
-
-    /**
-     * Enable validation on add collection form
-     */
-    /*
-    obj.collectionFormValidation = function () {
-
-        document.addEventListener('DOMContentLoaded', function() {
-            $('#collection-form').validate({
-                submitHandler: function () {
-                    addCollection();
-                }
-            });
-        });
-    };
-
-     */
-
-    /**
-     * Gets collection name
-     * @param pid
-     */
-    obj.getCollectionName = function (pid) {
-
-        if (pid === null) {
-            return false;
-        }
-
-        if (pid === undefined) {
-            let pid = helperModule.getParameterByName('pid');
-        }
-
-        // used add collection form
-        if (helperModule.getParameterByName('is_member_of_collection') !== null && helperModule.getParameterByName('is_member_of_collection') === configModule.getRootPid()) {
-            domModule.html('#collection-type', 'Add top-level collection');
-            return false;
-        } else if (helperModule.getParameterByName('is_member_of_collection') !== null && helperModule.getParameterByName('is_member_of_collection') !== configModule.getRootPid()) {
-            domModule.html('#collection-type', 'Add sub-level collection');
-        }
-
-        let token = userModule.getUserToken();
-        let url = api + endpoints.repo_object + '?pid=' + pid,
-            request = new Request(url, {
-                method: 'GET',
-                mode: 'cors',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-access-token': token
-                }
-            });
-
-        const callback = function (response) {
-
-            if (response.status === 200) {
-
-                response.json().then(function (data) {
-
-                    if (data.length === 0) {
-                        return domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-info-circle"></i> Collection name not found.</div>');
-                    }
-
-                    let record = JSON.parse(data[0].display_record);
-                    let title = 'No title.';
-
-                    if (record.title !== undefined) {
-                        title = record.title;
-                    }
-
-                    domModule.html('#collection-name', DOMPurify.sanitize(title));
-                });
-
-            } else if (response.status === 401) {
-
-                helperModule.renderError('Error: (HTTP status ' + response.status + '). Your session has expired.  You will be redirected to the login page momentarily.');
-
-                setTimeout(function () {
-                    window.location.replace('/repo');
-                }, 4000);
-
-            } else {
-                helperModule.renderError('Error: (HTTP status ' + response.status + '). Unable to retrieve collection name.');
-            }
-        };
-
-        httpModule.req(request, callback);
     };
 
     /**
@@ -300,9 +152,18 @@ const collectionsModule = (function () {
         collectionsModule.getCollectionName(is_member_of_collection);
     };
 
+    /**
+     * Sets is member of collection uuid
+     */
+    function set_is_member_of_collection() {
+        document.getElementById('parent').value = document.querySelector('#collections').value;
+    }
+
     obj.init = async function () {
         await display_collections();
-        document.querySelector('#add-collection-button').addEventListener('click', await collectionsModule.add_collection)
+        document.querySelector('#add-collection-button').addEventListener('click', await collectionsModule.add_collection);
+        document.querySelector('#collections').addEventListener('change', set_is_member_of_collection);
+        document.querySelector('#add-sub-collection-button').addEventListener('click', await collectionsModule.add_collection);
     };
 
     return obj;

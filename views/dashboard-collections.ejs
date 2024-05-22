@@ -51,42 +51,33 @@
                                         <!-- Tab panes -->
                                         <div class="tab-content">
                                             <div class="tab-pane active" id="add-collection" role="tabpanel" aria-labelledby="collection-tab">
-
                                                 <br>
-
                                                 <form name="collection-form" id="collection-form">
-
                                                     <div class="form-group">
-                                                        <input name="is_member_of_collection" type="hidden" id="is-member-of-collection" value="codu:root">
+                                                        <!--<input id="collection_type" name="collection_type" type="hidden" value="root_collection">-->
+                                                        <input id="parent" name="is_member_of_collection" type="hidden" value="codu:root">
                                                         <label for="collection-uri">* Archivesspace URI  e.g. (/repositories/2/resources/771)</label>
-                                                        <input name="collection-uri" type="text" class="form-control" id="collection-uri" required>
+                                                        <input name="collection_uri" type="text" class="form-control" id="collection_uri" required>
                                                     </div>
-
                                                     <br>
-                                                    <button type="button" class="btn btn-primary" id="add-collection-button"><i class="fa fa-save"></i>&nbsp;Save</button>
-
+                                                    <button id="add-collection-button" type="button" class="btn btn-primary"><i class="fa fa-save"></i>&nbsp;Save</button>
                                                 </form>
-
                                             </div>
                                             <div class="tab-pane" id="add-sub-collection" role="tabpanel" aria-labelledby="sub-collection-tab">
                                                 <br>
-                                                <form name="sub-collection-form" id="sub-collection-form"><!--onselect="select_collection(); addEventListener -->
-
+                                                <form name="sub-collection-form" id="sub-collection-form">
                                                     <div class="form-group">
-                                                        <input name="is_member_of_collection" type="hidden" id="is-member-of-collection">
+                                                        <input id="sub_collection" name="sub_collection" type="hidden" value="sub_collection">
+                                                        <input id="parent" name="is_member_of_collection" type="hidden">
                                                         <select id="collections" class="form-control form-control-lg" aria-label="Collections"></select>
                                                         <br>
                                                         <br>
-                                                        <!-- /repositories/2/resources/(archivespace ID) form-select -->
                                                         <label for="sub-collection-uri">* Archivesspace URI  e.g. (/repositories/2/resources/771)</label>
-                                                        <input name="sub-collection-uri" type="text" class="form-control" id="sub-collection-uri" required>
+                                                        <input name="sub_collection_uri" type="text" class="form-control" id="sub_collection_uri" required>
                                                     </div>
-
                                                     <br>
-                                                    <button type="submit" class="btn btn-primary" id="add-collection-button"><i class="fa fa-save"></i>&nbsp;Save</button>
-
+                                                    <button id="add-sub-collection-button" type="button" class="btn btn-primary"><i class="fa fa-save"></i>&nbsp;Save</button>
                                                 </form>
-
                                             </div>
                                         </div>
 
