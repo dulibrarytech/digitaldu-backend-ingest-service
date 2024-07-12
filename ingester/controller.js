@@ -164,6 +164,49 @@ const Ingest_controller = class {
     get_dashboard_ingest_complete(req, res) {
         res.redirect(CONFIG.repo + '/dashboard/import/complete');
     }
+
+    /**
+     * Gets objects by resource id and uri
+     * @param req
+     * @param res
+     */
+    async get_resources(req, res) {
+
+        if (req.query.resource_id === undefined || req.query.resource_uri === undefined || req.query.collection_uuid === undefined) {
+            res.status(400).send('Bad Request');
+            return false;
+        }
+
+        const resource_id = req.query.resource_id;
+        const resource_uri = VALIDATOR.unescape(req.query.resource_uri);
+        const collection_uuid = req.query.collection_uuid;
+        const tree = await COLLECTION_SERVICE.get_resources(resource_id, resource_uri, collection_uuid);
+
+        res.status(200).send({
+            data: tree
+        });
+    }
+
+    /**
+     * Reassign repository records
+     * @param req
+     * @param res
+     */
+    async reassign_records(req, res) {
+
+        if (req.query.collection_uuid === undefined) {
+            res.status(400).send('Bad Request');
+            return false;
+        }
+
+        const collection_uuid = req.query.collection_uuid;
+        const result = await COLLECTION_SERVICE.reassign_records(collection_uuid);
+        console.log(result);
+
+        res.status(200).send({
+            data: []
+        });
+    }
 }
 
 module.exports = Ingest_controller;

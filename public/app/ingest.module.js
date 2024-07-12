@@ -22,7 +22,6 @@ const ingestModule = (function () {
 
     let obj = {};
     const nginx_path = '/ingester';
-    set_api_key();
 
     /**
      * Starts ingest process
@@ -275,15 +274,6 @@ const ingestModule = (function () {
         }
 
         domModule.html('#packages', html);
-    }
-
-    /**
-     * Sets api key in menu item links
-     */
-    function set_api_key() {
-        const key = helperModule.getParameterByName('api_key');
-        document.querySelector('#ingest').href = nginx_path + '/dashboard/ingest?api_key=' + key;
-        document.querySelector('#ingest-status').href = nginx_path + '/dashboard/ingest/status?api_key=' + key;
     }
 
     obj.init = async function () {

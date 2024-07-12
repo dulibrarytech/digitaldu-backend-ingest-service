@@ -50,4 +50,8 @@ module.exports = async function (app) {
     app.route(`${APP_CONFIG.app_path}/api/v1/collections`)
     .get(TOKEN.verify, CONTROLLER.get_collections)
     .post(TOKEN.verify, CONTROLLER.create_collection);
+
+    app.route(`${APP_CONFIG.app_path}/api/v1/resources/`)
+    .get(TOKEN.verify, CONTROLLER.get_resources)
+    .post(TOKEN.verify, CONTROLLER.reassign_records);
 };

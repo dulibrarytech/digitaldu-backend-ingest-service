@@ -20,6 +20,7 @@ const helperModule = (function () {
 
     'use strict';
 
+    const nginx_path = '/ingester';
     let obj = {};
 
     /**
@@ -77,6 +78,16 @@ const helperModule = (function () {
     };
 
     /**
+     * Sets api key in menu item links
+     */
+    function set_api_key() {
+        const key = helperModule.getParameterByName('api_key');
+        document.querySelector('#ingest').href = nginx_path + '/dashboard/ingest?api_key=' + key;
+        document.querySelector('#ingest-status').href = nginx_path + '/dashboard/ingest/status?api_key=' + key;
+        document.querySelector('#add-collections').href = nginx_path + '/dashboard/collections?api_key=' + key;
+    }
+
+    /**
      * Makes content visible only after it is fully rendered on page
      * @param selector
      * @param timeout
@@ -97,6 +108,7 @@ const helperModule = (function () {
 
     obj.init = function () {
         npProgress();
+        set_api_key();
     };
 
     return obj;

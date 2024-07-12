@@ -152,6 +152,8 @@ const Archivesspace = class {
 
             if (response.status === 200) {
 
+                LOGGER.module().info('INFO: [/libs/archivesspace (destroy_session_token)] Session terminated');
+
                 return {
                     data: response.data
                 };
@@ -159,6 +161,38 @@ const Archivesspace = class {
 
         } catch (error) {
             LOGGER.module().error('ERROR: [/libs/archivesspace (destroy_session_token)] Unable to terminate session ' + error.message);
+            return false;
+        }
+    }
+
+    /**
+     * Gets archival objects by resource id
+     * @param resource_id
+     * @param resource_uri
+     * @param token
+     */
+    async get_resources(resource_id, resource_uri, token) {
+
+        try {
+
+            const api_endpoint = this.ARCHIVESSPACE_HOST + '/repositories/2/resources/' + resource_id + '/tree/node?node_uri=' + resource_uri;
+            const response = await HTTP.get(api_endpoint, {
+                timeout: TIMEOUT,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-ArchivesSpace-Session': token
+                }
+            });
+
+            if (response.status === 200) {
+
+                return {
+                    tree: response.data
+                };
+            }
+
+        } catch (error) {
+            LOGGER.module().error('ERROR: [/libs/archivesspace lib (get_resources)] Unable to get archivesspace resources: ' + error.message);
             return false;
         }
     }

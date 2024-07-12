@@ -86,6 +86,40 @@ const Collection_service = class {
             LOGGER.module().error('ERROR: [/ingester/service (create_collection)] Unable to create collections ' + error.message);
         }
     }
+
+    /**
+     * Gets resources tree
+     * @param resource_id
+     * @param resource_uri
+     * @param collection_uuid
+     */
+    async get_resources(resource_id, resource_uri, collection_uuid) {
+
+        try {
+
+            const TASK = new COLLECTION_TASKS(DB, DB_TABLES);
+            return await TASK.get_resources(ARCHIVESSPACE_LIB, resource_id, resource_uri, collection_uuid);
+
+        } catch (error) {
+            LOGGER.module().error('ERROR: [/ingester/service (get_resources)] Unable to get resources ' + error.message);
+        }
+    }
+
+    /**
+     * Reassigns records
+     * @param collection_uuid
+     */
+    async reassign_records(collection_uuid) {
+
+        try {
+
+            const TASK = new COLLECTION_TASKS(DB, DB_TABLES);
+            return await TASK.reassign_records(collection_uuid);
+
+        } catch (error) {
+            LOGGER.module().error('ERROR: [/ingester/service (reassign_records)] Unable to reassign records ' + error.message);
+        }
+    }
 }
 
 module.exports = Collection_service;

@@ -104,6 +104,8 @@ const Collection_tasks = class {
             collection_record.is_published = 0;
 
             let index_record = INDEX_LIB.create_index_record(collection_record);
+            console.log('INDEX ', index_record);
+            console.log('COLLECTION ', collection_record)
             collection_record.display_record = JSON.stringify(index_record);
             let is_saved = await TASKS.save_repo_record(collection_record);
 
@@ -113,7 +115,7 @@ const Collection_tasks = class {
             }
 
             let is_indexed = await TASKS.index_repo_record(collection_record.pid, index_record);
-
+            console.log('IS INDEXED ', is_indexed);
             if (is_indexed === false) {
                 LOGGER.module().error('ERROR: [/ingester/ingest_service_tasks (create_collection)] Unable to index collection record');
                 return false;
@@ -124,6 +126,152 @@ const Collection_tasks = class {
         } catch (error) {
             LOGGER.module().error('ERROR: [/ingester/collection_tasks (create_collection)] Unable to create collection ' + error.message);
             return false
+        }
+    }
+
+    /**
+     *
+     * @param ARCHIVESSPACE_LIB
+     * @param resource_id
+     * @param resource_uri
+     * @param collection_uuid
+     */
+    async get_resources(ARCHIVESSPACE_LIB, resource_id, resource_uri, collection_uuid) {
+
+        try {
+
+            const token = await ARCHIVESSPACE_LIB.get_session_token();
+            const data = await ARCHIVESSPACE_LIB.get_resources(resource_id, resource_uri, token);
+            await ARCHIVESSPACE_LIB.destroy_session_token(token);
+
+            const tree = data.tree.precomputed_waypoints[resource_uri]['0'];
+            let data_tree = [];
+            let obj = {}
+
+            for (let i = 0;i < tree.length;i++) {
+                obj.collection_uuid = collection_uuid;
+                obj.resource_uri = resource_uri;
+                obj.uri = tree[i].uri;
+                obj.identifier = tree[i].identifier;
+                obj.title = tree[i].title;
+                data_tree.push(obj);
+                obj = {};
+            }
+
+            const result = await this.DB.transaction((trx) => {
+                this.DB.insert(data_tree)
+                .into('tbl_resource_trees')
+                .transacting(trx)
+                .then(trx.commit)
+                .catch(trx.rollback);
+            });
+
+            console.log(result);
+            return data;
+
+        } catch (error) {
+            LOGGER.module().error('ERROR: [/ingester/collection_tasks (get_resources)] Unable to get resources ' + error.message);
+        }
+    }
+
+    /**
+     * Reassigns records
+     * @param collection_uuid
+     */
+    async reassign_records(collection_uuid) {
+
+        try {
+
+            const uris = await this.DB('tbl_resource_trees')
+            .select('*');
+
+            let timer = setInterval(async () => {
+
+                if (uris.length === 0) {
+                    clearInterval(timer);
+                    console.log('complete');
+                    return false;
+                }
+
+                let record = uris.pop();
+                console.log('record tree ', record.collection_uuid);
+                console.log(record.uri);
+
+                const result = await this.DB(this.TABLES.repo.repo_objects)
+                .select('*')
+                .where({
+                    uri: record.uri,
+                    is_active: 1
+                });
+
+                if (result.length > 1) {
+                    // clearInterval(timer);
+                    LOGGER.module().warn('WARN: [/ingester/collection tasks (reassign_records)] Record is a duplicate!');
+                    // return false;
+                }
+
+                if (result[0] !== undefined) {
+
+                    console.log('is member of collection ', result[0].is_member_of_collection);
+                    console.log('new collection ', collection_uuid);
+                    console.log('pid ', result[0].pid);
+
+                    let display_record = JSON.parse(result[0].display_record);
+
+                    if (result[0].pid === display_record.pid) {
+
+                        let updated_display_record = display_record;
+                        updated_display_record.is_member_of_collection = collection_uuid;
+                        console.log('db ', result[0].pid);
+                        console.log('json ', display_record.pid);
+
+                        const is_updated = await this.DB(this.TABLES.repo.repo_objects)
+                        .where({
+                            uri: record.uri,
+                            pid: result[0].pid,
+                            is_active: 1
+                        })
+                        .update({
+                            is_member_of_collection: collection_uuid,
+                            display_record: JSON.stringify(updated_display_record)
+                        });
+
+                        const is_tree_updated = await this.DB('tbl_resource_trees')
+                        .where({
+                            uri: record.uri
+                        })
+                        .update({
+                            is_complete: 1
+                        });
+
+                        console.log(is_updated);
+                        console.log(is_tree_updated);
+
+                        LOGGER.module().info('INFO: [/ingester/collection tasks (reassign_records)] Record reassigned');
+
+                    } else {
+                        LOGGER.module().warn('WARNING: [/ingester/collection tasks (reassign_records)] Duplicate skipped');
+                    }
+
+                } else {
+
+                    const is_updated = await this.DB('tbl_resource_trees')
+                    .where({
+                        uri: record.uri
+                    })
+                    .update({
+                        message: 'URI not found in repository',
+                        is_complete: 1
+                    });
+
+                    console.log(is_updated);
+                    LOGGER.module().info('INFO: [/ingester/collection tasks (reassign_records)] URI not found in repository');
+                }
+
+            }, 400);
+
+        } catch (error) {
+            LOGGER.module().error('ERROR: [/ingester/collection_tasks (reassign_records)] Unable to reassign records ' + error.message);
         }
     }
 };

@@ -116,7 +116,7 @@ const collectionsModule = (function () {
 
             const response = await httpModule.req({
                 method: 'POST',
-                url: '/ingester/api/v1/collections?api_key=' + api_key,
+                url: nginx_path + '/api/v1/collections?api_key=' + api_key,
                 data: data,
                 headers: {
                     'Content-Type': 'application/json'
