@@ -78,7 +78,7 @@ const Ingest_service = class {
                 data: data
             };
 
-        } catch(error) {
+        } catch (error) {
             LOGGER.module().error('ERROR: [/ingester/service (get_status)] Unable to get status - ' + error.message);
         }
     }
@@ -231,7 +231,7 @@ const Ingest_service = class {
 
             if (folder_name_checked.folder_name_results.errors.length > 0) {
 
-                LOGGER.module().error('ERROR: [/ingester/service module (start_ingest)] Ingest halted');
+                LOGGER.module().error('ERROR: [/ingester/service module (start_ingest)] Ingest halted ' + folder_name_checked.folder_name_results.errors.toString());
 
                 await INGEST_TASKS.update_ingest_queue({
                     batch: batch,
@@ -322,7 +322,6 @@ const Ingest_service = class {
             LOGGER.module().error('ERROR: [/ingester/service (check_uri_txt)] Unable to check uri txt - ' + error.message);
             return false;
         }
-
     }
 
     /**
@@ -368,11 +367,8 @@ const Ingest_service = class {
                 return false;
             }
 
-            // TODO: check package size
-
             await INGEST_TASKS.update_ingest_queue({
                 batch: batch,
-                package: archival_package,
                 is_complete: 0
             }, {
                 batch_size: batch_size_results.batch_size + batch_size_results.size_type
@@ -421,6 +417,25 @@ const Ingest_service = class {
 
             if (archival_package === false) {
 
+                LOGGER.module().info('INFO: [/ingester/service module (start_ingest)] Packages moved to ingest folder');
+
+                // reset
+                await INGEST_TASKS.update_ingest_queue({
+                    batch: batch,
+                    is_complete: 1
+                }, {
+                    is_complete: 0
+                });
+
+                let file_count = await INGEST_TASKS.get_file_count();
+
+                await this.move_to_sftp(batch, this.collection_uuid, file_count, (data) => {
+                    console.log('move to sftp cb ', data);
+                });
+
+                console.log('END QA -> sftp next');
+
+                /*
                 LOGGER.module().error('ERROR: [/ingester/service module (start_ingest)] Ingest halted');
 
                 await INGEST_TASKS.update_ingest_queue({
@@ -432,7 +447,11 @@ const Ingest_service = class {
                     is_complete: 1
                 });
 
+                 */
+
                 return false;
+            } else {
+                this.collection_uuid = archival_package.collection_uuid;
             }
 
             await INGEST_TASKS.update_ingest_queue({
@@ -445,11 +464,12 @@ const Ingest_service = class {
 
             LOGGER.module().info('INFO: [/ingester/service module (start_ingest)] Processing archival package');
 
-            if (await this.get_batch_size(batch, archival_package.package) === false) {
+            if (await this.get_batch_size(batch) === false) { // , archival_package.package
                 return false;
             }
 
             let package_file_count = await QA_TASKS.get_package_file_count(batch, archival_package.package);
+            console.log('package_file_count ', package_file_count);
 
             if (typeof package_file_count !== 'object') {
 
@@ -507,29 +527,36 @@ const Ingest_service = class {
             });
 
             LOGGER.module().info('INFO: [/ingester/service module (start_ingest)] Metadata URI retrieved - ' + metadata_uri.uri_results.result.toString());
+            LOGGER.module().info('INFO: [/ingester/service module (start_ingest)] Moving package to ingest folder ' + archival_package.package);
+            QA_TASKS.move_to_ingest(archival_package.collection_uuid, batch, archival_package.package, (data) => {
+                console.log('moved to ingest ', data);
+            });
 
-            let is_moved_to_ingest = await QA_TASKS.move_to_ingest(archival_package.collection_uuid, batch, archival_package.package);
+            // Temporarily flag as complete
+            await INGEST_TASKS.update_ingest_queue({
+                batch: batch,
+                package: archival_package.package,
+                is_complete: 0
+            }, {
+                status: 'UPLOAD PENDING',
+                is_complete: 1
+            });
 
-            if (is_moved_to_ingest.errors.length > 0 || is_moved_to_ingest === false) {
+            LOGGER.module().info('INFO: [/ingester/service module (start_ingest)] QA complete.  Upload pending.');
 
-                LOGGER.module().error('ERROR: [/ingester/service module (start_ingest)] Ingest halted - unable to move to ingest folder');
+            setTimeout(async () => {
+                await this.process_package(batch);
+            }, 1000);
 
-                await INGEST_TASKS.update_ingest_queue({
-                    batch: batch,
-                    is_complete: 0
-                }, {
-                    status: 'INGEST_HALTED',
-                    error: 'Unable to move package to ingest folder',
-                    is_complete: 1
-                });
+            return false;
 
-                return false;
-            }
+            /*
 
             LOGGER.module().info('INFO: [/ingester/service module (start_ingest)] Package moved to ingest folder');
+            LOGGER.module().info('INFO: [/ingester/service module (start_ingest)] Uploading package');
 
-            QA_TASKS.move_to_sftp(archival_package.collection_uuid, () => {
-                LOGGER.module().info('INFO: [/ingester/service module (start_ingest)] Uploading package');
+            QA_TASKS.move_to_sftp(archival_package.collection_uuid, (data) => {
+                console.log('move to sftp ', data);
             });
 
             await INGEST_TASKS.update_ingest_queue({
@@ -540,11 +567,12 @@ const Ingest_service = class {
                 status: 'UPLOADING'
             });
 
-            LOGGER.module().info('INFO: [/ingester/service module (sftp_upload_status)] Uploading package');
-
             let upload_timer = setInterval(async () => {
 
                 let upload_status = await QA_TASKS.sftp_upload_status(archival_package.collection_uuid, package_file_count.file_count);
+
+                LOGGER.module().info('INFO: [/ingester/service module (sftp_upload_status)] Uploading package...');
+                console.log('Upload status: ', upload_status.data.message);
 
                 if (upload_status.data.message === 'upload_complete') {
 
@@ -560,16 +588,121 @@ const Ingest_service = class {
 
                     LOGGER.module().info('INFO: [/ingester/service module (start_ingest)] Package upload complete');
 
-                    setTimeout(() => {
-                        this.start_ingest(archival_package.collection_uuid, archival_package.package);
-                        return true;
-                    }, 3000);
+                    setTimeout(async () => {
+
+                        INGEST_TASKS.move_to_ingested(archival_package.collection_uuid, (data) => {
+
+                            LOGGER.module().info('INFO: [/ingester/service module (sftp_upload_status)] Moved package to ingested folder');
+
+                            setTimeout(() => {
+                                this.start_ingest(archival_package.collection_uuid, archival_package.package);
+                                return true;
+                            }, 15000);
+
+                        });
+
+                    }, 5000);
                 }
 
             }, 10000); // 10 sec
 
+             */
+
         } catch (error) {
             LOGGER.module().error('ERROR: [/ingester/service module (start_ingest)] Ingest halted ' + error.message);
+        }
+    }
+
+    /**
+     * Move batch to Archivematica SFTP
+     * @param batch
+     * @param collection_uuid
+     * @param package_file_count
+     * @param callback
+     */
+    async move_to_sftp(batch, collection_uuid, package_file_count, callback) {
+
+        try {
+
+            await QA_TASKS.move_to_sftp(collection_uuid, (data) => {
+                console.log('move to sftp ', data);
+            });
+
+            await INGEST_TASKS.update_ingest_queue({
+                batch: batch,
+                is_complete: 0
+            }, {
+                status: 'UPLOADING'
+            });
+
+            let upload_timer = setInterval(async () => {
+
+                let upload_status = await QA_TASKS.sftp_upload_status(collection_uuid, package_file_count);
+
+                LOGGER.module().info('INFO: [/ingester/service module (sftp_upload_status)] Uploading ' + collection_uuid + ' packages...');
+
+                if (upload_status.data.message === 'upload_complete') {
+
+                    clearInterval(upload_timer);
+
+                    await INGEST_TASKS.update_ingest_queue({
+                        batch: batch,
+                        is_complete: 0
+                    }, {
+                        status: 'UPLOAD_COMPLETE'
+                    });
+
+                    LOGGER.module().info('INFO: [/ingester/service module (start_ingest)] Package upload complete');
+
+                    setTimeout(async () => {
+
+                        await INGEST_TASKS.move_to_ingested(collection_uuid, (data) => {
+
+                            LOGGER.module().info('INFO: [/ingester/service module (sftp_upload_status)] Moved package to ingested folder');
+
+                            setTimeout(() => {
+                                this.ingest_packages(batch);
+                                return true;
+                            }, 5000);
+
+
+                        });
+
+                    }, 10000);
+
+                    console.log('END SFTP');
+                    return false;
+                }
+
+            }, 10000); // 10 sec
+
+            callback(true);
+
+        } catch (error) {
+            LOGGER.module().error('ERROR: [/ingester/service module (move_to_sftp)] Ingest halted ' + error.message);
+        }
+    }
+
+    /**
+     * Ingests archival packages
+     * @param batch
+     */
+    async ingest_packages(batch) {
+
+        try {
+
+            const archival_package = await INGEST_TASKS.get_package(batch);
+
+            if (archival_package === false) {
+                LOGGER.module().info('INFO: [/ingester/service module (next)] ' + batch + ' batch is complete');
+                console.log('END INGEST');
+                return false;
+            }
+
+            this.start_ingest(archival_package.collection_uuid, archival_package.package);
+
+        } catch (error) {
+            LOGGER.module().error('ERROR: [/ingester/service module (ingest_packages)] Ingest halted ' + error.message);
         }
     }
 
@@ -581,7 +714,7 @@ const Ingest_service = class {
     start_ingest(collection_uuid, archival_package) {
 
         try {
-
+            console.log('Ingesting ', archival_package);
             (async () => {
 
                 LOGGER.module().info('INFO: [/ingester/service module (start_ingest)] Starting ingest');
@@ -604,7 +737,7 @@ const Ingest_service = class {
 
         try {
 
-            LOGGER.module().info('INFO: [/ingester/service module (start_transfer)] Starting Archivematica transfer');
+            LOGGER.module().info('INFO: [/ingester/service module (start_transfer)] Starting Archivematica transfer ' + archival_package);
 
             this.collection_uuid = collection_uuid;
             this.archival_package = archival_package;
@@ -741,7 +874,6 @@ const Ingest_service = class {
                     });
 
                     this.get_ingest_status(transfer.sip_uuid);
-
                     return false;
                 }
 
@@ -770,10 +902,6 @@ const Ingest_service = class {
 
         try {
 
-            setTimeout(async () => {
-                await INGEST_TASKS.move_to_ingested(this.collection_uuid);
-            }, 50);
-
             let ingest_status_timer = setInterval(async () => {
 
                 let ingest = await ARCHIVEMATICA_LIB.get_ingest_status(sip_uuid);
@@ -794,7 +922,6 @@ const Ingest_service = class {
                 }
 
                 if (ingest.status === 'COMPLETE') {
-
                     clearInterval(ingest_status_timer);
                     LOGGER.module().info('INFO: [/ingester/service module (get_ingest_status)] Archivematica ingest complete');
                     await ARCHIVEMATICA_LIB.clear_ingest(sip_uuid);
@@ -826,7 +953,7 @@ const Ingest_service = class {
     async process_metadata(sip_uuid) {
 
         try {
-
+            console.log('processing metadata for ', sip_uuid);
             LOGGER.module().info('INFO: [/ingester/service module (process_metadata)] Processing Metadata');
 
             await INGEST_TASKS.update_ingest_queue({
@@ -837,9 +964,26 @@ const Ingest_service = class {
                 micro_service: '',
             });
 
-            this.metadata = await INGEST_TASKS.process_metadata(ARCHIVEASSPACE_LIB, this.metadata_uri);
+            const uri = await INGEST_TASKS.get_uri(sip_uuid);
+
+            if (uri === false) {
+
+                await INGEST_TASKS.update_ingest_queue({
+                    sip_uuid: sip_uuid,
+                    is_complete: 0
+                }, {
+                    status: 'INGEST_HALTED',
+                    error: 'Metadata processing failed.',
+                    is_complete: 1
+                });
+
+                return false;
+            }
+
+            const metadata = await INGEST_TASKS.process_metadata(ARCHIVEASSPACE_LIB, uri);
             await INGEST_TASKS.update_ingest_queue({
                 sip_uuid: sip_uuid,
+                metadata: JSON.stringify(metadata),
                 is_complete: 0
             }, {
                 status: 'METADATA_PROCESSED'
@@ -944,7 +1088,8 @@ const Ingest_service = class {
         try {
 
             LOGGER.module().info('INFO: [/ingester/service module (create_object_parts)] Creating object parts');
-            let parts = this.metadata.parts;
+            const metadata = JSON.parse(await INGEST_TASKS.get_metadata(sip_uuid));
+            let parts = metadata.parts;
 
             for (let i = 0; i < file_data.length; i++) {
                 for (let j = 0; j < parts.length; j++) {
@@ -1043,7 +1188,7 @@ const Ingest_service = class {
                 });
             }
 
-            await this.get_transcript();
+            await this.get_transcript(sip_uuid);
 
         } catch (error) {
             LOGGER.module().error('ERROR: [/ingester/service module (get_master_object_data)] Unable to get master object data ' + error.message);
@@ -1052,15 +1197,16 @@ const Ingest_service = class {
 
     /**
      * Gets transcript if one is available
+     * @param sip_uuid
      */
-    async get_transcript() {
+    async get_transcript(sip_uuid) {
 
         try {
 
             LOGGER.module().info('INFO: [/ingester/service module (get_transcript)] checking for transcript data');
 
             await INGEST_TASKS.update_ingest_queue({
-                package: this.archival_package,
+                sip_uuid: sip_uuid, // this.archival_package,
                 is_complete: 0
             }, {
                 status: 'CHECKING_FOR_TRANSCRIPT_DATA'
@@ -1070,14 +1216,14 @@ const Ingest_service = class {
             let transcript_data = JSON.stringify(data);
 
             await INGEST_TASKS.update_ingest_queue({
-                package: this.archival_package,
+                sip_uuid: sip_uuid, // this.archival_package,
                 is_complete: 0
             }, {
                 status: 'TRANSCRIPT_CHECKED',
                 transcript_data: transcript_data
             });
 
-            await this.create_repo_record();
+            await this.create_repo_record(sip_uuid);
 
         } catch (error) {
             LOGGER.module().error('ERROR: [/ingester/service module (get_transcript)] Unable to get transcript ' + error.message);
@@ -1087,14 +1233,14 @@ const Ingest_service = class {
     /**
      * Creates repository record
      */
-    async create_repo_record() {
+    async create_repo_record(sip_uuid) {
 
         try {
 
             LOGGER.module().info('INFO: [/ingester/service module (create_repo_record)] Creating repository record');
 
             await INGEST_TASKS.update_ingest_queue({
-                package: this.archival_package,
+                sip_uuid: sip_uuid,
                 is_complete: 0
             }, {
                 status: 'CREATING_REPOSITORY_RECORD'
@@ -1102,9 +1248,10 @@ const Ingest_service = class {
 
             let record = {};
             let transcript_data;
-            const data = await INGEST_TASKS.get_queue_data(this.archival_package);
-            const handle = await HANDLES_LIB.create_handle(data[0].sip_uuid);
-            let tmp = data[0].metadata_uri.split('/');
+            const data = await INGEST_TASKS.get_queue_data_by_uuid(sip_uuid);
+            const handle = await HANDLES_LIB.create_handle(sip_uuid);
+            const uri = await INGEST_TASKS.get_uri(sip_uuid);
+            let tmp = uri.split('/');
             const aspace_id = tmp[tmp.length - 1];
 
             INGEST_TASKS.add_handle(handle, aspace_id, (response) => {
@@ -1165,7 +1312,7 @@ const Ingest_service = class {
             await INGEST_TASKS.index_repo_record(record.pid, record.display_record);
 
             await INGEST_TASKS.update_ingest_queue({
-                package: this.archival_package,
+                sip_uuid: sip_uuid,
                 is_complete: 0
             }, {
                 index_record: JSON.stringify(index_record),
@@ -1178,8 +1325,10 @@ const Ingest_service = class {
                 });
             }
 
+            LOGGER.module().info('INFO: [/ingester/service module (create_repo_record)] ingested');
+
             await INGEST_TASKS.update_ingest_queue({
-                package: this.archival_package,
+                sip_uuid: sip_uuid,
                 is_complete: 0
             }, {
                 status: 'COMPLETE',
@@ -1195,14 +1344,20 @@ const Ingest_service = class {
 
     async next() {
 
-        const data = await INGEST_TASKS.get_package(this.batch);
+        // let ingest_timer = setInterval(async () => {
+        // }, 20000);
+        LOGGER.module().info('INFO: [/ingester/service module (next)] Retrieving next package from ' + this.batch);
+        await this.ingest_packages(this.batch);
 
+        // const data = await INGEST_TASKS.get_package(this.batch);
+        /*
         if (data !== undefined) {
             LOGGER.module().info('INFO: [/ingester/service module (next)] Retrieving next package from ' + this.batch);
-            await this.process_package(this.batch);
+            //await this.process_package(this.batch);
         } else {
             LOGGER.module().info('INFO: [/ingester/service module (next)] ' + this.batch + ' batch is complete');
         }
+         */
     }
 }
 

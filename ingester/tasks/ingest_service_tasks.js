@@ -129,6 +129,25 @@ const Ingest_service_tasks = class {
     }
 
     /**
+     * Gets queue data by sip uuid
+     * @param sip_uuid
+     */
+    async get_queue_data_by_uuid(sip_uuid) {
+
+        try {
+
+            return await this.DB_QUEUE(this.TABLES.repo_queue.repo_ingest_queue)
+            .select('*')
+            .where({
+                sip_uuid: sip_uuid
+            });
+
+        } catch (error) {
+            LOGGER.module().error('ERROR: [/ingester/tasks (get_queue_data)] unable to get ingest queue data ' + error.message);
+        }
+    }
+
+    /**
      * Checks uri to determine if collection already exists
      * @param uri
      * @returns boolean
@@ -241,7 +260,6 @@ const Ingest_service_tasks = class {
                     collection_uuid: collection_record.pid,
                     status: 'REPOSITORY_COLLECTION_RECORD_CREATED_AND_INDEXED'
                 });
-
             }
 
             return collection_record.pid;
@@ -266,9 +284,14 @@ const Ingest_service_tasks = class {
                 batch: batch,
                 is_complete: 0
             })
+            .orderBy('id', 'asc')
             .limit(1);
 
-            return data[0];
+            if (data.length > 0) {
+                return data[0];
+            } else {
+                return false;
+            }
 
         } catch (error) {
             LOGGER.module().error('ERROR: [/ingester/ingest_service_tasks (get_package)] unable to get package ' + error.message);
@@ -304,8 +327,9 @@ const Ingest_service_tasks = class {
     /**
      * Moves packages to ingested folder
      * @param uuid
+     * @param callback
      */
-    async move_to_ingested(uuid) {
+    async move_to_ingested(uuid, callback) {
 
         try {
 
@@ -316,10 +340,27 @@ const Ingest_service_tasks = class {
                 }
             });
 
-            return true;
-
         } catch (error) {
             LOGGER.module().error('ERROR: [/qa/tasks (move_to_ingest)] Unable to move packages to ingested folder - ' + error.message);
+        }
+
+        callback(true);
+    }
+
+    /**
+     * Get total file count for all packages
+     */
+    async get_file_count() {
+
+        try {
+
+            const data = await this.DB_QUEUE(this.TABLES.repo_queue.repo_ingest_queue)
+            .sum('file_count as file_count');
+
+            return parseInt(data[0].file_count);
+
+        } catch (error) {
+            LOGGER.module().error('ERROR: [/qa/tasks (get_file_count)] Unable to get file count - ' + error.message);
         }
     }
 
@@ -416,6 +457,58 @@ const Ingest_service_tasks = class {
 
         } catch (error) {
             LOGGER.module().error('ERROR: [/ingester/tasks (process_metadata)] Unable to process metadata - ' + error.message);
+        }
+    }
+
+    /**
+     * Gets metadata uri by sip_uuid
+     * @param sip_uuid
+     */
+    async get_uri(sip_uuid) {
+
+        try {
+
+            const data = await this.DB_QUEUE(this.TABLES.repo_queue.repo_ingest_queue)
+            .select('metadata_uri')
+            .where({
+                sip_uuid: sip_uuid,
+                is_complete: 0
+            });
+            console.log(data[0]);
+            if (data.length > 0) {
+                return data[0].metadata_uri;
+            } else {
+                return false;
+            }
+
+        } catch (error) {
+            LOGGER.module().error('ERROR: [/ingester/ingest_service_tasks (get_uri)] unable to get uri ' + error.message);
+        }
+    }
+
+    /**
+     * Gets metadata
+     * @param sip_uuid
+     */
+    async get_metadata(sip_uuid) {
+
+        try {
+
+            const data = await this.DB_QUEUE(this.TABLES.repo_queue.repo_ingest_queue)
+            .select('metadata')
+            .where({
+                sip_uuid: sip_uuid,
+                is_complete: 0
+            });
+
+            if (data.length > 0) {
+                return data[0].metadata;
+            } else {
+                return false;
+            }
+
+        } catch (error) {
+            LOGGER.module().error('ERROR: [/ingester/ingest_service_tasks (get_uri)] unable to get uri ' + error.message);
         }
     }
 
@@ -624,6 +717,44 @@ const Ingest_service_tasks = class {
 
         } catch (error) {
             LOGGER.module().error('ERROR: [/qa/tasks (check_file_names)] Unable to check file names - ' + error.message);
+        }
+    }
+
+    /**
+     * Removes packages from Archivematica SFTP
+     * @param uuid
+     * @param archival_package
+     * @param callback
+     */
+    async cleanup_sftp(uuid, archival_package, callback) {
+
+        try {
+
+            const QA_URL = `${this.CONFIG.qa_service}${QA_ENDPOINT_PATH}cleanup_sftp?uuid=${uuid}&archival_package=${archival_package}&api_key=${this.CONFIG.qa_service_api_key}`;
+            await HTTP.get(QA_URL, {
+                timeout: 60000 * 5,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            /* console.log('task sftp cleanup ', response);
+            if (response.status === 200) {
+
+                return {
+                    data: response.data
+                };
+
+            } else {
+                return false;
+            }
+
+             */
+
+            callback(true);
+
+        } catch (error) {
+            LOGGER.module().error('ERROR: [/ingester/tasks (upload_status)] unable to clean up sftp - ' + error.message);
         }
     }
 };

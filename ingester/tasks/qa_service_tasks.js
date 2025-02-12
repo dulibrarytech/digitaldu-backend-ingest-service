@@ -21,6 +21,7 @@
 const HTTP = require('axios');
 const KA = require('http');
 const LOGGER = require('../../libs/log4');
+const {response} = require("express");
 const QA_ENDPOINT_PATH = '/api/v2/qa/';
 const TIMEOUT = 60000 * 60;
 
@@ -43,7 +44,6 @@ const QA_service_tasks = class {
 
             const QA_URL = this.CONFIG.qa_service + QA_ENDPOINT_PATH + 'list-ready-folders?api_key=' + this.CONFIG.qa_service_api_key;
             const response = await HTTP.get(QA_URL, {
-                // timeout: TIMEOUT,
                 headers: {
                     'Content-Type': 'application/json'
                 }
@@ -69,7 +69,6 @@ const QA_service_tasks = class {
 
             const QA_URL = this.CONFIG.qa_service + QA_ENDPOINT_PATH + 'package-names?folder=' + collection_package + '&api_key=' + this.CONFIG.qa_service_api_key;
             const response = await HTTP.get(QA_URL, {
-                // timeout: TIMEOUT,
                 headers: {
                     'Content-Type': 'application/json'
                 }
@@ -93,7 +92,6 @@ const QA_service_tasks = class {
 
             const QA_URL = this.CONFIG.qa_service + QA_ENDPOINT_PATH + 'set-collection-folder?folder=' + folder_name + '&api_key=' + this.CONFIG.qa_service_api_key;
             const response = await HTTP.get(QA_URL, {
-                // timeout: TIMEOUT,
                 headers: {
                     'Content-Type': 'application/json'
                 }
@@ -121,7 +119,6 @@ const QA_service_tasks = class {
 
             const QA_URL = this.CONFIG.qa_service + QA_ENDPOINT_PATH + 'check-collection-folder?folder=' + folder_name + '&api_key=' + this.CONFIG.qa_service_api_key;
             const response = await HTTP.get(QA_URL, {
-                // timeout: TIMEOUT,
                 headers: {
                     'Content-Type': 'application/json'
                 }
@@ -156,7 +153,6 @@ const QA_service_tasks = class {
                     maxSockets: 1,
                     keepAliveMsecs: 3000
                 }),
-                // timeout: TIMEOUT,
                 headers: {
                     'Content-Type': 'application/json'
                 }
@@ -186,7 +182,6 @@ const QA_service_tasks = class {
 
             const QA_URL = `${this.CONFIG.qa_service}${QA_ENDPOINT_PATH}get-total-batch-size?folder=${folder_name}&api_key=${this.CONFIG.qa_service_api_key}`;
             const response = await HTTP.get(QA_URL, {
-                // timeout: TIMEOUT,
                 headers: {
                     'Content-Type': 'application/json'
                 }
@@ -207,13 +202,12 @@ const QA_service_tasks = class {
      * @param collection_folder
      * @param archival_package
      */
-    async get_package_file_count(collection_folder, archival_package) {
+    async get_package_file_count(collection_folder, archival_package) { //
 
         try {
 
             const QA_URL = `${this.CONFIG.qa_service}${QA_ENDPOINT_PATH}package-file-count?folder=${collection_folder}&package=${archival_package}&api_key=${this.CONFIG.qa_service_api_key}`;
             const response = await HTTP.get(QA_URL, {
-                // timeout: TIMEOUT,
                 headers: {
                     'Content-Type': 'application/json'
                 }
@@ -239,7 +233,6 @@ const QA_service_tasks = class {
 
             const QA_URL = this.CONFIG.qa_service + QA_ENDPOINT_PATH + 'check-uri-txt?folder=' + folder_name + '&api_key=' + this.CONFIG.qa_service_api_key;
             const response = await HTTP.get(QA_URL, {
-                // timeout: TIMEOUT,
                 headers: {
                     'Content-Type': 'application/json'
                 }
@@ -260,27 +253,34 @@ const QA_service_tasks = class {
      * @param uuid
      * @param folder_name
      * @param archival_package
+     * @param callback
      */
-    async move_to_ingest(uuid, folder_name, archival_package) {
+    move_to_ingest(uuid, folder_name, archival_package, callback) {
 
-        try {
+        (async () => {
 
-            const QA_URL = `${this.CONFIG.qa_service}${QA_ENDPOINT_PATH}move-to-ingest?uuid=${uuid}&folder=${folder_name}&package=${archival_package}&api_key=${this.CONFIG.qa_service_api_key}`;
-            const response = await HTTP.get(QA_URL, {
-                // timeout: TIMEOUT,
-                headers: {
-                    'Content-Type': 'application/json'
+            try {
+
+                const QA_URL = `${this.CONFIG.qa_service}${QA_ENDPOINT_PATH}move-to-ingest?uuid=${uuid}&folder=${folder_name}&package=${archival_package}&api_key=${this.CONFIG.qa_service_api_key}`;
+                const response = await HTTP.get(QA_URL, {
+                    timeout: 60000*5,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.status === 200) {
+                    return response.data;
                 }
-            });
 
-            if (response.status === 200) {
-                return response.data;
+            } catch (error) {
+                LOGGER.module().error('ERROR: [/ingester/tasks (move_to_ingest)] Unable to move packages to ingest folder - ' + error.message);
+                return false;
             }
 
-        } catch (error) {
-            LOGGER.module().error('ERROR: [/ingester/tasks (move_to_ingest)] Unable to move packages to ingest folder - ' + error.message);
-            return false;
-        }
+        })();
+
+        callback(true);
     }
 
     /**
@@ -290,25 +290,25 @@ const QA_service_tasks = class {
      */
     move_to_sftp(uuid, callback) {
 
-        try {
+        (async () => {
 
-            (async () => {
+            try {
 
                 const QA_URL = `${this.CONFIG.qa_service}${QA_ENDPOINT_PATH}move-to-sftp?uuid=${uuid}&api_key=${this.CONFIG.qa_service_api_key}`;
                 await HTTP.get(QA_URL, {
+                    timeout: 60000 * 5,
                     headers: {
                         'Content-Type': 'application/json'
                     }
                 });
 
-            })();
+            } catch (error) {
+                LOGGER.module().error('ERROR: [/ingester/tasks (move_to_sftp)] move to sftp error occurred - ' + error.message);
+            }
 
-            callback(true);
+        })();
 
-        } catch (error) {
-            LOGGER.module().error('ERROR: [/ingester/tasks (move_to_sftp)] move to sftp error occurred - ' + error.message);
-            callback(false);
-        }
+        callback(true);
     }
 
     /**
@@ -322,7 +322,6 @@ const QA_service_tasks = class {
 
             const QA_URL = `${this.CONFIG.qa_service}${QA_ENDPOINT_PATH}upload-status?uuid=${uuid}&total_batch_file_count=${total_batch_file_count}&api_key=${this.CONFIG.qa_service_api_key}`;
             const response = await HTTP.get(QA_URL, {
-                // timeout: TIMEOUT,
                 headers: {
                     'Content-Type': 'application/json'
                 }

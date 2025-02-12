@@ -51,6 +51,7 @@ module.exports = function () {
     APP.set('view engine', 'ejs');
 
     require('../ingester/routes.js')(APP);
+    require('../migration/routes.js')(APP);
     SERVER.listen(process.env.APP_PORT);
 
     return APP;

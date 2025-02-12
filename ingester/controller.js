@@ -67,6 +67,20 @@ const Ingest_controller = class {
     }
 
     /**
+     * Bypasses automatic upload to archivematica sftp
+     * @param req
+     * @param res
+     */
+    async start_archivematica_ingest(req, res) {
+
+        // const data = await INGEST_SERVICE.get_collection_packages();
+        // TODO: callback - immediate response
+        // TODO: get queue items here - add set interval timer
+        // TODO: start_transfer
+        // res.status(data.status).send(data.data);
+    }
+
+    /**
      * Gets repository collections
      * @param req
      * @param res
