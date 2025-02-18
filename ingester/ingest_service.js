@@ -953,8 +953,8 @@ const Ingest_service = class {
     async process_metadata(sip_uuid) {
 
         try {
-            console.log('processing metadata for ', sip_uuid);
-            LOGGER.module().info('INFO: [/ingester/service module (process_metadata)] Processing Metadata');
+
+            LOGGER.module().info('INFO: [/ingester/service module (process_metadata)] Processing Metadata ' + sip_uuid);
 
             await INGEST_TASKS.update_ingest_queue({
                 sip_uuid: sip_uuid,
@@ -1273,6 +1273,18 @@ const Ingest_service = class {
             }
 
             let metadata = JSON.parse(data[0].metadata);
+            let parts = JSON.parse(data[0].object_parts);
+            delete metadata.parts;
+            metadata.parts = parts;
+            let updated_metadata = metadata;
+
+            await INGEST_TASKS.update_ingest_queue({
+                sip_uuid: sip_uuid,
+                is_complete: 0
+            }, {
+                metadata: JSON.stringify(updated_metadata),
+                status: 'METADATA_RECORD_PARTS_UPDATED'
+            });
 
             if (metadata.is_compound === true) {
                 record.is_compound = 1;
@@ -1285,7 +1297,7 @@ const Ingest_service = class {
             record.is_member_of_collection = data[0].collection_uuid;
             record.pid = data[0].sip_uuid; // pid - legacy
             record.handle = handle;
-            record.mods = data[0].metadata;
+            record.mods = JSON.stringify(updated_metadata);
             record.thumbnail = master_data.thumbnail;
             record.file_name = master_data.file_name;
             record.uri = data[0].metadata_uri;
@@ -1302,7 +1314,7 @@ const Ingest_service = class {
             await INGEST_TASKS.save_repo_record(record);
 
             await INGEST_TASKS.update_ingest_queue({
-                package: this.archival_package,
+                sip_uuid: sip_uuid,
                 is_complete: 0
             }, {
                 index_record: JSON.stringify(index_record),
@@ -1343,21 +1355,8 @@ const Ingest_service = class {
     }
 
     async next() {
-
-        // let ingest_timer = setInterval(async () => {
-        // }, 20000);
         LOGGER.module().info('INFO: [/ingester/service module (next)] Retrieving next package from ' + this.batch);
         await this.ingest_packages(this.batch);
-
-        // const data = await INGEST_TASKS.get_package(this.batch);
-        /*
-        if (data !== undefined) {
-            LOGGER.module().info('INFO: [/ingester/service module (next)] Retrieving next package from ' + this.batch);
-            //await this.process_package(this.batch);
-        } else {
-            LOGGER.module().info('INFO: [/ingester/service module (next)] ' + this.batch + ' batch is complete');
-        }
-         */
     }
 }
 

@@ -115,7 +115,7 @@ const Index_record_lib = class {
             if (data.transcript_search !== null && data.transcript_search.length > 0) {
                 index_record.transcript_search = data.transcript_search;
             }
-            // TODO:...
+            // TODO: processed in ingest_service create repo record function
             /*
             if (metadata.parts !== undefined && metadata.parts.length > 0) {
 
@@ -132,7 +132,7 @@ const Index_record_lib = class {
             }
 
              */
-
+            /*
             if (metadata.parts !== undefined && metadata.parts.length > 0) {
                 for (let i=0;i<metadata.parts.length;i++) {
                     if (metadata.parts[i].kaltura_id !== undefined) {
@@ -142,6 +142,8 @@ const Index_record_lib = class {
             }
 
             index_record.parts = metadata.parts;
+
+             */
         }
 
         if (metadata.names !== undefined) {
