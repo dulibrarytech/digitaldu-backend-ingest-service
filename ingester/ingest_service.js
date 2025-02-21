@@ -654,15 +654,14 @@ const Ingest_service = class {
 
                     LOGGER.module().info('INFO: [/ingester/service module (start_ingest)] Package upload complete');
 
-                    await INGEST_TASKS.update_ingest_queue({
-                        batch: batch,
-                        is_complete: 0
-                    }, {
-                        status: 'REPLICATING_PACKAGE'
-                    });
-
-
                     setTimeout(async () => {
+
+                        await INGEST_TASKS.update_ingest_queue({
+                            batch: batch,
+                            is_complete: 0
+                        }, {
+                            status: 'REPLICATING_PACKAGE'
+                        });
 
                         await INGEST_TASKS.move_to_ingested(collection_uuid, (data) => {
 
@@ -672,8 +671,6 @@ const Ingest_service = class {
                                 this.ingest_packages(batch);
                                 return true;
                             }, 5000);
-
-
                         });
 
                     }, 10000);
