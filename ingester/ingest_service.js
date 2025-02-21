@@ -663,6 +663,10 @@ const Ingest_service = class {
                             status: 'REPLICATING_PACKAGE'
                         });
 
+                    }, 3000);
+
+                    setTimeout(async () => {
+
                         await INGEST_TASKS.move_to_ingested(collection_uuid, (data) => {
 
                             LOGGER.module().info('INFO: [/ingester/service module (sftp_upload_status)] Moved package to ingested folder');
@@ -671,6 +675,8 @@ const Ingest_service = class {
                                 this.ingest_packages(batch);
                                 return true;
                             }, 5000);
+
+
                         });
 
                     }, 10000);
@@ -695,6 +701,13 @@ const Ingest_service = class {
     async ingest_packages(batch) {
 
         try {
+
+            await INGEST_TASKS.update_ingest_queue({
+                batch: batch,
+                is_complete: 0
+            }, {
+                status: 'INGEST_PENDING'
+            });
 
             const archival_package = await INGEST_TASKS.get_package(batch);
 
