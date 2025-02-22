@@ -675,8 +675,6 @@ const Ingest_service = class {
                                 this.ingest_packages(batch);
                                 return true;
                             }, 5000);
-
-
                         });
 
                     }, 10000);
@@ -732,7 +730,9 @@ const Ingest_service = class {
     start_ingest(collection_uuid, archival_package) {
 
         try {
-            console.log('Ingesting ', archival_package);
+
+            LOGGER.module().info('INFO: [/ingester/service module (start_ingest)] Ingesting ' + archival_package);
+
             (async () => {
 
                 LOGGER.module().info('INFO: [/ingester/service module (start_ingest)] Starting ingest');
