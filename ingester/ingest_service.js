@@ -1206,7 +1206,8 @@ const Ingest_service = class {
                 });
             }
 
-            await this.get_transcript(sip_uuid);
+            // await this.get_transcript(sip_uuid);
+            await this.create_repo_record(sip_uuid);
 
         } catch (error) {
             LOGGER.module().error('ERROR: [/ingester/service module (get_master_object_data)] Unable to get master object data ' + error.message);
@@ -1231,10 +1232,11 @@ const Ingest_service = class {
             });
 
             let data = await INGEST_TASKS.get_transcript(this.metadata);
+            console.log(data);
             let transcript_data = JSON.stringify(data);
 
             await INGEST_TASKS.update_ingest_queue({
-                sip_uuid: sip_uuid, // this.archival_package,
+                sip_uuid: sip_uuid,
                 is_complete: 0
             }, {
                 status: 'TRANSCRIPT_CHECKED',
