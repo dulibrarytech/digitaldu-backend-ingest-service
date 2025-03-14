@@ -50,7 +50,7 @@ const Ingest_service_tasks = class {
 
         try {
             return await this.DB_QUEUE(this.TABLES.repo_queue.repo_ingest_queue)
-            .select('id', 'status', 'batch', 'package', 'batch_size', 'file_count', 'metadata_uri', 'micro_service', 'error', 'is_complete')
+            .select('id', 'status', 'batch', 'package', 'collection_uuid', 'batch_size', 'file_count', 'metadata_uri', 'micro_service', 'error', 'is_complete')
             .orderBy('created', 'desc');
         } catch (error) {
             LOGGER.module().error('ERROR: [/ingester/ingest_service_tasks (get_status)] Unable get status ' + error.message);
@@ -281,7 +281,8 @@ const Ingest_service_tasks = class {
             const data = await this.DB_QUEUE(this.TABLES.repo_queue.repo_ingest_queue)
             .select('collection_uuid', 'package')
             .where({
-                batch: batch,
+                // batch: batch,
+                collection_uuid: batch,
                 is_complete: 0
             })
             .orderBy('id', 'asc')
@@ -474,7 +475,7 @@ const Ingest_service_tasks = class {
                 sip_uuid: sip_uuid,
                 is_complete: 0
             });
-            console.log(data[0]);
+
             if (data.length > 0) {
                 return data[0].metadata_uri;
             } else {
@@ -721,6 +722,25 @@ const Ingest_service_tasks = class {
     }
 
     /**
+     * Deletes completed queue record
+     * @param sip_uuid
+     */
+    async remove_completed_queue_record(sip_uuid) {
+
+        try {
+
+            await this.DB_QUEUE(this.TABLES.repo_queue.repo_ingest_queue)
+            .where({
+                sip_uuid: sip_uuid
+            })
+            .delete();
+
+        } catch (error) {
+            LOGGER.module().error('ERROR: [/qa/tasks  (dremove_completed_queue_record)] unable to delete queue record ' + error.message);
+        }
+    }
+
+    /** Deprecated Archivematica no longer supports ssh
      * Removes packages from Archivematica SFTP
      * @param uuid
      * @param archival_package

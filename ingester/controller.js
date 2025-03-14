@@ -58,26 +58,22 @@ const Ingest_controller = class {
     }
 
     /**
-     * Starts ingest process
+     * Starts QA process
      * @param req
      */
     async start_ingest(req) {
-        const batch = req.query.batch; // batch === collection folder name
+        const batch = req.query.batch;
         await INGEST_SERVICE.queue_packages(batch);
     }
 
     /**
      * Bypasses automatic upload to archivematica sftp
      * @param req
-     * @param res
      */
     async start_archivematica_ingest(req, res) {
-
-        // const data = await INGEST_SERVICE.get_collection_packages();
-        // TODO: callback - immediate response
-        // TODO: get queue items here - add set interval timer
-        // TODO: start_transfer
-        // res.status(data.status).send(data.data);
+        const batch = req.query.batch;
+        await INGEST_SERVICE.ingest_packages(batch);
+        res.status(200).send({message: 'ingest started'});
     }
 
     /**

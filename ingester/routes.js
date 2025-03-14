@@ -33,10 +33,8 @@ module.exports = async function (app) {
     .post(TOKEN.verify, INIT.ingest_init);
 
     // bypasses automatic upload to sftp
-
     app.route(`${APP_CONFIG.app_path}/api/v1/start-archivematica-ingest`)
     .post(TOKEN.verify, await CONTROLLER.start_archivematica_ingest);
-
 
     app.route(`${APP_CONFIG.app_path}/api/v1/ingest/status`)
     .get(TOKEN.verify, CONTROLLER.get_status);
