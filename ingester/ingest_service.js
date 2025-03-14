@@ -449,15 +449,16 @@ const Ingest_service = class {
                     batch: batch,
                     is_complete: 1
                 }, {
+                    status: 'QA_COMPLETE',
                     is_complete: 0
                 });
 
-                console.log('Move packages to SFTP');
-
                 // TODO:
-                // console.log('QA complete - manually copy batch folder to SFTP here');
-                // return false;
+                // console.log('Move packages to SFTP');
+                console.log('QA complete - manually copy batch folder to SFTP here');
+                return false;
 
+                /*
                 let file_count = await INGEST_TASKS.get_file_count();
 
                 await this.move_to_sftp(batch, this.collection_uuid, file_count, (data) => {
@@ -467,6 +468,8 @@ const Ingest_service = class {
                 console.log('END QA -> sftp next');
 
                 return false;
+
+                 */
 
             } else {
                 this.collection_uuid = archival_package.collection_uuid;
