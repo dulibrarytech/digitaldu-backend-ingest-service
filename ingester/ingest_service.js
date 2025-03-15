@@ -439,7 +439,7 @@ const Ingest_service = class {
         try {
 
             let archival_package = await INGEST_TASKS.get_package(batch);
-
+            console.log(archival_package);
             if (archival_package === false) {
 
                 LOGGER.module().info('INFO: [/ingester/service module (start_ingest)] Packages moved to ingest folder');
@@ -568,7 +568,7 @@ const Ingest_service = class {
 
             setTimeout(async () => {
                 await this.process_package(batch);
-            }, 1000);
+            }, 250);
 
             return false;
 

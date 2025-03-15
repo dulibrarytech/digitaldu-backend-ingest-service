@@ -281,8 +281,8 @@ const Ingest_service_tasks = class {
             const data = await this.DB_QUEUE(this.TABLES.repo_queue.repo_ingest_queue)
             .select('collection_uuid', 'package')
             .where({
-                // batch: batch,
-                collection_uuid: batch,
+                batch: batch,
+                // collection_uuid: batch,
                 is_complete: 0
             })
             .orderBy('id', 'asc')
