@@ -439,7 +439,7 @@ const Ingest_service = class {
         try {
 
             let archival_package = await INGEST_TASKS.get_package(batch);
-            console.log(archival_package);
+
             if (archival_package === false) {
 
                 LOGGER.module().info('INFO: [/ingester/service module (start_ingest)] Packages moved to ingest folder');
@@ -656,7 +656,7 @@ const Ingest_service = class {
         }
     }
 
-    /** TODO: start here
+    /** CL ingest starts here
      * Ingests archival packages
      * @param batch
      */
@@ -665,7 +665,7 @@ const Ingest_service = class {
         try {
 
             await INGEST_TASKS.update_ingest_queue({
-                collection_uuid: batch,
+                batch: batch,
                 is_complete: 0
             }, {
                 status: 'INGEST_PENDING'
