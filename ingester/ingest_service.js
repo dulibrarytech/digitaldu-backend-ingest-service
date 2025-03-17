@@ -1234,7 +1234,7 @@ const Ingest_service = class {
             });
 
             let record = {};
-            let transcript_data;
+            // let transcript_data;
             const data = await INGEST_TASKS.get_queue_data_by_uuid(sip_uuid);
             const handle = await HANDLES_LIB.create_handle(sip_uuid);
             const uri = await INGEST_TASKS.get_uri(sip_uuid);
@@ -1249,6 +1249,8 @@ const Ingest_service = class {
             });
 
             const master_data = JSON.parse(data[0].master_data);
+
+            /*
             transcript_data = JSON.parse(data[0].transcript_data);
 
             if (transcript_data !== false) {
@@ -1259,6 +1261,11 @@ const Ingest_service = class {
                 record.transcript = null;
                 record.transcript_search = null;
             }
+
+             */
+
+            record.transcript = null;
+            record.transcript_search = null;
 
             let metadata = JSON.parse(data[0].metadata);
             let parts = JSON.parse(data[0].object_parts);
