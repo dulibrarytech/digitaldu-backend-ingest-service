@@ -1186,6 +1186,7 @@ const Ingest_service = class {
 
         try {
 
+            /*
             LOGGER.module().info('INFO: [/ingester/service module (get_transcript)] checking for transcript data');
 
             await INGEST_TASKS.update_ingest_queue({
@@ -1196,7 +1197,7 @@ const Ingest_service = class {
             });
 
             let data = await INGEST_TASKS.get_transcript(this.metadata);
-            console.log('transcipt data ', data);
+            console.log('transcript data ', data);
             let transcript_data = JSON.stringify(data);
 
             await INGEST_TASKS.update_ingest_queue({
@@ -1206,6 +1207,8 @@ const Ingest_service = class {
                 status: 'TRANSCRIPT_CHECKED',
                 transcript_data: transcript_data
             });
+
+             */
 
             await this.create_repo_record(sip_uuid);
 
@@ -1237,6 +1240,7 @@ const Ingest_service = class {
             const uri = await INGEST_TASKS.get_uri(sip_uuid);
             let tmp = uri.split('/');
             const aspace_id = tmp[tmp.length - 1];
+            const batch = data[0].batch;
 
             INGEST_TASKS.add_handle(handle, aspace_id, (response) => {
                 if (response === false) {
@@ -1333,7 +1337,7 @@ const Ingest_service = class {
 
             setTimeout(async () => {
                 await INGEST_TASKS.remove_completed_queue_record(sip_uuid);
-                await this.next(record.is_member_of_collection);
+                await this.next(batch); // record.is_member_of_collection
             }, 10000); // 10sec
 
         } catch (error) {
