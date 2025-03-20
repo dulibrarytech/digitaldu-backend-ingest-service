@@ -454,22 +454,20 @@ const Ingest_service = class {
                 });
 
                 // TODO:
-                // console.log('Move packages to SFTP');
-                console.log('QA complete - manually copy batch folder to SFTP here');
-                return false;
+                console.log('Move packages to SFTP');
+                // console.log('QA complete - manually copy batch folder to SFTP here');
+                // return false;
 
-                /*
+
                 let file_count = await INGEST_TASKS.get_file_count();
 
                 await this.move_to_sftp(batch, this.collection_uuid, file_count, (data) => {
                     console.log('moving to sftp cb ', data);
                 });
 
-                console.log('END QA -> sftp next');
+                // console.log('END QA -> sftp next');
 
                 return false;
-
-                 */
 
             } else {
                 this.collection_uuid = archival_package.collection_uuid;
@@ -647,7 +645,7 @@ const Ingest_service = class {
                     return false;
                 }
 
-            }, 10000*30); // 10 sec
+            }, 60000); // 60 sec
 
             callback(true);
 

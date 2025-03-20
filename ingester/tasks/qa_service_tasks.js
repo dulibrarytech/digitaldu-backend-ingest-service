@@ -296,7 +296,7 @@ const QA_service_tasks = class {
 
                 const QA_URL = `${this.CONFIG.qa_service}${QA_ENDPOINT_PATH}move-to-sftp?uuid=${uuid}&api_key=${this.CONFIG.qa_service_api_key}`;
                 await HTTP.get(QA_URL, {
-                    timeout: 60000 * 5,
+                    timeout: 60000 * 30,
                     headers: {
                         'Content-Type': 'application/json'
                     }

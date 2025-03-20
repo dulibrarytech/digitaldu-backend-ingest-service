@@ -24,7 +24,7 @@ const ingestModule = (function () {
     const nginx_path = '/ingester';
 
     /**
-     * Starts ingest process
+     * Starts ingest process TODO: rename to start_QA
      */
     obj.start_ingest = async function () {
 
@@ -83,6 +83,7 @@ const ingestModule = (function () {
                         break;
                     } else if (data[i].error === null && data[i].is_complete === 0) {
                         message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; An ingest is in progress.</strong></div>';
+                        // message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; QA complete.  Please upload the folder in 002-ingest to the Archivematica SFTP server.</strong></div>';
                     }
                 }
 
@@ -99,7 +100,7 @@ const ingestModule = (function () {
                 return false;
             }
 
-        }, 7000);
+        }, 5000);
     }
 
     /**
@@ -269,7 +270,7 @@ const ingestModule = (function () {
             html += '<small>' + packages.result[prop] + '</small>';
             html += '</td>';
             // Action button column
-            html += '<td style="text-align: center;vertical-align: middle; width: 15%"><a href="' + nginx_path + '/dashboard/ingest/status?batch=' + prop + '&api_key=' + key + '" type="button" class="btn btn-sm btn-default run-qa"><i class="fa fa-cogs"></i> <span>Start</span></a></td>';
+            html += '<td style="text-align: center;vertical-align: middle; width: 15%"><a href="' + nginx_path + '/dashboard/ingest/status?batch=' + prop + '&api_key=' + key + '" type="button" class="btn btn-sm btn-default run-qa"><i class="fa fa-cogs"></i> <span>Start QA</span></a></td>';
             html += '</tr>';
         }
 
