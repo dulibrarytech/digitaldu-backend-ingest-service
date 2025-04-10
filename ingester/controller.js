@@ -20,13 +20,10 @@
 
 const VALIDATOR = require('validator');
 const CONFIG = require('../config/app_config')();
-// const DB = require('../config/db_config')();
-// const DB_TABLES = require('../config/db_tables_config')();
 const I_SERVICE = require('../ingester/ingest_service');
 const C_SERVICE = require('../ingester/collection_service');
 const INGEST_SERVICE = new I_SERVICE();
 const COLLECTION_SERVICE = new C_SERVICE();
-// const COLLECTION_TASKS = require('../ingester/tasks/collection_tasks');
 
 /**
  *
@@ -58,7 +55,7 @@ const Ingest_controller = class {
     }
 
     /**
-     * Starts QA process
+     * Starts ingest process - QA process starts first
      * @param req
      */
     async start_ingest(req) {
@@ -67,13 +64,24 @@ const Ingest_controller = class {
     }
 
     /**
-     * Bypasses automatic upload to archivematica sftp
+     * Bypasses automatic upload to archivematica sftp - CLI
      * @param req
      */
     async start_archivematica_ingest(req, res) {
         const batch = req.query.batch;
         await INGEST_SERVICE.ingest_packages(batch);
         res.status(200).send({message: 'ingest started'});
+    }
+
+    /**
+     * Checks ingest record (indexed record and duracloud storage)
+     * @param req
+     * @param res
+     */
+    async check_ingest(req, res) {
+        const uuid = req.query.uuid;
+        const response = await INGEST_SERVICE.check_ingest(uuid);
+        res.status(200).send(response);
     }
 
     /**

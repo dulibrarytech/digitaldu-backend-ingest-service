@@ -282,7 +282,6 @@ const Ingest_service_tasks = class {
             .select('collection_uuid', 'package')
             .where({
                 batch: batch,
-                // collection_uuid: batch,
                 is_complete: 0
             })
             .orderBy('id', 'asc')
@@ -737,6 +736,33 @@ const Ingest_service_tasks = class {
 
         } catch (error) {
             LOGGER.module().error('ERROR: [/qa/tasks  (dremove_completed_queue_record)] unable to delete queue record ' + error.message);
+        }
+    }
+
+    /**
+     *
+     * @param uuid
+     */
+    async check_ingest_record(uuid) {
+
+        try {
+
+            const index = ES_CONFIG.elasticsearch_back_index;
+            const response = await CLIENT.get({
+                index: index,
+                id: uuid,
+            });
+
+            if (response.body.found === true) {
+                return response.body._source;
+            } else {
+                return {
+                    message: 'Record Not Found'
+                }
+            }
+
+        } catch (error) {
+            LOGGER.module().error('ERROR: [/ingester/ingest_service_tasks] unable to check ingested record ' + error.message);
         }
     }
 

@@ -22,7 +22,7 @@ const CONTROLLER = require('../ingester/controller');
 const INGEST_CONTROLLER = new CONTROLLER();
 
 /**
- * Initializes ingest processes
+ * Initializes ingest processes - Dashboard
  * @param req
  * @param res
  */

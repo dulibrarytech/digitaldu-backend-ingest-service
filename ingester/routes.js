@@ -27,35 +27,38 @@ const CONTROLLER = new INGEST_CONTROLLER();
 module.exports = async function (app) {
 
     app.route(`${APP_CONFIG.app_path}/api/v1/ingest/packages`)
-    .get(TOKEN.verify, await CONTROLLER.get_collection_packages);
+        .get(TOKEN.verify, await CONTROLLER.get_collection_packages);
 
     app.route(`${APP_CONFIG.app_path}/api/v1/ingest`)
-    .post(TOKEN.verify, INIT.ingest_init);
+        .post(TOKEN.verify, INIT.ingest_init);
 
-    // bypasses automatic upload to sftp
+    // bypasses automatic upload to sftp - CLI
     app.route(`${APP_CONFIG.app_path}/api/v1/start-archivematica-ingest`)
-    .post(TOKEN.verify, await CONTROLLER.start_archivematica_ingest);
+        .post(TOKEN.verify, await CONTROLLER.start_archivematica_ingest);
 
     app.route(`${APP_CONFIG.app_path}/api/v1/ingest/status`)
-    .get(TOKEN.verify, CONTROLLER.get_status);
+        .get(TOKEN.verify, CONTROLLER.get_status);
 
     app.route(`${APP_CONFIG.app_path}/dashboard/ingest`)
-    .get(TOKEN.verify, CONTROLLER.get_dashboard_ingest_view);
+        .get(TOKEN.verify, CONTROLLER.get_dashboard_ingest_view);
 
     app.route(`${APP_CONFIG.app_path}/dashboard/ingest/status`)
-    .get(TOKEN.verify, CONTROLLER.get_dashboard_ingest_status_view);
+        .get(TOKEN.verify, CONTROLLER.get_dashboard_ingest_status_view);
 
     app.route(`${APP_CONFIG.app_path}/dashboard/ingest/complete`)
-    .get(CONTROLLER.get_dashboard_ingest_complete);
+        .get(CONTROLLER.get_dashboard_ingest_complete);
 
     app.route(`${APP_CONFIG.app_path}/dashboard/collections`)
-    .get(CONTROLLER.get_dashboard_collections_view); // TOKEN.verify,
+        .get(CONTROLLER.get_dashboard_collections_view); // TOKEN.verify,
 
     app.route(`${APP_CONFIG.app_path}/api/v1/collections`)
-    .get(TOKEN.verify, CONTROLLER.get_collections)
-    .post(TOKEN.verify, CONTROLLER.create_collection);
+        .get(TOKEN.verify, CONTROLLER.get_collections)
+        .post(TOKEN.verify, CONTROLLER.create_collection);
+
+    app.route(`${APP_CONFIG.app_path}/api/v1/ingest/check`)
+        .get(CONTROLLER.check_ingest); // TOKEN.verify,
 
     app.route(`${APP_CONFIG.app_path}/api/v1/resources/`)
-    .get(TOKEN.verify, CONTROLLER.get_resources)
-    .post(TOKEN.verify, CONTROLLER.reassign_records);
+        .get(TOKEN.verify, CONTROLLER.get_resources)
+        .post(TOKEN.verify, CONTROLLER.reassign_records);
 };

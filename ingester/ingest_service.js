@@ -785,7 +785,7 @@ const Ingest_service = class {
             let approve_transfer_timer = setInterval(async () => {
 
                 let list = await ARCHIVEMATICA_LIB.get_unapproved_transfer_list();
-                console.log('unapproved transfer list ', list);
+
                 if (list.results.length > 0) {
 
                     clearInterval(approve_transfer_timer);
@@ -793,7 +793,7 @@ const Ingest_service = class {
                     let is_transfer_available = false;
 
                     for (let i = 0; i < list.results.length; i++) {
-                        console.log('directory ', list.results[i].directory);
+
                         if (transfer_folder === list.results[i].directory) {
                             is_transfer_available = true;
                             break;
@@ -803,7 +803,7 @@ const Ingest_service = class {
                     if (is_transfer_available === true) {
 
                         let transfer_approval_response = await ARCHIVEMATICA_LIB.approve_transfer(transfer_folder);
-                        console.log('approval message', transfer_approval_response.message);
+
                         if (transfer_approval_response.message === 'Approval successful.') {
 
                             LOGGER.module().info('INFO: [/ingester/service module (approve_transfer)] Archivematica transfer approved');
@@ -1353,6 +1353,19 @@ const Ingest_service = class {
     async next(batch) {
         LOGGER.module().info('INFO: [/ingester/service module (next)] Retrieving next package from ' + batch);
         await this.ingest_packages(batch);
+    }
+
+    /**
+     * checks ingested records
+     * @param uuid
+     */
+    async check_ingest(uuid) {
+
+        try {
+            return await INGEST_TASKS.check_ingest_record(uuid);
+        } catch (error) {
+            LOGGER.module().error('ERROR: [/ingester/service module (check_ingest)] Unable to check ingested record ' + error.message);
+        }
     }
 }
 
