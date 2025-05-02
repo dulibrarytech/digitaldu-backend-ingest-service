@@ -52,6 +52,8 @@ module.exports = function () {
 
     require('../ingester/routes.js')(APP);
     require('../migration/routes.js')(APP);
+    require('../astools/routes.js')(APP);
+    require('../kaltura/routes.js')(APP);
     SERVER.listen(process.env.APP_PORT);
 
     return APP;

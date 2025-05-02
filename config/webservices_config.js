@@ -28,7 +28,9 @@ const WEBSERVICES_CONFIG = {
     qa_service_api_key: process.env.QA_SERVICE_API_KEY,
     handle_update_service_host: process.env.HANDLE_UPDATE_SERVICE_HOST,
     handle_update_service_endpoint: process.env.HANDLE_UPDATE_SERVICE_ENDPOINT,
-    handle_update_service_api_key: process.env.HANDLE_UPDATE_SERVICE_API_KEY
+    handle_update_service_api_key: process.env.HANDLE_UPDATE_SERVICE_API_KEY,
+    astools_service: process.env.ASTOOLS_SERVICE,
+    astools_service_api_key: process.env.ASTOOLS_SERVICE_API_KEY,
 };
 
 module.exports = function () {

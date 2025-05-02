@@ -225,6 +225,26 @@ const Ingest_controller = class {
             data: []
         });
     }
+
+    get_dashboard_astools_view(req, res) {
+        res.render('dashboard-astools', {
+            host: CONFIG.host,
+            appname: CONFIG.app_name,
+            appversion: CONFIG.app_version,
+            organization: CONFIG.organization,
+            app_path: CONFIG.app_path
+        });
+    };
+
+    get_dashboard_workspace_view(req, res) {
+        res.render('dashboard-workspace', {
+            host: CONFIG.host,
+            appname: CONFIG.app_name,
+            appversion: CONFIG.app_version,
+            organization: CONFIG.organization,
+            app_path: CONFIG.app_path
+        });
+    };
 }
 
 module.exports = Ingest_controller;
