@@ -122,7 +122,6 @@ exports.make_digital_objects = function (args, callback) {
             }
 
         } catch (error) {
-            console.log(error);
             LOGGER.module().error('ERROR: [/astools/service (make_digital_objects)] Unable to make digital objects - ' + error.message);
         }
 
@@ -153,6 +152,28 @@ exports.check_uri_txt = function (batch, callback) {
 };
 
 /**
+ * Moves batch to ready folder
+ * @param batch
+ * @param callback
+ */
+exports.move_to_ready = function (batch, callback) {
+
+    (async function () {
+
+        try {
+
+            let is_moved = await move_to_ready_folder(batch);
+            LOGGER.module().info('INFO: [/astools/service module (move_to_ready)] ');
+            callback(is_moved);
+
+        } catch (error) {
+            LOGGER.module().error('ERROR: [/astools/service (move_to_ready)] Unable to move batch to ready folder - ' + error.message);
+        }
+
+    })();
+};
+
+/**
  * Checks uri.txt in QA service
  * @param folder_name
  */
@@ -177,3 +198,23 @@ async function check_uri_txts(folder_name) {
     }
 }
 
+async function move_to_ready_folder(folder_name) {
+
+    try {
+
+        const ASTOOLS_URL = CONFIG.astools_service + 'move-to-ready?folder=' + folder_name + '&api_key=' + CONFIG.astools_service_api_key;
+        const response = await HTTP.get(ASTOOLS_URL, {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.status === 200) {
+            return response.data;
+        }
+
+    } catch (error) {
+        LOGGER.module().error('ERROR: [/astools/service (move_to_ready_folder)] Unable to move batch to ready folder - ' + error.message);
+        return false;
+    }
+}

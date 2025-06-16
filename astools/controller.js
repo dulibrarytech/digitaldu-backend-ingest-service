@@ -69,7 +69,34 @@ exports.check_uri_txt = function (req, res) {
 
         const batch = req.body.batch;
 
+        if (batch === undefined) {
+            res.status(400).send('Bad request.');
+            return false;
+        }
+
         SERVICE.check_uri_txt(batch, (response) => {
+            res.status(200).send({
+                data: response
+            });
+        });
+
+    } catch (error) {
+        res.status(500).send({message: `${error.message}`});
+    }
+};
+
+exports.move_to_ready = function (req, res) {
+
+    try {
+
+        const batch = req.body.batch;
+
+        if (batch === undefined) {
+            res.status(400).send('Bad request.');
+            return false;
+        }
+
+        SERVICE.move_to_ready(batch, (response) => {
             res.status(200).send({
                 data: response
             });

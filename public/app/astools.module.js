@@ -80,7 +80,7 @@ const astoolsModule = (function () {
             const ks = await get_ks();
             window.localStorage.setItem('ks', ks);
 
-            // TODO: check if items already have kaltura id
+            // TODO: check if items already have kaltura id?
             document.querySelector('#message').innerHTML = '';
             document.querySelector('.x_panel').style.visibility = 'visible';
 
@@ -220,6 +220,7 @@ const astoolsModule = (function () {
 
         try {
 
+            document.querySelector('.x_panel').style.visibility = 'hidden';
             const batch_data = window.localStorage.getItem(folder);
 
             if (batch_data === null || batch_data === undefined) {
@@ -283,7 +284,7 @@ const astoolsModule = (function () {
                     await check_uri_txt(folder);
                 }, 3000)
 
-                // TODO: check kaltura ids if in audio/video
+                // TODO: check kaltura ids if in audio/video?
                 // document.querySelector('#astools-response').style.visibility = 'visible';
                 // document.querySelector('#astools-response').innerText = response.data.data;
             }
@@ -320,11 +321,58 @@ const astoolsModule = (function () {
 
                 if (response.data.data.errors.length > 0) {
                     domModule.html('#message', `<div class="alert alert-danger"><i class=""></i> "${response.data.data.errors.toString()}"</div>`);
+                    return false;
                 } else {
                     domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ${folder} complete </div>`);
+                    // TODO: move batch to ready folder
+                    setTimeout(async () => {
+                        await move_to_ready(folder);
+                    }, 1000)
                 }
+            }
 
-                document.querySelector('#astools-response').style.visibility = 'visible';
+        } catch (error) {
+            domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
+        }
+    }
+
+    async function move_to_ready(folder) {
+
+        try {
+
+            const api_key = helperModule.getParameterByName('api_key');
+            domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Moving "${folder}" batch to ready folder...</div>`);
+
+            const data = {
+                'batch': folder
+            };
+
+            const response = await httpModule.req({
+                method: 'POST',
+                url: nginx_path + '/api/v1/astools/move-to-ready?api_key=' + api_key,
+                data: data,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                timeout: 600000
+            });
+
+            if (response.status === 200) {
+
+                if (response.data.data.errors.length > 0) {
+                    domModule.html('#message', `<div class="alert alert-danger"><i class=""></i> "${response.data.data.errors.toString()}"</div>`);
+                    return false;
+                } else {
+
+                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ${folder} complete </div>`);
+
+                    setTimeout(async () => {
+                        // TODO: redirect
+                        const api_key = helperModule.getParameterByName('api_key');
+                        window.location.href = '/ingester/dashboard/ingest?api_key=' + api_key;
+                        // https://digitaldu-ingester.dev/ingester/dashboard/ingest?api_key=M7dHS21r47RsgyxSd7XJaEAgf7Miha01
+                    }, 1000)
+                }
             }
 
         } catch (error) {

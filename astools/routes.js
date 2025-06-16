@@ -32,4 +32,7 @@ module.exports = async function (app) {
 
     app.route(`${APP_CONFIG.app_path}/api/v1/astools/check-uri-txt`)
         .post(TOKEN.verify, CONTROLLER.check_uri_txt);
+
+    app.route(`${APP_CONFIG.app_path}/api/v1/astools/move-to-ready`)
+        .post(TOKEN.verify, CONTROLLER.move_to_ready);
 };
