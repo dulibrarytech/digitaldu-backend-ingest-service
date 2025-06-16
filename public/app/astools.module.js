@@ -66,7 +66,7 @@ const astoolsModule = (function () {
                 html += '<td style="text-align: left;vertical-align: middle; width: 20%">';
                 html += '<div class="custom-control custom-checkbox">';
                 html += `<label class="custom-control-label" for="${batch}">Are these files in Kaltura?</label>`;
-                html += `&nbsp;&nbsp;<input type="checkbox" class="custom-control-input" id="${batch}" onclick="astoolsModule.set_is_kaltura('${batch}');">`;
+                html += `&nbsp;&nbsp;<input type="checkbox" class="custom-control-input" id="${batch}">`; // onclick="astoolsModule.set_is_kaltura('${batch}');"
                 html += '</div>';
                 html += '</td>';
                 // actions
@@ -301,7 +301,6 @@ const astoolsModule = (function () {
 
             const api_key = helperModule.getParameterByName('api_key');
             domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Checking uri txt files for "${folder}" batch</div>`);
-            //  domModule.html('#message', '<div class="alert alert-info"><i class=""></i> Making digital objects...</div>');
 
             const data = {
                 'batch': folder
@@ -332,25 +331,6 @@ const astoolsModule = (function () {
             domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
         }
     }
-
-    obj.set_is_kaltura = async function (id) {
-        /*
-        try {
-
-            if (document.querySelector('#is_kaltura').value === 'true') {
-                alert('Please make only one selection!');
-            } else {
-                document.querySelector('#is_kaltura').value = 'true';
-            }
-
-            return false;
-
-        } catch (error) {
-            domModule.html('#message', '<div class="alert alert-info"><i class=""></i> ' + error.message + '</div>');
-        }
-
-         */
-    };
 
     obj.init = async function () {
 
