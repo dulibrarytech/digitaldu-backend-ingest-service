@@ -367,10 +367,8 @@ const astoolsModule = (function () {
                     domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ${folder} complete </div>`);
 
                     setTimeout(async () => {
-                        // TODO: redirect
                         const api_key = helperModule.getParameterByName('api_key');
                         window.location.href = '/ingester/dashboard/ingest?api_key=' + api_key;
-                        // https://digitaldu-ingester.dev/ingester/dashboard/ingest?api_key=M7dHS21r47RsgyxSd7XJaEAgf7Miha01
                     }, 1000)
                 }
             }
