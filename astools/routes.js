@@ -29,4 +29,7 @@ module.exports = async function (app) {
 
     app.route(`${APP_CONFIG.app_path}/api/v1/astools/make-digital-objects`)
         .post(TOKEN.verify, CONTROLLER.make_digital_objects);
+
+    app.route(`${APP_CONFIG.app_path}/api/v1/astools/check-uri-txt`)
+        .post(TOKEN.verify, CONTROLLER.check_uri_txt);
 };

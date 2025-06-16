@@ -17,7 +17,11 @@
  */
 
 const HTTP = require('axios');
+const QA_SERVICE_TASKS = require("../ingester/tasks/qa_service_tasks");
 const CONFIG = require('../config/webservices_config')();
+const WEB_SERVICES_CONFIG = require('../config/webservices_config')();
+// const QA_TASKS = new QA_SERVICE_TASKS(WEB_SERVICES_CONFIG);
+const LOGGER = require('../libs/log4');
 
 'use strict';
 
@@ -35,14 +39,69 @@ exports.get_workspace_packages = function (callback) {
             });
 
             if (response.status === 200) {
-                callback(response.data);
+
+                let packages = [];
+                let package_files = [];
+
+                if (response.data.errors.length > 0) {
+                    callback(response.data);
+                } else {
+
+                    for (let package_name in response.data.result) {
+                        packages.push(package_name);
+                    }
+
+                    let timer = setInterval(() => {
+
+                        if (packages.length === 0) {
+                            clearInterval(timer);
+                            console.log('complete');
+                            callback(package_files);
+                            return false;
+                        }
+
+                        const package_name = packages.pop();
+
+                        get_package_files(package_name, (result) => {
+                            package_files.push(result);
+                        });
+
+                    }, 1000);
+                }
             }
 
         } catch (error) {
             console.error(error);
         }
+
     })();
 };
+
+const get_package_files = function (package_name, callback) {
+
+    (async function () {
+
+        try {
+
+            const ASTOOLS_URL = CONFIG.astools_service + 'workspace/packages/files?package_name=' + package_name + '&api_key=' + CONFIG.astools_service_api_key;
+            const response = await HTTP.get(ASTOOLS_URL, {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.status === 200) {
+                callback(response.data);
+            } else {
+                return false;
+            }
+
+        } catch (error) {
+            console.error(error);
+        }
+
+    })();
+}
 
 exports.make_digital_objects = function (args, callback) {
 
@@ -64,7 +123,57 @@ exports.make_digital_objects = function (args, callback) {
 
         } catch (error) {
             console.log(error);
+            LOGGER.module().error('ERROR: [/astools/service (make_digital_objects)] Unable to make digital objects - ' + error.message);
         }
 
     })();
 };
+
+/**
+ * Checks uri txt files
+ * @param batch
+ * @param callback
+ */
+exports.check_uri_txt = function (batch, callback) {
+
+    (async function () {
+
+        try {
+
+            let uri_txts_checked = await check_uri_txts(batch);
+
+            LOGGER.module().info('INFO: [/astools/service module (check_uri_txt)] ' + uri_txts_checked.uri_results.result);
+            callback(uri_txts_checked.uri_results);
+
+        } catch (error) {
+            LOGGER.module().error('ERROR: [/astools/service (check_uri_txt)] Unable to check uri txt - ' + error.message);
+        }
+
+    })();
+};
+
+/**
+ * Checks uri.txt in QA service
+ * @param folder_name
+ */
+async function check_uri_txts(folder_name) {
+
+    try {
+
+        const ASTOOLS_URL = CONFIG.astools_service + 'check-uri-txt?folder=' + folder_name + '&api_key=' + CONFIG.astools_service_api_key;
+        const response = await HTTP.get(ASTOOLS_URL, {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.status === 200) {
+            return response.data;
+        }
+
+    } catch (error) {
+        LOGGER.module().error('ERROR: [/astools/service (check_uri_txts)] Unable to check uri.txt - ' + error.message);
+        return false;
+    }
+}
+

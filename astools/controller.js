@@ -45,14 +45,31 @@ exports.make_digital_objects = function (req, res) {
         }
 
         const args = {
-            username: req.body.username,
-            password: req.body.password,
             folder: req.body.folder,
+            batch_data: req.body.batch_data,
+            entry_ids: req.body.entry_ids,
             is_kaltura: req.body.is_kaltura,
             is_test: req.body.is_test
         }
 
         SERVICE.make_digital_objects(args, (response) => {
+            res.status(200).send({
+                data: response
+            });
+        });
+
+    } catch (error) {
+        res.status(500).send({message: `${error.message}`});
+    }
+};
+
+exports.check_uri_txt = function (req, res) {
+
+    try {
+
+        const batch = req.body.batch;
+
+        SERVICE.check_uri_txt(batch, (response) => {
             res.status(200).send({
                 data: response
             });

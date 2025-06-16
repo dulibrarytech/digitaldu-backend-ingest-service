@@ -37,72 +37,227 @@ const astoolsModule = (function () {
             });
 
             if (response.status === 200) {
-                return response;
+                return response.data;
             }
 
         } catch (error) {
-            console.log(error);
             domModule.html('#message', '<div class="alert alert-info"><i class=""></i> ' + error.message + '</div>');
         }
     }
 
     obj.display_workspace_packages = async function () {
 
-        const records = await astoolsModule.get_workspace_packages();
+        try {
 
-        if (records.data.data.errors.length > 0) {
-            console.log(records.data.data.errors);
-            return false;
-        }
+            const records = await astoolsModule.get_workspace_packages();
+            let html = '';
 
-        let html = '';
+            for (let i = 0; i < records.data.length; i++) {
 
-        for (let prop in records.data.data.result) {
+                let batch = records.data[i].result.batch;
+                window.localStorage.setItem(batch, JSON.stringify(records.data[i].result));
 
-            if (records.data.data.result[prop] > 0) {
                 html += '<tr>';
                 // workspace folder name
                 html += '<td style="text-align: left;vertical-align: middle; width: 55%">';
-                html += '<small>' + prop + '</small>';
+                html += '<small>' + batch + '</small>';
+                html += '</td>';
+                // type
+                html += '<td style="text-align: left;vertical-align: middle; width: 20%">';
+                html += '<div class="custom-control custom-checkbox">';
+                html += `<label class="custom-control-label" for="${batch}">Are these files in Kaltura?</label>`;
+                html += `&nbsp;&nbsp;<input type="checkbox" class="custom-control-input" id="${batch}" onclick="astoolsModule.set_is_kaltura('${batch}');">`;
+                html += '</div>';
                 html += '</td>';
                 // actions
                 html += '<td style="text-align: center;vertical-align: middle; width: 35%">';
-                html += '<div class="custom-control custom-checkbox">';
-                html += `<label class="custom-control-label" for="${prop}">Are these files in Kaltura?</label>`;
-                html += `&nbsp;&nbsp;<input type="checkbox" class="custom-control-input" id="${prop}" onclick="astoolsModule.set_is_kaltura('${prop}');">`;
-                html += '</div>';
-                html += '<a href="#" onclick="astoolsModule.make_digital_objects(\'' + prop + '\');" type="button" class="btn btn-sm btn-default run-qa"><i class="fa fa-cogs"></i> <span>Start</span></a>';
+                html += '<a href="#" onclick="astoolsModule.make_digital_objects(\'' + batch + '\');" type="button" class="btn btn-sm btn-default run-qa"><i class="fa fa-cogs"></i> <span>Start</span></a>';
                 html += '</td>';
                 html += '</tr>';
             }
-        }
 
-        domModule.html('#packages', html);
+            domModule.html('#packages', html);
+            const ks = await get_ks();
+            window.localStorage.setItem('ks', ks);
+
+            // TODO: check if items already have kaltura id
+            document.querySelector('#message').innerHTML = '';
+            document.querySelector('.x_panel').style.visibility = 'visible';
+
+        } catch (error) {
+            domModule.html('#message', '<div class="alert alert-info"><i class=""></i> ' + error.message + '</div>');
+        }
+    }
+
+    async function get_ks() {
+
+        try {
+
+            const api_key = helperModule.getParameterByName('api_key');
+            const response = await httpModule.req({
+                method: 'POST',
+                url: nginx_path + '/api/v1/kaltura/session?api_key=' + api_key,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.status === 200) {
+                return response.data.ks;
+            }
+
+        } catch (error) {
+            domModule.html('#message', '<div class="alert alert-info"><i class=""></i> ' + error.message + '</div>');
+        }
+    }
+
+    async function get_ks_metadata(identifier) {
+
+        try {
+
+            const ks = localStorage.getItem('ks');
+            // TODO: check if null
+            const response = await httpModule.req({
+                method: 'GET',
+                url: nginx_path + '/api/v1/kaltura/metadata?identifier=' + identifier + '&session=' + ks,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.status === 200) {
+
+                if (response.data.ks.objects.length === 0) {
+                    return {
+                        identifier: identifier,
+                        message: 'Kaltura id not found'
+                    };
+                }
+
+                const total_count = response.data.ks.objects[0].itemsData[0].totalCount;
+
+                if (total_count === 1) {
+                    return response.data.ks.objects[0].object.id;
+                } else {
+                    // TODO: handle multiple records
+                    console.log('test!')
+                }
+            }
+
+        } catch (error) {
+            domModule.html('#message', '<div class="alert alert-info"><i class=""></i> ' + error.message + '</div>');
+        }
+    }
+
+    async function extract_entry_ids(json) {
+
+        try {
+
+            const package_name = json.package;
+            const entry_ids = [];
+            let pairs = [];
+
+            if (json.files.length > 1) {
+
+                let files = json.files;
+                let timer = setInterval(async () => {
+
+                    if (files.length === 0) {
+
+                        clearInterval(timer);
+
+                        if (typeof entry_ids === 'object') {
+
+                            let message = '';
+
+                            for (let i=0; i<entry_ids.length; i++) {
+                                message += 'Kaltura entry ID not found for ' + entry_ids[i].identifier + '<br>';
+                            }
+
+                            domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + message + '</div>');
+
+                            return false;
+                        }
+
+                        return entry_ids;
+                    }
+
+                    let file_id_pair = {};
+                    let file = files.pop();
+                    let metadata = await get_ks_metadata(file);
+
+                    if (metadata.identifier !== undefined) {
+                        entry_ids.push(metadata);
+                    } else {
+                        entry_ids.push(metadata);
+                        file_id_pair.package = package_name;
+                        file_id_pair.file = file;
+                        file_id_pair.entry_id = entry_ids.toString();
+                        pairs.push(file_id_pair);
+                        file_id_pair = {};
+                    }
+
+                }, 1000);
+
+            } else if (json.files.length === 1) {
+
+                let file_id_pair = {};
+                let file = json.files.pop();
+                entry_ids.push(await get_ks_metadata(package_name));
+                file_id_pair.package = package_name;
+                file_id_pair.file = file;
+                file_id_pair.entry_id = entry_ids.toString();
+                pairs.push(file_id_pair);
+                return pairs;
+            }
+
+        } catch (error) {
+            domModule.html('#message', '<div class="alert alert-info"><i class=""></i> ' + error.message + '</div>');
+        }
     }
 
     obj.make_digital_objects = async function (folder) {
 
         try {
 
+            const batch_data = window.localStorage.getItem(folder);
+
+            if (batch_data === null || batch_data === undefined) {
+                domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> Unable to get batch data</div>');
+                return false;
+            }
+
+            const json = JSON.parse(batch_data);
             const api_key = helperModule.getParameterByName('api_key');
-            const username = document.querySelector('#username').value;
-            const password = document.querySelector('#password').value;
-            const is_kaltura = document.querySelector('#is_kaltura').value;
+            let is_kaltura = document.querySelector('#' + folder).checked;
+            let entry_ids;
 
             if (api_key === null) {
                 domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> Permission Denied</div>');
                 return false;
             }
 
-            if (username.length === 0 || password.length === 0) {
-                document.getElementById('aspace-message').innerHTML = '<div class="alert alert-danger"><i class="fa fa-exclamation"></i> Credentials are not set</div>';
+            if (is_kaltura === true) {
+
+                entry_ids = await extract_entry_ids(json);
+
+                if (entry_ids === undefined) {
+                    return false;
+                }
+
+            } else {
+                entry_ids = [];
+            }
+
+            if (is_kaltura === 'true' && entry_ids.length === 0) {
+                domModule.html('#message', '<div class="alert alert-info"><i class=""></i> Unable to get Kaltura entry ids</div>');
                 return false;
             }
 
             const data = {
-                'username': username,
-                'password': password,
                 'folder': folder,
+                // 'batch_data': json,
+                'entry_ids': entry_ids,
                 'is_kaltura': is_kaltura,
                 'is_test': 'false'
             };
@@ -120,59 +275,135 @@ const astoolsModule = (function () {
             });
 
             if (response.status === 200) {
+
                 domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Digital objects created for "${folder}" batch</div>`);
-                document.querySelector('#astools-response').style.visibility = 'visible';
-                document.querySelector('#astools-response').innerText = response.data.data;
+
+                setTimeout(async () => {
+                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Checking package updates for "${folder}" batch</div>`);
+                    await check_uri_txt(folder);
+                }, 3000)
+
+                // TODO: check kaltura ids if in audio/video
+                // document.querySelector('#astools-response').style.visibility = 'visible';
+                // document.querySelector('#astools-response').innerText = response.data.data;
             }
+
+        } catch (error) {
+            domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
+        }
+
+        return false;
+    };
+
+    async function check_uri_txt(folder) {
+
+        try {
+
+            const api_key = helperModule.getParameterByName('api_key');
+            domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Checking uri txt files for "${folder}" batch</div>`);
+            //  domModule.html('#message', '<div class="alert alert-info"><i class=""></i> Making digital objects...</div>');
+
+            const data = {
+                'batch': folder
+            };
+
+            const response = await httpModule.req({
+                method: 'POST',
+                url: nginx_path + '/api/v1/astools/check-uri-txt?api_key=' + api_key,
+                data: data,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                timeout: 600000
+            });
+
+            if (response.status === 200) {
+
+                if (response.data.data.errors.length > 0) {
+                    domModule.html('#message', `<div class="alert alert-danger"><i class=""></i> "${response.data.data.errors.toString()}"</div>`);
+                } else {
+                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ${folder} complete </div>`);
+                }
+
+                document.querySelector('#astools-response').style.visibility = 'visible';
+            }
+
+        } catch (error) {
+            domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
+        }
+    }
+
+    obj.set_is_kaltura = async function (id) {
+        /*
+        try {
+
+            if (document.querySelector('#is_kaltura').value === 'true') {
+                alert('Please make only one selection!');
+            } else {
+                document.querySelector('#is_kaltura').value = 'true';
+            }
+
+            return false;
 
         } catch (error) {
             domModule.html('#message', '<div class="alert alert-info"><i class=""></i> ' + error.message + '</div>');
         }
 
-        return false;
-    };
-
-    function save_credentials() {
-
-        const username = document.querySelector('#aspace-username').value;
-        const password = document.querySelector('#aspace-password').value;
-
-        if (username.length === 0 || password.length === 0) {
-            document.getElementById('aspace-message').innerHTML = '<div class="alert alert-danger"><i class="fa fa-exclamation"></i> Please enter your credentials</div>';
-        } else {
-            $('.aspace-login-modal').modal('hide');
-            document.getElementById('aspace-message').innerHTML = '';
-            document.querySelector('#username').value = username;
-            document.querySelector('#password').value = password;
-        }
-
-        return false;
-    }
-
-    obj.set_is_kaltura = async function (id) {
-
-        if (document.querySelector('#is_kaltura').value === 'true') {
-            alert('Please make only one selection!');
-        } else {
-            document.querySelector('#is_kaltura').value = 'true';
-        }
-
-        return false;
+         */
     };
 
     obj.init = async function () {
 
-        document.querySelector('#digital-object-workspace-button').addEventListener('click', function () {
-            save_credentials();
-        });
+        try {
 
-        await astoolsModule.display_workspace_packages();
-        $('.aspace-login-modal').modal({
-            backdrop: 'static',
-            keyboard: false
-        });
+            document.querySelector('#message').innerHTML = '<div class="alert alert-info"><i class=""></i> Loading...</div>';
+            await astoolsModule.display_workspace_packages();
+
+        } catch (error) {
+            domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
+        }
     };
 
     return obj;
 
 }());
+
+
+/*
+            document.querySelector('#digital-object-workspace-button').addEventListener('click', function () {
+                save_credentials();
+            });
+
+
+            $('.aspace-login-modal').modal({
+                backdrop: 'static',
+                keyboard: false
+            });
+
+             */
+
+/*
+    function save_credentials() {
+
+        try {
+
+            const username = document.querySelector('#aspace-username').value;
+            const password = document.querySelector('#aspace-password').value;
+
+            if (username.length === 0 || password.length === 0) {
+                document.getElementById('aspace-message').innerHTML = '<div class="alert alert-danger"><i class="fa fa-exclamation"></i> Please enter your credentials</div>';
+            } else {
+                $('.aspace-login-modal').modal('hide');
+                document.getElementById('aspace-message').innerHTML = '';
+                document.querySelector('#username').value = username;
+                document.querySelector('#password').value = password;
+            }
+
+            return false;
+
+        } catch (error) {
+            domModule.html('#message', '<div class="alert alert-info"><i class=""></i> ' + error.message + '</div>');
+        }
+    }
+
+     */

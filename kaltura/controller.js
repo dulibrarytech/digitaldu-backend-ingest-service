@@ -32,7 +32,6 @@ exports.get_ks_session = function (req, res) {
         }
 
         SERVICE.get_ks_session((session) => {
-            console.log('session: ', session)
             res.status(200).send({
                 ks: session
             });
@@ -47,20 +46,15 @@ exports.get_ks_metadata = function (req, res) {
 
     try {
 
-        // const api_key = req.query.api_key;
         const session = req.query.session;
-        const call_number = req.query.call_number;
+        const identifier = req.query.identifier;
 
-        /*
-        if (api_key === undefined) {
+        if (session === undefined || session.length === 0) {
             res.status(400).send('Bad request.');
             return false;
         }
 
-         */
-
-        SERVICE.get_ks_metadata(call_number, session,(metadata) => {
-            console.log('metadata: ', metadata)
+        SERVICE.get_ks_metadata(identifier, session, (metadata) => {
             res.status(200).send({
                 ks: metadata
             });
