@@ -318,10 +318,10 @@ const Ingest_service = class {
      * Checks uri txt files
      * @param batch
      */
+    /*
     async check_uri_txt(batch) {
 
         try {
-
 
             let uri_txts_checked = await QA_TASKS.check_uri_txt(batch);
 
@@ -349,6 +349,8 @@ const Ingest_service = class {
             return false;
         }
     }
+
+     */
 
     /**
      * Gets total batch size
@@ -423,9 +425,11 @@ const Ingest_service = class {
             return false;
         }
 
+        /*
         if (await this.check_uri_txt(batch) === false) {
             return false;
         }
+         */
 
         await this.process_package(batch);
     }
@@ -457,7 +461,6 @@ const Ingest_service = class {
                 console.log('Move packages to SFTP');
                 // console.log('QA complete - manually copy batch folder to SFTP here');
                 // return false;
-
 
                 let file_count = await INGEST_TASKS.get_file_count();
 
