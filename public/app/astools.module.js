@@ -116,7 +116,12 @@ const astoolsModule = (function () {
         try {
 
             const ks = localStorage.getItem('ks');
-            // TODO: check if null
+
+            if (ks === null) {
+                domModule.html('#message', '<div class="alert alert-info"><i class=""></i> Unable to get Kaltura session token.</div>');
+                return false;
+            }
+
             const response = await httpModule.req({
                 method: 'GET',
                 url: nginx_path + '/api/v1/kaltura/metadata?identifier=' + identifier + '&session=' + ks,
@@ -323,11 +328,28 @@ const astoolsModule = (function () {
                     domModule.html('#message', `<div class="alert alert-danger"><i class=""></i> "${response.data.data.errors.toString()}"</div>`);
                     return false;
                 } else {
+
                     domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ${folder} complete </div>`);
-                    // TODO: move batch to ready folder
+
+                    /*
+                    document.querySelector('.x_panel').style.visibility = 'visible';
+                    console.log(folder);
+                    let tmp = JSON.parse(window.localStorage.getItem(folder));
+                    console.log('test ', tmp.batch);
+
+                    if (folder === tmp.batch) {
+                        tmp.batch = folder + ' - complete';
+                        window.localStorage.setItem(folder, JSON.stringify(tmp));
+                    }
+
+                     */
+
+                    /* TODO: remove
                     setTimeout(async () => {
                         await move_to_ready(folder);
                     }, 1000)
+
+                     */
                 }
             }
 
@@ -336,6 +358,7 @@ const astoolsModule = (function () {
         }
     }
 
+    /*
     async function move_to_ready(folder) {
 
         try {
@@ -367,8 +390,8 @@ const astoolsModule = (function () {
                     domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ${folder} complete </div>`);
 
                     setTimeout(async () => {
-                        const api_key = helperModule.getParameterByName('api_key');
-                        window.location.href = '/ingester/dashboard/ingest?api_key=' + api_key;
+                        // const api_key = helperModule.getParameterByName('api_key');
+                        // window.location.href = '/ingester/dashboard/ingest?api_key=' + api_key;
                     }, 1000)
                 }
             }
@@ -377,6 +400,8 @@ const astoolsModule = (function () {
             domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
         }
     }
+
+     */
 
     obj.init = async function () {
 
