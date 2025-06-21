@@ -133,10 +133,13 @@ const astoolsModule = (function () {
             if (response.status === 200) {
 
                 if (response.data.ks.objects.length === 0) {
+                    // return '0_0';
+
                     return {
                         identifier: identifier,
-                        message: 'Kaltura id not found'
+                        message: '0_0'
                     };
+
                 }
 
                 const total_count = response.data.ks.objects[0].itemsData[0].totalCount;
@@ -181,6 +184,10 @@ const astoolsModule = (function () {
 
                             domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + message + '</div>');
 
+                            setTimeout(() => {
+                                document.querySelector('.x_panel').style.visibility = 'visible';
+                            }, 3000);
+
                             return false;
                         }
 
@@ -191,7 +198,7 @@ const astoolsModule = (function () {
                     let file = files.pop();
                     let metadata = await get_ks_metadata(file);
 
-                    if (metadata.identifier !== undefined) {
+                    if (metadata.message === '0_0') {
                         entry_ids.push(metadata);
                     } else {
                         entry_ids.push(metadata);
@@ -208,11 +215,27 @@ const astoolsModule = (function () {
 
                 let file_id_pair = {};
                 let file = json.files.pop();
-                entry_ids.push(await get_ks_metadata(package_name));
-                file_id_pair.package = package_name;
-                file_id_pair.file = file;
-                file_id_pair.entry_id = entry_ids.toString();
-                pairs.push(file_id_pair);
+                let metadata = await get_ks_metadata(package_name);
+                let message;
+
+                if (metadata.message === '0_0') {
+                    message = 'Kaltura entry ID not found for ' + metadata.identifier;
+                    domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + message + '</div>');
+                    setTimeout(() => {
+                        document.querySelector('.x_panel').style.visibility = 'visible';
+                    }, 3000);
+                    return false;
+                } else {
+                    entry_ids.push(await get_ks_metadata(package_name));
+                    file_id_pair.package = package_name;
+                    file_id_pair.file = file;
+                    file_id_pair.entry_id = entry_ids.toString();
+                    pairs.push(file_id_pair);
+                }
+
+                // return false;
+                // entry_ids.push(await get_ks_metadata(package_name));
+
                 return pairs;
             }
 
@@ -259,7 +282,8 @@ const astoolsModule = (function () {
                 domModule.html('#message', '<div class="alert alert-info"><i class=""></i> Unable to get Kaltura entry ids</div>');
                 return false;
             }
-
+            console.log(entry_ids);
+            return false;
             const data = {
                 'folder': folder,
                 // 'batch_data': json,
