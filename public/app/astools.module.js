@@ -233,9 +233,6 @@ const astoolsModule = (function () {
                     pairs.push(file_id_pair);
                 }
 
-                // return false;
-                // entry_ids.push(await get_ks_metadata(package_name));
-
                 return pairs;
             }
 
@@ -282,8 +279,7 @@ const astoolsModule = (function () {
                 domModule.html('#message', '<div class="alert alert-info"><i class=""></i> Unable to get Kaltura entry ids</div>');
                 return false;
             }
-            console.log(entry_ids);
-            return false;
+
             const data = {
                 'folder': folder,
                 // 'batch_data': json,
