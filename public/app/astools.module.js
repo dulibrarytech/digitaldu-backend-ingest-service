@@ -67,11 +67,11 @@ const astoolsModule = (function () {
                 html += '<td style="text-align: left;vertical-align: middle; width: 20%">';
 
                 if (is_kaltura === true) {
-                    html += '<small>Kaltura Item</small>';
-                    html += `<input type="checkbox" class="custom-control-input" id="${batch}" checked>`;
+                    html += '<small>Kaltura Items</small>';
+                    html += `<input type="hidden" id="${batch}" value="true">`;
                 } else {
-                    html += '<small>Non Kaltura Item</small>';
-                    html += `<input type="checkbox" class="custom-control-input" id="${batch}">`;
+                    html += '<small>Non Kaltura Items</small>';
+                    html += `<input type="hidden" id="${batch}" value="false">`;
                 }
 
                 // html += '<div class="custom-control custom-checkbox">';
@@ -165,7 +165,7 @@ const astoolsModule = (function () {
 
             const json = JSON.parse(batch_data);
             const api_key = helperModule.getParameterByName('api_key');
-            let is_kaltura = document.querySelector('#' + folder).checked;
+            let is_kaltura = document.querySelector('#' + folder).value;
             let files;
 
             if (api_key === null) {
@@ -173,7 +173,7 @@ const astoolsModule = (function () {
                 return false;
             }
 
-            if (is_kaltura === true) {
+            if (is_kaltura === 'true') {
 
                 domModule.html('#message', '<div class="alert alert-info"><i class=""></i> (' + folder + ') Retrieving Entry IDs from Kaltura...</div>');
 
