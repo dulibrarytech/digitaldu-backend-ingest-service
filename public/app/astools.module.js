@@ -55,6 +55,7 @@ const astoolsModule = (function () {
             for (let i = 0; i < records.data.length; i++) {
 
                 let batch = records.data[i].result.batch;
+                let is_kaltura = records.data[i].result.is_kaltura;
                 window.localStorage.setItem(batch, JSON.stringify(records.data[i].result));
 
                 html += '<tr>';
@@ -64,10 +65,20 @@ const astoolsModule = (function () {
                 html += '</td>';
                 // type
                 html += '<td style="text-align: left;vertical-align: middle; width: 20%">';
-                html += '<div class="custom-control custom-checkbox">';
-                html += `<label class="custom-control-label" for="${batch}">Are these files in Kaltura?</label>`;
-                html += `&nbsp;&nbsp;<input type="checkbox" class="custom-control-input" id="${batch}">`; // onclick="astoolsModule.set_is_kaltura('${batch}');"
-                html += '</div>';
+
+                if (is_kaltura === true) {
+                    html += '<small>Kaltura Item</small>';
+                    html += `<input type="checkbox" class="custom-control-input" id="${batch}" checked>`;
+                } else {
+                    html += '<small>Non Kaltura Item</small>';
+                    html += `<input type="checkbox" class="custom-control-input" id="${batch}">`;
+                }
+
+                // html += '<div class="custom-control custom-checkbox">';
+                // html += `<label class="custom-control-label" for="${batch}">Are these files in Kaltura?</label>`;
+                // html += `&nbsp;&nbsp;<input type="checkbox" class="custom-control-input" id="${batch}">`; // onclick="astoolsModule.set_is_kaltura('${batch}');"
+                // html += '</div>';
+
                 html += '</td>';
                 // actions
                 html += '<td style="text-align: center;vertical-align: middle; width: 35%">';
@@ -266,14 +277,7 @@ const astoolsModule = (function () {
                     domModule.html('#message', `<div class="alert alert-danger"><i class=""></i> "${response.data.data.errors.toString()}"</div>`);
                     return false;
                 } else {
-
                     domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ${folder} complete - Please proceed to Metadata QA page</div>`);
-
-                    /* TODO: Check metadata fields here?
-                    setTimeout(async () => {
-                        await move_to_ready(folder);
-                    }, 1000)
-                     */
                 }
             }
 

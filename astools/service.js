@@ -23,7 +23,6 @@ const CONFIG = require('../config/webservices_config')();
 const ARCHIVESSPACE_CONFIG = require('../config/archivesspace_config')();
 const ARCHIVESSPACE = require('../libs/archivesspace');
 const LOGGER = require('../libs/log4');
-// const {metadata} = require("kaltura-client/KalturaServices");
 
 exports.get_workspace_packages = function (callback) {
 
@@ -62,8 +61,64 @@ exports.get_workspace_packages = function (callback) {
 
                         const package_name = packages.pop();
 
-                        get_package_files(package_name, (result) => {
-                            package_files.push(result);
+                        get_package_files(package_name, (response) => {
+
+                            if (response.errors.length > 0) {
+                                package_files.push(response);
+                                return false;
+                            }
+
+                            let checked_files = response.result.files.map((file) => {
+
+                                let is_kaltura = [];
+
+                                if (file.indexOf('wav') !== -1) {
+                                    is_kaltura.push(true);
+                                }
+
+                                if (file.indexOf('mp3') !== -1) {
+                                    is_kaltura.push(true);
+                                }
+
+                                if (file.indexOf('mp4') !== -1) {
+                                    is_kaltura.push(true);
+                                }
+
+                                if (file.indexOf('mp4') !== -1) {
+                                    is_kaltura.push(true);
+                                }
+
+                                if (file.indexOf('mov') !== -1) {
+                                    is_kaltura.push(true);
+                                }
+
+                                if (file.indexOf('mkv') !== -1) {
+                                    is_kaltura.push(true);
+                                }
+
+                                if (file.indexOf('avi') !== -1) {
+                                    is_kaltura.push(true);
+                                }
+
+                                if (file.indexOf('m4v') !== -1) {
+                                    is_kaltura.push(true);
+                                }
+
+                                if (is_kaltura.length > 0) {
+                                    is_kaltura = true;
+                                } else {
+                                    is_kaltura = false;
+                                }
+                                return is_kaltura;
+                            });
+
+                            if (checked_files.indexOf(true) !== -1) {
+                                response.result.is_kaltura = true;
+                            } else if (checked_files.indexOf(false) !== -1) {
+                                response.result.is_kaltura = false;
+                            }
+
+                            package_files.push(response);
                         });
 
                     }, 1000);
