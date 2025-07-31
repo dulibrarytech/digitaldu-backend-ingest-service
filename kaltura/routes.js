@@ -28,5 +28,5 @@ module.exports = async function (app) {
         .post(TOKEN.verify, CONTROLLER.get_ks_session);
 
     app.route(`${APP_CONFIG.app_path}/api/v1/kaltura/metadata`)
-        .get(CONTROLLER.get_ks_metadata); // TOKEN.verify,
+        .post(CONTROLLER.get_ks_metadata); // TOKEN.verify,
 };

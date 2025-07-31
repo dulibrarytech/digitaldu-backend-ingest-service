@@ -511,8 +511,9 @@ const Ingest_service_tasks = class {
             LOGGER.module().error('ERROR: [/ingester/ingest_service_tasks (get_uri)] unable to get uri ' + error.message);
         }
     }
+    /////////////////////////////////////////////
 
-    /**
+    /** TODO: disabled
      * Gets record transcript if one is available
      * @param data
      */

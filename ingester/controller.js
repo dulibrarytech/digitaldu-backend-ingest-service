@@ -245,6 +245,16 @@ const Ingest_controller = class {
             app_path: CONFIG.app_path
         });
     };
+
+    get_dashboard_metadata_view(req, res) {
+        res.render('dashboard-metadata', {
+            host: CONFIG.host,
+            appname: CONFIG.app_name,
+            appversion: CONFIG.app_version,
+            organization: CONFIG.organization,
+            app_path: CONFIG.app_path
+        });
+    };
 }
 
 module.exports = Ingest_controller;

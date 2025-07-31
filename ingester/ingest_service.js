@@ -318,7 +318,7 @@ const Ingest_service = class {
      * Checks uri txt files
      * @param batch
      */
-    /*
+    /* TODO: moved to astools module
     async check_uri_txt(batch) {
 
         try {
@@ -425,7 +425,7 @@ const Ingest_service = class {
             return false;
         }
 
-        /*
+        /* TODO: moved to astools
         if (await this.check_uri_txt(batch) === false) {
             return false;
         }

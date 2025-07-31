@@ -242,8 +242,6 @@ const ingestModule = (function () {
             return false;
         }
 
-        console.log(Object.keys(packages.result).length);
-
         if (packages.errors.length > 0) {
             html = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; The collection folder contains errors.</strong></div>';
 

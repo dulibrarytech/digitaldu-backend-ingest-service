@@ -47,22 +47,34 @@ exports.get_ks_session = function (callback) {
 
 exports.get_ks_metadata = function (identifier, session, callback) {
 
-    client.setKs(session);
-    const searchParams = new kaltura.objects.ESearchEntryParams();
-    searchParams.orderBy = new kaltura.objects.ESearchOrderBy();
-    searchParams.searchOperator = new kaltura.objects.ESearchEntryOperator();
-    searchParams.searchOperator.searchItems = [];
-    searchParams.searchOperator.searchItems[0] = new kaltura.objects.ESearchUnifiedItem();
-    searchParams.searchOperator.searchItems[0].itemType = kaltura.enums.ESearchItemType.EXACT_MATCH;
-    searchParams.searchOperator.searchItems[0].searchTerm = identifier;
-    searchParams.aggregations = new kaltura.objects.ESearchAggregation();
-    const pager = new kaltura.objects.Pager();
+    try {
 
-    kaltura.services.eSearch.searchEntry(searchParams, pager)
-        .execute(client)
-        .then(result => {
-            callback(result);
-        }).catch(error => {
+        client.setKs(session);
+        const searchParams = new kaltura.objects.ESearchEntryParams();
+        searchParams.orderBy = new kaltura.objects.ESearchOrderBy();
+        searchParams.searchOperator = new kaltura.objects.ESearchEntryOperator();
+        searchParams.searchOperator.searchItems = [];
+        searchParams.searchOperator.searchItems[0] = new kaltura.objects.ESearchUnifiedItem();
+        searchParams.searchOperator.searchItems[0].itemType = kaltura.enums.ESearchItemType.EXACT_MATCH;
+        // searchParams.searchOperator.searchItems[0].fieldName = kaltura.enums.ESearchEntryFieldName.NAME;
+        searchParams.searchOperator.searchItems[0].searchTerm = identifier;
+        searchParams.aggregations = new kaltura.objects.ESearchAggregation();
+        const pager = new kaltura.objects.Pager();
+
+        kaltura.services.eSearch.searchEntry(searchParams, pager)
+            .execute(client)
+            .then(result => {
+                callback(result);
+            }).catch(error => {
             callback(error);
-    });
+        });
+
+    } catch (error) {
+        callback(error);
+    }
+};
+
+exports.process_metadata = function (metadata, callback) {
+    console.log(metadata);
+    callback(metadata);
 };

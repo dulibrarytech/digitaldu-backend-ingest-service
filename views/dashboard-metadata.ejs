@@ -1,0 +1,91 @@
+<%- include('partials/header.ejs'); %>
+<body class="nav-md">
+<div class="container body">
+    <div class="main_container">
+        <div class="col-md-3 left_col">
+            <div class="left_col scroll-view">
+                <div class="navbar nav_title" style="border: 0;">
+                    <%- include('partials/app-name.ejs'); %>
+                </div>
+                <div class="clearfix"></div>
+                <%- include('partials/menu-profile.ejs'); %>
+                <br>
+                <%- include('partials/nav.ejs'); %>
+                <%- include('partials/sidebar-footer.ejs'); %>
+            </div>
+        </div>
+        <%- include('partials/top-nav.ejs'); %>
+        <div class="right_col" role="main">
+            <div class="">
+                <div class="page-title">
+                    <div class="title_left">
+                        <h3 id="collection-type"></h3>
+                    </div>
+                    <div class="title_right"></div>
+                </div>
+                <div class="clearfix"></div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="message"></div>
+                        <div class="x_panel" style="visibility: hidden;">
+                            <div class="x_title">
+                                <h2>Metadata QA</h2>
+                                <ul class="nav navbar-right"></ul>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="x_content">
+                                <div id="astools-response" style="background-color: #000000;color: #FFFFFF;padding: 5px;visibility: hidden"></div>
+                                <h4>Metadata QA Workspace</h4><br>
+                                <h5 id="batch"></h5>
+                                <table id="digital-object-workspace-table"
+                                       class="table table-striped table-bordered bulk_action" style="visibility: hidden;">
+                                    <thead>
+                                    <tr>
+                                        <th>Batch</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="packages"></tbody>
+                                </table>
+                                <table id="metadata-workspace-table"
+                                       class="table table-striped table-bordered bulk_action" style="visibility: hidden;">
+                                    <thead>
+                                    <tr>
+                                        <th>Package</th>
+                                        <th>Title</th>
+                                        <th>URI</th>
+                                        <th>Result</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="metadata-results">
+                                        <tr>
+                                            <td>-----</td>
+                                            <td>-----</td>
+                                            <td>-----</td>
+                                            <td>-----</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/repo/static/libs/jquery/dist/jquery.min.js"></script>
+    <script src="/repo/static/libs/bootstrap-4.6.2/js/bootstrap.bundle.js"></script>
+    <script src="/repo/static/libs/nprogress/nprogress.js"></script>
+    <script src="/repo/static/libs/dompurify/purify.min.js"></script>
+    <script src="/repo/static/libs/axios-2.x/dist/axios.min.js"></script>
+    <script src="/repo/static/assets/js/theme_sidebar.js"></script>
+    <script src="/repo/static/app/dom.module.js"></script>
+    <script src="/ingester/static/app/helper.module.js"></script>
+    <script src="/ingester/static/app/http.module.js"></script>
+    <script src="/ingester/static/app/metadata.module.js"></script>
+    <script>
+        metadataModule.init();
+    </script>
+</body>
+</html>

@@ -223,10 +223,11 @@ const QA_service_tasks = class {
         }
     }
 
-    /**
+    /** TODO: moved to astools
      * Checks uri.txt in QA service
      * @param folder_name
      */
+    /*
     async check_uri_txt(folder_name) {
 
         try {
@@ -247,6 +248,8 @@ const QA_service_tasks = class {
             return false;
         }
     }
+
+     */
 
     /**
      * Moves packages to ingest folder in QA service

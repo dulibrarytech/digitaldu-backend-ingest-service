@@ -67,4 +67,7 @@ module.exports = async function (app) {
 
     app.route(`${APP_CONFIG.app_path}/dashboard/workspace`)
         .get(CONTROLLER.get_dashboard_workspace_view); // TOKEN.verify,
+
+    app.route(`${APP_CONFIG.app_path}/dashboard/metadata`)
+        .get(CONTROLLER.get_dashboard_metadata_view); // TOKEN.verify,
 };

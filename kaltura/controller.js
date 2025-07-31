@@ -47,20 +47,88 @@ exports.get_ks_metadata = function (req, res) {
     try {
 
         const session = req.query.session;
-        const identifier = req.query.identifier;
+        const data = req.body
 
         if (session === undefined || session.length === 0) {
             res.status(400).send('Bad request.');
             return false;
         }
 
-        SERVICE.get_ks_metadata(identifier, session, (metadata) => {
-            res.status(200).send({
-                ks: metadata
-            });
-        });
+       process_metadata(data, session, (data) => {
+
+           if (data.length === 0) {
+
+               res.status(404).send({
+                   data: data
+               });
+
+               return false;
+           }
+
+           res.status(200).send({
+               data: data
+           });
+       });
+
+        return false;
 
     } catch (error) {
         res.status(500).send({message: `Unable to get metadata. ${error.message}`});
     }
 };
+
+function process_metadata(data, session, callback) {
+
+    let pairs = [];
+    let files = data.files;
+
+    let timer = setInterval(() => {
+
+        if (files.length === 0) {
+            clearInterval(timer);
+            data.files = pairs;
+            console.log('complete');
+            callback(data);
+            return false;
+        }
+
+        let file = files.pop();
+
+        SERVICE.get_ks_metadata(file, session, (metadata) => {
+
+            if (metadata.totalCount > 1) {
+
+                let entry_ids = [];
+
+                for (let i = 0; i < metadata.objects.length; i++) {
+                    entry_ids.push(metadata.objects[i].object.id);
+                }
+
+                pairs.push({
+                    file: file,
+                    entry_id: entry_ids,
+                    message: '- file has more than 1 Entry ID - Please check Kaltura record(s)'
+                });
+
+            } else if (metadata.totalCount === 1) {
+
+                pairs.push({
+                    file: file,
+                    entry_id: metadata.objects[0].object.id,
+                    message: 'success'
+                });
+
+            } else if (metadata.totalCount === 0) {
+
+                pairs.push({
+                    file: file,
+                    entry_id: [],
+                    message: 'Entry ID not found for this file - Please check Kaltura record'
+                });
+            }
+
+            return false;
+        });
+
+    }, 1000);
+}
