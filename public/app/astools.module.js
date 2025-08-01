@@ -56,6 +56,13 @@ const astoolsModule = (function () {
 
                 let batch = records.data[i].result.batch;
                 let is_kaltura = records.data[i].result.is_kaltura;
+
+
+                if (batch.indexOf('new_') === -1 || batch.indexOf('-resources_') === -1) {
+                    console.log('Removing ', batch);
+                    continue;
+                }
+
                 window.localStorage.setItem(batch, JSON.stringify(records.data[i].result));
 
                 html += '<tr>';
