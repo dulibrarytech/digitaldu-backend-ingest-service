@@ -56,7 +56,15 @@ const metadataModule = (function () {
             for (let i = 0; i < records.data.length; i++) {
 
                 let batch = records.data[i].result.batch;
+
+                if (batch.indexOf('new_') === -1 || batch.indexOf('-resources_') === -1) {
+                    console.log('Removing ', batch);
+                    continue;
+                }
+
                 window.localStorage.setItem(batch, JSON.stringify(records.data[i].result));
+
+
 
                 html += '<tr>';
                 // workspace folder name
@@ -153,6 +161,7 @@ const metadataModule = (function () {
                 }
 
                 let ingest_package = packages.pop();
+
                 await check_metadata(batch, ingest_package);
 
             }, 5000);
