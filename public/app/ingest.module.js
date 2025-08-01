@@ -258,6 +258,11 @@ const ingestModule = (function () {
 
         for (let prop in packages.result) {
 
+            if (prop.indexOf('new_') === -1 || prop.indexOf('-resources_') === -1) {
+                console.log('Removing ', prop);
+                continue;
+            }
+
             html += '<tr>';
             // collection folder name
             html += '<td style="text-align: left;vertical-align: middle; width: 55%">';
