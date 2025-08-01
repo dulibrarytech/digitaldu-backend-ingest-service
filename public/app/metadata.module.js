@@ -147,7 +147,8 @@ const metadataModule = (function () {
 
                 if (packages.length === 0) {
                     clearInterval(timer);
-                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Metadata checks complete - Please proceed to Ingest Packages</div>`);
+                    // TODO: override message if no file is found // - Please proceed to Ingest Packages
+                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Metadata checks complete </div>`);
                     return false;
                 }
 
@@ -185,7 +186,6 @@ const metadataModule = (function () {
 
             if (response.status === 200) {
 
-                console.log(document.querySelector('#metadata-workspace-table'));
                 document.querySelector('#metadata-workspace-table').style.visibility = 'visible';
                 const data = response.data.data;
                 const key = batch + '_m';
@@ -201,7 +201,7 @@ const metadataModule = (function () {
                 let html = '';
                 html += await create_table(records);
 
-                domModule.html('#metadata-results', html);
+                document.querySelector('#metadata-results').innerHTML = html;
                 document.querySelector('#batch').innerHTML = batch;
             }
 
@@ -223,13 +223,13 @@ const metadataModule = (function () {
             if (data.title !== undefined && data.title.length > 0) {
                 record.title = data.title;
             } else {
-                record.title = '-----';
+                // record.title = '-----';
             }
 
             if (data.uri !== undefined && data.uri.length > 0) {
                 record.uri = data.uri;
             } else {
-                record.uri = '-----';
+                // record.uri = '-----';
             }
 
             if (data.errors !== undefined && data.errors.length > 0) {
@@ -292,43 +292,48 @@ const metadataModule = (function () {
 
                 html += '<tr>';
                 // package
-                html += '<td style="text-align: left;vertical-align: middle; width: 25%">';
+                html += '<td style="text-align: left;vertical-align: middle;">';
                 html += '<small>' + records[i].ingest_package + '</small>';
                 html += '</td>';
 
                 // title
+                html += '<td style="text-align: left;vertical-align: middle;">';
+
                 if (records[i].title !== undefined && records[i].title.length > 0) {
-                    html += '<td style="text-align: left;vertical-align: middle; width: 35%">';
                     html += '<small>' + records[i].title + '</small>';
-                    html += '</td>';
                 } else {
-                    html += '<td style="text-align: left;vertical-align: middle; width: 10%">';
                     html += '<small>-----</small>';
-                    html += '</td>';
                 }
+
+                html += '</td>';
 
                 // uri
+                html += '<td style="text-align: center;vertical-align: middle;">';
+
                 if (records[i].uri !== undefined && records[i].uri.length > 0) {
-                    html += '<td style="text-align: center;vertical-align: middle; width: 35%">';
                     html += '<small>' + records[i].uri + '</small>';
-                    html += '</td>';
                 } else {
-                    html += '<td style="text-align: center;vertical-align: middle; width: 10%">';
                     html += '<small>-----</small>';
-                    html += '</td>';
                 }
+
+                html += '</td>';
 
                 // status
+                html += '<td style="text-align: center;vertical-align: middle;">';
+
                 if (records[i].errors !== false) {
-                    html += '<td style="text-align: center;vertical-align: middle; width: 50%">';
-                    html += '<small><i class="fa fa-exclamation-circle"></i> ' + records[i].errors.toString() + '</small>';
-                    html += '</td>';
+                    let message = '';
+                    if (records[i].errors.toString().indexOf('Record not found.') !== -1) {
+                        message = 'Please check if record is cataloged in ArchivesSpace and/or the package has a uri.txt file.';
+                    }
+
+                    html += '<small><i class="fa fa-exclamation-circle"></i> ' + records[i].errors.toString() + ' ' + message +'</small>';
+
                 } else {
-                    html += '<td style="text-align: center;vertical-align: middle; width: 10%">';
                     html += '<small><i class="fa fa-check"></i></small>';
-                    html += '</td>';
                 }
 
+                html += '</td>';
                 html += '</tr>';
             }
 
