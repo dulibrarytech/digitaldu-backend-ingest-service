@@ -176,6 +176,7 @@ const astoolsModule = (function () {
                 return false;
             }
 
+            // TODO
             if (is_kaltura === 'true') {
 
                 domModule.html('#message', '<div class="alert alert-info"><i class=""></i> (' + folder + ') Retrieving Entry IDs from Kaltura...</div>');
@@ -214,9 +215,8 @@ const astoolsModule = (function () {
                 files = result.files;
 
             } else {
-
+                // TODO
                 for (let i=0; i < json.packages.length; i++) {
-                    // packages.push(json.packages[i].package);
                     files.push(json.packages[i].files);
                 }
             }

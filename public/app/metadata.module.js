@@ -23,6 +23,7 @@ const metadataModule = (function () {
     let obj = {};
     const nginx_path = '/ingester';
 
+    // TODO change function name
     obj.get_workspace_batches = async function () {
 
         try {
@@ -30,7 +31,7 @@ const metadataModule = (function () {
             const api_key = helperModule.getParameterByName('api_key');
             const response = await httpModule.req({
                 method: 'GET',
-                url: nginx_path + '/api/v1/astools/workspace?api_key=' + api_key,
+                url: nginx_path + '/api/v1/astools/processed?api_key=' + api_key,
                 headers: {
                     'Content-Type': 'application/json'
                 }

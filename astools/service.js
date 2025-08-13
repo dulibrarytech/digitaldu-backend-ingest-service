@@ -24,6 +24,106 @@ const ARCHIVESSPACE_CONFIG = require('../config/archivesspace_config')();
 const ARCHIVESSPACE = require('../libs/archivesspace');
 const LOGGER = require('../libs/log4');
 
+// TODO:
+exports.get_processed_packages = function (callback) {
+
+    (async function () {
+
+        try {
+
+            const ASTOOLS_URL = CONFIG.astools_service + 'processed?api_key=' + CONFIG.astools_service_api_key;
+            const response = await HTTP.get(ASTOOLS_URL, {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.status === 200) {
+
+                let batches = [];
+                let package_files = [];
+
+                if (response.data.errors.length > 0) {
+                    callback(response.data);
+                } else {
+
+                    for (let i = 0; i < response.data.result.length; i++) {
+                        batches.push(response.data.result[i]);
+                    }
+
+                    let timer = setInterval(() => {
+
+                        if (batches.length === 0) {
+                            clearInterval(timer);
+                            console.log('complete');
+                            callback(package_files);
+                            return false;
+                        }
+
+                        const package_name = batches.pop();
+
+                        get_package_files(package_name, (response) => {
+
+                            if (response.errors.length > 0) {
+                                package_files.push(response);
+                                return false;
+                            }
+
+                            let is_kaltura = [];
+
+                            for (let i = 0; i < response.result.packages.length; i++) {
+
+                                let files = response.result.packages[i].files;
+
+                                if (files.toString().indexOf('.wav') !== -1) {
+                                    is_kaltura.push(true);
+                                }
+
+                                if (files.toString().indexOf('.mp3') !== -1) {
+                                    is_kaltura.push(true);
+                                }
+
+                                if (files.toString().indexOf('.mp4') !== -1) {
+                                    is_kaltura.push(true);
+                                }
+
+                                if (files.toString().indexOf('.mov') !== -1) {
+                                    is_kaltura.push(true);
+                                }
+
+                                if (files.toString().indexOf('.mkv') !== -1) {
+                                    is_kaltura.push(true);
+                                }
+
+                                if (files.toString().indexOf('.avi') !== -1) {
+                                    is_kaltura.push(true);
+                                }
+
+                                if (files.toString().indexOf('.m4v') !== -1) {
+                                    is_kaltura.push(true);
+                                }
+                            }
+
+                            if (is_kaltura.length > 0) {
+                                response.result.is_kaltura = true;
+                            } else {
+                                response.result.is_kaltura = false;
+                            }
+
+                            package_files.push(response);
+                        });
+
+                    }, 500);
+                }
+            }
+
+        } catch (error) {
+            console.error(error);
+        }
+
+    })();
+};
+
 exports.get_workspace_packages = function (callback) {
 
     (async function () {
