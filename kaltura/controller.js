@@ -54,21 +54,21 @@ exports.get_ks_metadata = function (req, res) {
             return false;
         }
 
-       process_metadata(data, session, (data) => {
+        process_metadata(data, session, (data) => {
 
-           if (data.length === 0) {
+            if (data.length === 0) {
 
-               res.status(404).send({
-                   data: data
-               });
+                res.status(404).send({
+                    data: data
+                });
 
-               return false;
-           }
+                return false;
+            }
 
-           res.status(200).send({
-               data: data
-           });
-       });
+            res.status(200).send({
+                data: data
+            });
+        });
 
         return false;
 
@@ -80,7 +80,7 @@ exports.get_ks_metadata = function (req, res) {
 function process_metadata(data, session, callback) {
 
     let pairs = [];
-    let files = data.files;
+    let files = data.packages[0].files;
 
     let timer = setInterval(() => {
 
