@@ -168,7 +168,8 @@ const astoolsModule = (function () {
             const json = JSON.parse(batch_data);
             const api_key = helperModule.getParameterByName('api_key');
             let is_kaltura = document.querySelector('#' + folder).value;
-            let files;
+            let packages = [];
+            let files = [];
 
             if (api_key === null) {
                 domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> Permission Denied</div>');
@@ -213,19 +214,22 @@ const astoolsModule = (function () {
                 files = result.files;
 
             } else {
-                console.log(json);
-                files = json.files;
+
+                for (let i=0; i < json.packages.length; i++) {
+                    // packages.push(json.packages[i].package);
+                    files.push(json.packages[i].files);
+                }
             }
 
             const data = {
                 'folder': folder,
-                'package': json.package,
+                'packages': json.packages,
                 'files': files,
                 'is_kaltura': is_kaltura
             };
-            console.log(data);
+
             domModule.html('#message', '<div class="alert alert-info"><i class=""></i> Making digital objects...</div>');
-            return false;
+
             const response = await httpModule.req({
                 method: 'POST',
                 url: nginx_path + '/api/v1/astools/make-digital-objects?api_key=' + api_key,

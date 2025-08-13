@@ -155,8 +155,7 @@ exports.make_digital_objects = function (args, callback) {
     (async function () {
 
         try {
-            console.log(args);
-            return false;
+
             const ASTOOLS_URL = CONFIG.astools_service + 'make-digital-objects?api_key=' + CONFIG.astools_service_api_key;
             const response = await HTTP.post(ASTOOLS_URL, {
                 headers: {

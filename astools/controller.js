@@ -46,7 +46,7 @@ exports.make_digital_objects = function (req, res) {
 
         const args = {
             folder: req.body.folder,
-            batch_data: req.body.batch_data,
+            packages: req.body.packages,
             files: req.body.files,
             is_kaltura: req.body.is_kaltura
         }
