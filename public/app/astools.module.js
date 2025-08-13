@@ -50,6 +50,7 @@ const astoolsModule = (function () {
         try {
 
             const records = await astoolsModule.get_workspace_packages();
+            console.log(records.data);
             let html = '';
 
             for (let i = 0; i < records.data.length; i++) {
@@ -79,11 +80,6 @@ const astoolsModule = (function () {
                     html += '<small>Non Kaltura Items</small>';
                     html += `<input type="hidden" id="${batch}" value="false">`;
                 }
-
-                // html += '<div class="custom-control custom-checkbox">';
-                // html += `<label class="custom-control-label" for="${batch}">Are these files in Kaltura?</label>`;
-                // html += `&nbsp;&nbsp;<input type="checkbox" class="custom-control-input" id="${batch}">`; // onclick="astoolsModule.set_is_kaltura('${batch}');"
-                // html += '</div>';
 
                 html += '</td>';
                 // actions
@@ -223,12 +219,13 @@ const astoolsModule = (function () {
 
             const data = {
                 'folder': folder,
+                'package': json.package,
                 'files': files,
                 'is_kaltura': is_kaltura
             };
-
+            console.log(data);
             domModule.html('#message', '<div class="alert alert-info"><i class=""></i> Making digital objects...</div>');
-
+            return false;
             const response = await httpModule.req({
                 method: 'POST',
                 url: nginx_path + '/api/v1/astools/make-digital-objects?api_key=' + api_key,

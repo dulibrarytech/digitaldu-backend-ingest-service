@@ -49,7 +49,6 @@ exports.make_digital_objects = function (req, res) {
             batch_data: req.body.batch_data,
             files: req.body.files,
             is_kaltura: req.body.is_kaltura
-            // is_test: req.body.is_test
         }
 
         SERVICE.make_digital_objects(args, (response) => {

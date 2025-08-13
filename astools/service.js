@@ -39,27 +39,27 @@ exports.get_workspace_packages = function (callback) {
 
             if (response.status === 200) {
 
-                let packages = [];
+                let batches = [];
                 let package_files = [];
 
                 if (response.data.errors.length > 0) {
                     callback(response.data);
                 } else {
 
-                    for (let package_name in response.data.result) {
-                        packages.push(package_name);
+                    for (let i = 0; i < response.data.result.length; i++) {
+                        batches.push(response.data.result[i]);
                     }
 
                     let timer = setInterval(() => {
 
-                        if (packages.length === 0) {
+                        if (batches.length === 0) {
                             clearInterval(timer);
                             console.log('complete');
                             callback(package_files);
                             return false;
                         }
 
-                        const package_name = packages.pop();
+                        const package_name = batches.pop();
 
                         get_package_files(package_name, (response) => {
 
@@ -68,60 +68,58 @@ exports.get_workspace_packages = function (callback) {
                                 return false;
                             }
 
-                            let checked_files = response.result.files.map((file) => {
+                            let is_kaltura = [];
 
-                                let is_kaltura = [];
+                            for (let i = 0; i < response.result.packages.length; i++) {
 
-                                if (file.indexOf('wav') !== -1) {
+                                let files = response.result.packages[i].files;
+
+                                if (files.toString().indexOf('.wav') !== -1) {
+                                    console.log('files wav ', files);
                                     is_kaltura.push(true);
                                 }
 
-                                if (file.indexOf('mp3') !== -1) {
+                                if (files.toString().indexOf('.mp3') !== -1) {
+                                    console.log('files mp3 ', files);
                                     is_kaltura.push(true);
                                 }
 
-                                if (file.indexOf('mp4') !== -1) {
+                                if (files.toString().indexOf('.mp4') !== -1) {
+                                    console.log('files mp4 ', files);
                                     is_kaltura.push(true);
                                 }
 
-                                if (file.indexOf('mp4') !== -1) {
+                                if (files.toString().indexOf('.mov') !== -1) {
+                                    console.log('files mov ', files);
                                     is_kaltura.push(true);
                                 }
 
-                                if (file.indexOf('mov') !== -1) {
+                                if (files.toString().indexOf('.mkv') !== -1) {
+                                    console.log('files mkv ', files);
                                     is_kaltura.push(true);
                                 }
 
-                                if (file.indexOf('mkv') !== -1) {
+                                if (files.toString().indexOf('.avi') !== -1) {
+                                    console.log('files avi ', files);
                                     is_kaltura.push(true);
                                 }
 
-                                if (file.indexOf('avi') !== -1) {
+                                if (files.toString().indexOf('.m4v') !== -1) {
+                                    console.log('files m4v ', files);
                                     is_kaltura.push(true);
                                 }
+                            }
 
-                                if (file.indexOf('m4v') !== -1) {
-                                    is_kaltura.push(true);
-                                }
-
-                                if (is_kaltura.length > 0) {
-                                    is_kaltura = true;
-                                } else {
-                                    is_kaltura = false;
-                                }
-                                return is_kaltura;
-                            });
-
-                            if (checked_files.indexOf(true) !== -1) {
+                            if (is_kaltura.length > 0) {
                                 response.result.is_kaltura = true;
-                            } else if (checked_files.indexOf(false) !== -1) {
+                            } else {
                                 response.result.is_kaltura = false;
                             }
 
                             package_files.push(response);
                         });
 
-                    }, 1000);
+                    }, 500);
                 }
             }
 
@@ -146,6 +144,7 @@ const get_package_files = function (package_name, callback) {
             });
 
             if (response.status === 200) {
+
                 callback(response.data);
             } else {
                 return false;
@@ -163,7 +162,8 @@ exports.make_digital_objects = function (args, callback) {
     (async function () {
 
         try {
-
+            console.log(args);
+            return false;
             const ASTOOLS_URL = CONFIG.astools_service + 'make-digital-objects?api_key=' + CONFIG.astools_service_api_key;
             const response = await HTTP.post(ASTOOLS_URL, {
                 headers: {
