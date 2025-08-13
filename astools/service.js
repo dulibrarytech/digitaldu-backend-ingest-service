@@ -75,37 +75,30 @@ exports.get_workspace_packages = function (callback) {
                                 let files = response.result.packages[i].files;
 
                                 if (files.toString().indexOf('.wav') !== -1) {
-                                    console.log('files wav ', files);
                                     is_kaltura.push(true);
                                 }
 
                                 if (files.toString().indexOf('.mp3') !== -1) {
-                                    console.log('files mp3 ', files);
                                     is_kaltura.push(true);
                                 }
 
                                 if (files.toString().indexOf('.mp4') !== -1) {
-                                    console.log('files mp4 ', files);
                                     is_kaltura.push(true);
                                 }
 
                                 if (files.toString().indexOf('.mov') !== -1) {
-                                    console.log('files mov ', files);
                                     is_kaltura.push(true);
                                 }
 
                                 if (files.toString().indexOf('.mkv') !== -1) {
-                                    console.log('files mkv ', files);
                                     is_kaltura.push(true);
                                 }
 
                                 if (files.toString().indexOf('.avi') !== -1) {
-                                    console.log('files avi ', files);
                                     is_kaltura.push(true);
                                 }
 
                                 if (files.toString().indexOf('.m4v') !== -1) {
-                                    console.log('files m4v ', files);
                                     is_kaltura.push(true);
                                 }
                             }

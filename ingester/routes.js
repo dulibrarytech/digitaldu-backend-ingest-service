@@ -40,7 +40,7 @@ module.exports = async function (app) {
         .get(TOKEN.verify, CONTROLLER.get_status);
 
     app.route(`${APP_CONFIG.app_path}/dashboard/ingest`)
-        .get(TOKEN.verify, CONTROLLER.get_dashboard_ingest_view);
+        .get(CONTROLLER.get_dashboard_ingest_view);  // TOKEN.verify,
 
     app.route(`${APP_CONFIG.app_path}/dashboard/ingest/status`)
         .get(TOKEN.verify, CONTROLLER.get_dashboard_ingest_status_view);
