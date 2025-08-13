@@ -178,7 +178,8 @@ const astoolsModule = (function () {
 
             // TODO
             if (is_kaltura === 'true') {
-
+                domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> Kaltura processing temporarily down</div>');
+                return false;
                 domModule.html('#message', '<div class="alert alert-info"><i class=""></i> (' + folder + ') Retrieving Entry IDs from Kaltura...</div>');
 
                 let  result = await get_entry_ids(json);
