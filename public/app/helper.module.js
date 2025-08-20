@@ -77,7 +77,7 @@ const helperModule = (function () {
         return decodeURIComponent(DOMPurify.sanitize(results[2].replace(/\+/g, " ")));
     };
 
-    /**
+    /** TODO move to nav module
      * Sets api key in menu item links
      */
     function set_api_key() {

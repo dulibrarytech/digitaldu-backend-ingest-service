@@ -18,6 +18,7 @@
 
 'use strict';
 
+const MODEL = require('../astools/model');
 const SERVICE = require('../astools/service');
 
 exports.workspace = function (req, res) {
@@ -59,14 +60,51 @@ exports.make_digital_objects = function (req, res) {
             return false;
         }
 
+        // data is sent to astools script
         const args = {
-            folder: req.body.folder,
+            folder: req.body.batch,
             packages: req.body.packages,
             files: req.body.files,
             is_kaltura: req.body.is_kaltura
         }
 
+        let is_kaltura = 0;
+
+        if (req.body.is_kaltura === 'true') {
+            is_kaltura = 1;
+        }
+
+        // data used to create job record
+        const job = {
+            uuid: req.body.uuid,
+            job_type: 'make_digital_objects',
+            batch_name: req.body.batch,
+            packages: JSON.stringify(req.body.packages),
+            is_kaltura: is_kaltura,
+            log: '---',
+            error: '---'
+        };
+
+        (async function() {
+            await MODEL.create_job(job);
+        })();
+
         SERVICE.make_digital_objects(args, (response) => {
+
+            // update job record
+            (async function() {
+
+                const job = {
+                    uuid: req.body.uuid,
+                    job_type: 'make_digital_objects',
+                    log: response,
+                    status: 1
+                }
+
+                await MODEL.update_job(job);
+
+            })();
+
             res.status(200).send({
                 data: response
             });
@@ -127,13 +165,30 @@ exports.check_metadata = function (req, res) {
 
         const batch = req.body.batch;
         const ingest_package = req.body.ingest_package;
+        const uuid = req.body.uuid;
 
         if (batch === undefined) {
             res.status(400).send('Bad request.');
             return false;
         }
+        // TODO: job here
+        // TODO: check if parts array matches file count in package(s)
+
+        console.log(`Check metadata for ${batch}`);
+        console.log(ingest_package);
+        const job = {
+            uuid: req.body.uuid,
+            job_type: 'check_metadata',
+            batch_name: req.body.batch,
+            is_kaltura: req.body.is_kaltura, // pass in body
+            data: JSON.stringify('todo'), // populate in callback
+            log: '---',
+            error: '---'
+        };
 
         SERVICE.check_metadata(batch, ingest_package, (response) => {
+            // TODO: job here
+            console.log(response);
             res.status(200).send({
                 data: response
             });
@@ -144,28 +199,18 @@ exports.check_metadata = function (req, res) {
     }
 };
 
-
-/*
-exports.move_to_ready = function (req, res) {
+exports.get_job = async function (req, res) {
 
     try {
 
-        const batch = req.body.batch;
+        const job_uuid = req.query.uuid;
+        const response = await MODEL.get_job(job_uuid);
 
-        if (batch === undefined) {
-            res.status(400).send('Bad request.');
-            return false;
-        }
-
-        SERVICE.move_to_ready(batch, (response) => {
-            res.status(200).send({
-                data: response
-            });
+        res.status(200).send({
+            data: response
         });
 
     } catch (error) {
         res.status(500).send({message: `${error.message}`});
     }
 };
-
- */

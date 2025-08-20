@@ -32,7 +32,8 @@ const REPO_TABLES = HELPER_TASK.check_config(REPO);
 const REPO_QUEUE_TABLES = HELPER_TASK.check_config(REPO_INGEST_QUEUE);
 const DB_TABLES_CONFIG = {
     repo: REPO_TABLES,
-    repo_queue: REPO_QUEUE_TABLES
+    repo_queue: REPO_QUEUE_TABLES,
+    repo_jobs: process.env.JOBS
 };
 
 module.exports = function () {

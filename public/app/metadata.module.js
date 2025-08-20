@@ -23,8 +23,7 @@ const metadataModule = (function () {
     let obj = {};
     const nginx_path = '/ingester';
 
-    // TODO change function name
-    obj.get_workspace_batches = async function () {
+    obj.get_metadata_check_batches = async function () {
 
         try {
 
@@ -46,12 +45,23 @@ const metadataModule = (function () {
         }
     }
 
-    obj.display_workspace_batches = async function () {
+    obj.display_metadata_check_batches = async function () {
 
         try {
 
-            window.localStorage.clear();
-            const records = await metadataModule.get_workspace_batches();
+            const job_uuid = helperModule.getParameterByName('job_uuid');
+            let records;
+
+            if (job_uuid !== null && job_uuid.length > 0) {
+                records = await metadataModule.get_active_job(job_uuid);
+                window.localStorage.setItem('job_uuid', job_uuid);
+                console.log('job ', records);
+            } else {
+                records = await metadataModule.get_metadata_check_batches();
+                console.log('not job ', records);
+                // TODO: check if job_uuid exists in localStorage
+            }
+
             let html = '';
 
             for (let i = 0; i < records.data.length; i++) {
@@ -62,10 +72,6 @@ const metadataModule = (function () {
                     console.log('Removing ', batch);
                     continue;
                 }
-
-                window.localStorage.setItem(batch, JSON.stringify(records.data[i].result));
-
-
 
                 html += '<tr>';
                 // workspace folder name
@@ -177,9 +183,17 @@ const metadataModule = (function () {
         try {
 
             const api_key = helperModule.getParameterByName('api_key');
+            const job_uuid = helperModule.getParameterByName('job_uuid');
+
+            if (job_uuid === null || job_uuid.length === 0) {
+                // TODO: create job uuid here
+            }
+
             const data = {
+                'uuid': job_uuid,
                 'batch': batch,
-                'ingest_package': ingest_package
+                'ingest_package': ingest_package,
+                'is_kaltura': ''
             };
 
             domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Checking metadata for "${ingest_package}"...</div>`);
@@ -354,12 +368,58 @@ const metadataModule = (function () {
         }
     };
 
+    obj.get_active_job = async function (job_uuid) {
+
+        try {
+
+            const api_key = helperModule.getParameterByName('api_key');
+            const response = await httpModule.req({
+                method: 'GET',
+                url: nginx_path + '/api/v1/astools/job?uuid=' + job_uuid + '&api_key=' + api_key,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                timeout: 600000
+            });
+
+            if (response.status === 200) {
+
+                console.log(response.data.data[0]);
+
+                let record = [];
+                let is_kalture = false;
+
+                if (response.data.data[0].is_kaltura === 1) {
+                    is_kalture = true;
+                }
+
+                let data = {
+                    result: {
+                        batch: response.data.data[0].batch_name,
+                        packages: JSON.parse(response.data.data[0].packages),
+                        is_kaltura: is_kalture
+                    }
+                };
+
+                record.push(data);
+
+                return {
+                    data: record
+                };
+            }
+
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
     obj.init = async function () {
 
         try {
 
             document.querySelector('#message').innerHTML = '<div class="alert alert-info"><i class=""></i> Loading...</div>';
-            await metadataModule.display_workspace_batches();
+
+            await metadataModule.display_metadata_check_batches();
 
         } catch (error) {
             domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');

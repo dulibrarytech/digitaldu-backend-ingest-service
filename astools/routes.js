@@ -42,10 +42,6 @@ module.exports = async function (app) {
     app.route(`${APP_CONFIG.app_path}/api/v1/astools/metadata`)
         .post(TOKEN.verify, CONTROLLER.check_metadata);
 
-    // TODO: remove
-    /*
-    app.route(`${APP_CONFIG.app_path}/api/v1/astools/move-to-ready`)
-        .post(TOKEN.verify, CONTROLLER.move_to_ready);
-
-     */
+    app.route(`${APP_CONFIG.app_path}/api/v1/astools/job`)
+        .get(TOKEN.verify, CONTROLLER.get_job);
 };

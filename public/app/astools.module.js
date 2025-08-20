@@ -50,7 +50,6 @@ const astoolsModule = (function () {
         try {
 
             const records = await astoolsModule.get_workspace_packages();
-            console.log(records.data);
             let html = '';
 
             for (let i = 0; i < records.data.length; i++) {
@@ -153,22 +152,22 @@ const astoolsModule = (function () {
         }
     }
 
-    obj.make_digital_objects = async function (folder) {
+    obj.make_digital_objects = async function (batch) {
 
         try {
 
             document.querySelector('.x_panel').style.visibility = 'hidden';
-            const batch_data = window.localStorage.getItem(folder);
+            const batch_data = window.localStorage.getItem(batch);
 
             if (batch_data === null || batch_data === undefined) {
                 domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> Unable to get batch data</div>');
                 return false;
             }
 
+            const job_uuid = self.crypto.randomUUID();
             const json = JSON.parse(batch_data);
             const api_key = helperModule.getParameterByName('api_key');
-            let is_kaltura = document.querySelector('#' + folder).value;
-            let packages = [];
+            let is_kaltura = document.querySelector('#' + batch).value;
             let files = [];
 
             if (api_key === null) {
@@ -177,9 +176,8 @@ const astoolsModule = (function () {
             }
 
             if (is_kaltura === 'true') {
-                // domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> Kaltura processing temporarily down</div>');
-                // return false;
-                domModule.html('#message', '<div class="alert alert-info"><i class=""></i> (' + folder + ') Retrieving Entry IDs from Kaltura...</div>');
+
+                domModule.html('#message', '<div class="alert alert-info"><i class=""></i> (' + batch + ') Retrieving Entry IDs from Kaltura...</div>');
 
                 let  result = await get_entry_ids(json);
                 let errors = [];
@@ -221,8 +219,10 @@ const astoolsModule = (function () {
                 }
             }
 
+            // data used to create job record
             const data = {
-                'folder': folder,
+                'uuid': job_uuid,
+                'batch': batch,
                 'packages': json.packages,
                 'files': files,
                 'is_kaltura': is_kaltura
@@ -242,11 +242,11 @@ const astoolsModule = (function () {
 
             if (response.status === 200) {
 
-                domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Digital objects created for "${folder}" batch</div>`);
+                domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Digital objects created for "${batch}" batch</div>`);
 
                 setTimeout(async () => {
-                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Checking package updates for "${folder}" batch</div>`);
-                    await check_uri_txt(folder);
+                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Checking package updates for "${batch}" batch</div>`);
+                    await check_uri_txt(batch, job_uuid);
                 }, 3000);
             }
 
@@ -257,15 +257,15 @@ const astoolsModule = (function () {
         return false;
     };
 
-    async function check_uri_txt(folder) {
+    async function check_uri_txt(batch, job_uuid) {
 
         try {
 
             const api_key = helperModule.getParameterByName('api_key');
-            domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Checking uri txt files for "${folder}" batch</div>`);
+            domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Checking uri txt files for "${batch}" batch</div>`);
 
             const data = {
-                'batch': folder
+                'batch': batch
             };
 
             const response = await httpModule.req({
@@ -284,7 +284,12 @@ const astoolsModule = (function () {
                     domModule.html('#message', `<div class="alert alert-danger"><i class=""></i> "${response.data.data.errors.toString()}"</div>`);
                     return false;
                 } else {
-                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ${folder} complete - Please proceed to Metadata QA page</div>`);
+
+                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ${batch} complete - Proceeding to Metadata QA page</div>`);
+
+                    setTimeout(() => {
+                        window.location.href = nginx_path + '/dashboard/metadata?job_uuid=' + job_uuid + '&api_key=' + api_key;
+                    }, 3000);
                 }
             }
 
@@ -297,6 +302,7 @@ const astoolsModule = (function () {
 
         try {
 
+            window.localStorage.clear();
             document.querySelector('#message').innerHTML = '<div class="alert alert-info"><i class=""></i> Loading...</div>';
             await astoolsModule.display_workspace_packages();
 
@@ -308,225 +314,3 @@ const astoolsModule = (function () {
     return obj;
 
 }());
-
-
-/*
-            document.querySelector('#digital-object-workspace-button').addEventListener('click', function () {
-                save_credentials();
-            });
-
-
-            $('.aspace-login-modal').modal({
-                backdrop: 'static',
-                keyboard: false
-            });
-
-             */
-
-/*
-    function save_credentials() {
-
-        try {
-
-            const username = document.querySelector('#aspace-username').value;
-            const password = document.querySelector('#aspace-password').value;
-
-            if (username.length === 0 || password.length === 0) {
-                document.getElementById('aspace-message').innerHTML = '<div class="alert alert-danger"><i class="fa fa-exclamation"></i> Please enter your credentials</div>';
-            } else {
-                $('.aspace-login-modal').modal('hide');
-                document.getElementById('aspace-message').innerHTML = '';
-                document.querySelector('#username').value = username;
-                document.querySelector('#password').value = password;
-            }
-
-            return false;
-
-        } catch (error) {
-            domModule.html('#message', '<div class="alert alert-info"><i class=""></i> ' + error.message + '</div>');
-        }
-    }
-
-     */
-
-// TODO: deprecate - move to server side
-/*
-async function extract_entry_ids(json) {
-
-    try {
-
-        const package_name = json.package;
-        const entry_ids = [];
-        let pairs = [];
-
-        if (json.files.length > 1) {
-
-            let files = json.files;
-            let timer = setInterval(async () => {
-
-                if (files.length === 0) {
-
-                    clearInterval(timer);
-
-                    if (typeof entry_ids === 'object') {
-
-                        let message = '';
-
-                        for (let i=0; i<entry_ids.length; i++) {
-                            message += 'Kaltura entry ID not found for ' + entry_ids[i].identifier + '<br>';
-                        }
-
-                        domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + message + '</div>');
-
-                        setTimeout(() => {
-                            document.querySelector('.x_panel').style.visibility = 'visible';
-                        }, 3000);
-
-                        return false;
-                    }
-
-                    return entry_ids;
-                }
-
-                let file_id_pair = {};
-                let file = files.pop();
-                let metadata = await get_ks_metadata(file);
-
-                if (metadata.message === '0_0') {
-                    entry_ids.push(metadata);
-                } else {
-                    entry_ids.push(metadata);
-                    file_id_pair.package = package_name;
-                    file_id_pair.file = file;
-                    file_id_pair.entry_id = entry_ids.toString();
-                    pairs.push(file_id_pair);
-                    file_id_pair = {};
-                }
-
-            }, 1000);
-
-        } else if (json.files.length === 1) {
-
-            let file_id_pair = {};
-            let file = json.files.pop();
-            let metadata = await get_ks_metadata(package_name);
-            let message;
-
-            if (metadata.message === '0_0') {
-                message = 'Kaltura entry ID not found for ' + metadata.identifier;
-                domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + message + '</div>');
-                setTimeout(() => {
-                    document.querySelector('.x_panel').style.visibility = 'visible';
-                }, 3000);
-                return false;
-            } else {
-                entry_ids.push(await get_ks_metadata(package_name));
-                file_id_pair.package = package_name;
-                file_id_pair.file = file;
-                file_id_pair.entry_id = entry_ids.toString();
-                pairs.push(file_id_pair);
-            }
-
-            return pairs;
-        }
-
-    } catch (error) {
-        domModule.html('#message', '<div class="alert alert-info"><i class=""></i> ' + error.message + '</div>');
-    }
-}
-*/
-
-/*
-    async function move_to_ready(folder) {
-
-        try {
-
-            const api_key = helperModule.getParameterByName('api_key');
-            domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Moving "${folder}" batch to ready folder...</div>`);
-
-            const data = {
-                'batch': folder
-            };
-
-            const response = await httpModule.req({
-                method: 'POST',
-                url: nginx_path + '/api/v1/astools/move-to-ready?api_key=' + api_key,
-                data: data,
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                timeout: 600000
-            });
-
-            if (response.status === 200) {
-
-                if (response.data.data.errors.length > 0) {
-                    domModule.html('#message', `<div class="alert alert-danger"><i class=""></i> "${response.data.data.errors.toString()}"</div>`);
-                    return false;
-                } else {
-
-                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ${folder} complete </div>`);
-
-                    setTimeout(async () => {
-                        // const api_key = helperModule.getParameterByName('api_key');
-                        // window.location.href = '/ingester/dashboard/ingest?api_key=' + api_key;
-                    }, 1000)
-                }
-            }
-
-        } catch (error) {
-            domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
-        }
-    }
-
-     */
-
-// TODO: deprecate
-/*
-async function get_ks_metadata_(identifier) {
-
-    try {
-
-        const ks = localStorage.getItem('ks');
-
-        if (ks === null) {
-            domModule.html('#message', '<div class="alert alert-info"><i class=""></i> Unable to get Kaltura session token.</div>');
-            return false;
-        }
-
-        const response = await httpModule.req({
-            method: 'GET',
-            url: nginx_path + '/api/v1/kaltura/metadata?identifier=' + identifier + '&session=' + ks,
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        console.log('response ', response);
-        if (response.status === 200) {
-
-            if (response.data.ks.objects.length === 0) {
-
-                return {
-                    identifier: identifier,
-                    message: '0_0'
-                };
-
-            }
-
-            // TODO
-            const total_count = response.data.ks.objects[0].itemsData[0].totalCount;
-
-            if (total_count === 1) {
-                return response.data.ks.objects[0].object.id;
-            } else {
-                // TODO: handle multiple records
-                console.log('test compound objects')
-                console.log('compound', response.data.ks.objects);
-            }
-        }
-
-    } catch (error) {
-        domModule.html('#message', '<div class="alert alert-info"><i class=""></i> ' + error.message + '</div>');
-    }
-}
-*/
