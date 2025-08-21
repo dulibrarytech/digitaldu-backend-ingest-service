@@ -150,23 +150,23 @@ exports.check_metadata = function (req, res) {
 
         const batch = req.body.batch;
         const ingest_package = req.body.ingest_package;
-        const uuid = req.body.uuid;
-
-        console.log(batch);
-        console.log(ingest_package);
-        console.log(uuid);
+        const job_uuid = req.body.uuid;
 
         if (batch === undefined) {
             res.status(400).send('Bad request.');
             return false;
         }
 
-        // TODO: job here
-        // TODO: check if parts array matches file count in package(s)
-
         SERVICE.check_metadata(batch, ingest_package, (response) => {
-            // TODO: job here?
-            console.log(response);
+
+            console.log(batch);
+            console.log(ingest_package);
+            console.log(job_uuid);
+
+            (async function() {
+                await check_metadata_parts(batch, ingest_package, job_uuid, response);
+            })();
+
             res.status(200).send({
                 data: response
             });
@@ -176,6 +176,23 @@ exports.check_metadata = function (req, res) {
         res.status(500).send({message: `${error.message}`});
     }
 };
+
+async function check_metadata_parts(batch, ingest_package, job_uuid, metadata) {
+
+    try {
+
+        const job = await MODEL.get_job(job_uuid);
+        console.log(job[0].is_kaltura); // check entry ids
+        console.log(job[0].packages);
+        console.log(metadata.parts);
+        // console.log(metadata);
+
+
+    } catch (error) {
+        console.log(error);
+    }
+
+}
 
 exports.get_job = async function (req, res) {
 

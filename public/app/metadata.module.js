@@ -50,7 +50,6 @@ const metadataModule = (function () {
         try {
 
             const job_uuid = window.localStorage.getItem('job_uuid');
-            //helperModule.getParameterByName('job_uuid');
             let records;
 
             if (job_uuid !== null && job_uuid.length > 0) {
@@ -73,6 +72,9 @@ const metadataModule = (function () {
                     console.log('Removing ', batch);
                     continue;
                 }
+
+                // clear batch
+                window.localStorage.removeItem(batch + '_m')
 
                 html += '<tr>';
                 // workspace folder name
