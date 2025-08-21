@@ -235,6 +235,7 @@ const ingestModule = (function () {
             return false;
         }
 
+        /*
         if (Object.keys(packages.result).length === 0) {
             html = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; There are no ingest packages ready for ingest.</strong></div>';
             domModule.html('#message', html);
@@ -242,7 +243,10 @@ const ingestModule = (function () {
             return false;
         }
 
+         */
+
         if (packages.errors.length > 0) {
+
             html = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; The collection folder contains errors.</strong></div>';
 
             // TODO
@@ -256,10 +260,21 @@ const ingestModule = (function () {
             return false;
         }
 
+        console.log('packages result ', packages.result);
+
         for (let prop in packages.result) {
 
             if (prop.indexOf('new_') === -1 || prop.indexOf('-resources_') === -1) {
-                console.log('Removing ', prop);
+
+                delete packages.result[prop];
+
+                if (Object.keys(packages.result).length === 0) {
+                    html = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; There are no ingest packages ready for ingest.</strong></div>';
+                    domModule.html('#message', html);
+                    document.querySelector('#import-table').style.visibility = 'hidden';
+                    return false;
+                }
+
                 continue;
             }
 
