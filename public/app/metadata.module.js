@@ -166,7 +166,7 @@ const metadataModule = (function () {
                 if (packages.length === 0) {
                     clearInterval(timer);
                     // TODO: override message if no file is found // - Please proceed to Ingest Packages
-                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Metadata checks complete </div>`);
+                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Metadata checks complete - Proceed to ingest packages if there are no errors</div>`);
                     return false;
                 }
 
@@ -216,7 +216,7 @@ const metadataModule = (function () {
                 const data = response.data.data;
                 const key = batch + '_m';
                 let list_exist = window.localStorage.getItem(key);
-
+                console.log(data);
                 if (list_exist === null || list_exist === undefined) {
                     await create_list(key, batch, ingest_package, data);
                 } else {
