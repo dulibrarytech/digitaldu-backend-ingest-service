@@ -53,7 +53,7 @@ const metadataModule = (function () {
             let records;
 
             if (job_uuid !== null && job_uuid.length > 0) {
-                records = await metadataModule.get_active_job(job_uuid);
+                records = await jobsModule.get_active_job(job_uuid);
                 window.localStorage.setItem('job_uuid', job_uuid);
                 console.log('job ', records);
             } else {
@@ -368,57 +368,11 @@ const metadataModule = (function () {
         }
     };
 
-    obj.get_active_job = async function (job_uuid) {
-
-        try {
-
-            const api_key = helperModule.getParameterByName('api_key');
-            const response = await httpModule.req({
-                method: 'GET',
-                url: nginx_path + '/api/v1/astools/job?uuid=' + job_uuid + '&api_key=' + api_key,
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                timeout: 600000
-            });
-
-            if (response.status === 200) {
-
-                console.log(response.data.data[0]);
-
-                let record = [];
-                let is_kalture = false;
-
-                if (response.data.data[0].is_kaltura === 1) {
-                    is_kalture = true;
-                }
-
-                let data = {
-                    result: {
-                        batch: response.data.data[0].batch_name,
-                        packages: JSON.parse(response.data.data[0].packages),
-                        is_kaltura: is_kalture
-                    }
-                };
-
-                record.push(data);
-
-                return {
-                    data: record
-                };
-            }
-
-        } catch (error) {
-            console.log(error);
-        }
-    };
-
     obj.init = async function () {
 
         try {
 
             document.querySelector('#message').innerHTML = '<div class="alert alert-info"><i class=""></i> Loading...</div>';
-
             await metadataModule.display_metadata_check_batches();
 
         } catch (error) {

@@ -244,6 +244,11 @@ const astoolsModule = (function () {
 
                 domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Digital objects created for "${batch}" batch</div>`);
 
+                await jobsModule.update_job({
+                    uuid: job_uuid,
+                    log: response.data.data
+                });
+
                 setTimeout(async () => {
                     domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Checking package updates for "${batch}" batch</div>`);
                     await check_uri_txt(batch, job_uuid);
@@ -257,6 +262,7 @@ const astoolsModule = (function () {
         return false;
     };
 
+    // confirms that a uri.txt file was created in the packages
     async function check_uri_txt(batch, job_uuid) {
 
         try {
@@ -285,11 +291,20 @@ const astoolsModule = (function () {
                     return false;
                 } else {
 
-                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ${batch} complete - Proceeding to Metadata QA page</div>`);
+                    await jobsModule.update_job({
+                        uuid: job_uuid,
+                        is_make_digital_objects_complete: 1
+                    });
 
+                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ${batch} complete - Proceed to Metadata QA page</div>`);
+                    window.localStorage.setItem('job_uuid', job_uuid);
+
+                    /*
                     setTimeout(() => {
                         window.location.href = nginx_path + '/dashboard/metadata?job_uuid=' + job_uuid + '&api_key=' + api_key;
                     }, 3000);
+
+                     */
                 }
             }
 

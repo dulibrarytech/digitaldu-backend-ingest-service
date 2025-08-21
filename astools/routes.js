@@ -42,6 +42,9 @@ module.exports = async function (app) {
     app.route(`${APP_CONFIG.app_path}/api/v1/astools/metadata`)
         .post(TOKEN.verify, CONTROLLER.check_metadata);
 
-    app.route(`${APP_CONFIG.app_path}/api/v1/astools/job`)
+    app.route(`${APP_CONFIG.app_path}/api/v1/astools/jobs`)
         .get(TOKEN.verify, CONTROLLER.get_job);
+
+    app.route(`${APP_CONFIG.app_path}/api/v1/astools/jobs`)
+        .put(TOKEN.verify, CONTROLLER.update_job);
 };

@@ -90,21 +90,6 @@ exports.make_digital_objects = function (req, res) {
         })();
 
         SERVICE.make_digital_objects(args, (response) => {
-
-            // update job record
-            (async function() {
-
-                const job = {
-                    uuid: req.body.uuid,
-                    job_type: 'make_digital_objects',
-                    log: response,
-                    status: 1
-                }
-
-                await MODEL.update_job(job);
-
-            })();
-
             res.status(200).send({
                 data: response
             });
@@ -173,7 +158,7 @@ exports.check_metadata = function (req, res) {
         }
         // TODO: job here
         // TODO: check if parts array matches file count in package(s)
-
+        console.log(uuid);
         console.log(`Check metadata for ${batch}`);
         console.log(ingest_package);
         const job = {
@@ -214,3 +199,35 @@ exports.get_job = async function (req, res) {
         res.status(500).send({message: `${error.message}`});
     }
 };
+
+exports.update_job = async function (req, res) {
+
+    try {
+
+        const job = req.body;
+        const response = await MODEL.update_job(job);
+
+        res.status(200).send({
+            data: response
+        });
+
+    } catch (error) {
+        res.status(500).send({message: `${error.message}`});
+    }
+};
+
+// update job record
+/*
+(async function() {
+
+    const job = {
+        uuid: req.body.uuid,
+        job_type: 'make_digital_objects',
+        log: response,
+        status: 1
+    }
+
+    await MODEL.update_job(job);
+
+})();
+*/
