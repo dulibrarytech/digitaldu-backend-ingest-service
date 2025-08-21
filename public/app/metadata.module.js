@@ -37,7 +37,25 @@ const metadataModule = (function () {
             });
 
             if (response.status === 200) {
+
+                // get job records
+                let jobs = await jobsModule.get_metadata_jobs();
+
+                if (jobs === undefined || jobs.length === 0) {
+                    jobs = {
+                        data: []
+                    }
+                    return jobs;
+                }
+                /*
+                // TODO: compare response and jobs results
+                else if () {
+
+                }
+
                 return response.data;
+
+                 */
             }
 
         } catch (error) {

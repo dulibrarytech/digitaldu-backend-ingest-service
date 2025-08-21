@@ -55,7 +55,19 @@ exports.get_job = async function (job_uuid) {
         return await TASKS.get_job(job_uuid);
 
     } catch (error) {
-        LOGGER.module().error('ERROR: [/astools/task (create_job)] unable to update job ' + error.message);
+        LOGGER.module().error('ERROR: [/astools/task (get_job)] unable to get job ' + error.message);
+        return false;
+    }
+};
+
+exports.get_metadata_jobs = async function () {
+
+    try {
+
+        return await TASKS.get_metadata_jobs();
+
+    } catch (error) {
+        LOGGER.module().error('ERROR: [/astools/task (get_metadata_jobs)] unable to get metadata jobs ' + error.message);
         return false;
     }
 };

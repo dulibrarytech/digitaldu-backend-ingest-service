@@ -67,6 +67,55 @@ const jobsModule = (function () {
         }
     };
 
+    obj.get_metadata_jobs = async function () {
+
+        try {
+
+            const api_key = helperModule.getParameterByName('api_key');
+            const response = await httpModule.req({
+                method: 'GET',
+                url: nginx_path + endpoint + '/metadata?&api_key=' + api_key,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                timeout: 600000
+            });
+
+            console.log('resp ', response);
+
+            if (response.status === 200) {
+                console.log(response);
+                if (response.data.data.length === 0) {
+                    return response.data.data;
+                }
+
+                let record = [];
+                let is_kaltura = false;
+
+                if (response.data.data[0].is_kaltura === 1) {
+                    is_kaltura = true;
+                }
+
+                let data = {
+                    result: {
+                        batch: response.data.data[0].batch_name,
+                        packages: JSON.parse(response.data.data[0].packages),
+                        is_kaltura: is_kaltura
+                    }
+                };
+                console.log('jobs module ', data);
+                record.push(data);
+
+                return {
+                    data: record
+                };
+            }
+
+        } catch (error) {
+            domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
+        }
+    };
+
     obj.update_job = async function (job) {
 
         try {

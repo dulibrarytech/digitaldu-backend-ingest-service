@@ -287,6 +287,21 @@ exports.get_job = async function (req, res) {
     }
 };
 
+exports.get_metadata_jobs = async function (req, res) {
+
+    try {
+
+        const response = await MODEL.get_metadata_jobs();
+
+        res.status(200).send({
+            data: response
+        });
+
+    } catch (error) {
+        res.status(500).send({message: `${error.message}`});
+    }
+};
+
 exports.update_job = async function (req, res) {
 
     try {

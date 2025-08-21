@@ -304,12 +304,9 @@ const astoolsModule = (function () {
                     domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ${batch} <strong>complete</strong> - Proceed to Metadata QA page</div>`);
                     window.localStorage.setItem('job_uuid', job_uuid);
 
-                    /*
                     setTimeout(() => {
                         window.location.href = nginx_path + '/dashboard/metadata?job_uuid=' + job_uuid + '&api_key=' + api_key;
                     }, 3000);
-
-                     */
                 }
             }
 

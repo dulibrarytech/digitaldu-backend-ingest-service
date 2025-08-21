@@ -260,8 +260,6 @@ const ingestModule = (function () {
             return false;
         }
 
-        console.log('packages result ', packages.result);
-
         for (let prop in packages.result) {
 
             if (prop.indexOf('new_') === -1 || prop.indexOf('-resources_') === -1) {
@@ -269,7 +267,7 @@ const ingestModule = (function () {
                 delete packages.result[prop];
 
                 if (Object.keys(packages.result).length === 0) {
-                    html = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; There are no ingest packages ready for ingest.</strong></div>';
+                    html = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; There are no packages ready for ingest.</strong></div>';
                     domModule.html('#message', html);
                     document.querySelector('#import-table').style.visibility = 'hidden';
                     return false;
