@@ -237,7 +237,6 @@ async function check_metadata_parts(batch, ingest_package, job_uuid, metadata) {
 
         for (let i = 0; i < packagef.length; i++) {
             if (packagef[i] !== partf[i]) {
-                console.log('FAIL');
                 errors.push('Package files do not match ArchivesSpace record.');
                 return false;
             } else {
@@ -245,6 +244,7 @@ async function check_metadata_parts(batch, ingest_package, job_uuid, metadata) {
             }
         }
 
+        // TODO
         // check for entry ids if kaltura packages
         if (job[0].is_kaltura === 1) {
 

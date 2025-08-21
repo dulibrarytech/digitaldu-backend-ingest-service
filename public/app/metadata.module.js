@@ -62,6 +62,11 @@ const metadataModule = (function () {
                 // TODO: check if job_uuid exists in localStorage
             }
 
+            if (records.data.length === 0) {
+                domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> The "metadata QA" workspace is empty</div>');
+                return false;
+            }
+
             let html = '';
 
             for (let i = 0; i < records.data.length; i++) {
