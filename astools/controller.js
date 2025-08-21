@@ -187,10 +187,8 @@ exports.check_metadata = function (req, res) {
 
                 if (result !== true) {
                     response.errors = result;
-                    console.log('metadata check result ', result);
                 }
 
-                console.log('error prop? ', response);
                 res.status(200).send({
                     data: response
                 });
@@ -260,7 +258,7 @@ async function check_metadata_parts(batch, ingest_package, job_uuid, metadata) {
 
             }
         }
-        errors.push('Test ERROR!');
+
         if (errors.length > 0) {
             return JSON.stringify(errors);
         } else {
