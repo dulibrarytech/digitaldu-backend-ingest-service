@@ -446,6 +446,9 @@ const process_metadata = async function(uri) {
                     errors.push('Mime-type is missing (' + record.metadata.parts[i].title + ')');
                 }
             }
+
+            // TODO: compare with files in package
+            console.log('parts', record.metadata.parts);
         }
 
         if (errors.length > 0) {

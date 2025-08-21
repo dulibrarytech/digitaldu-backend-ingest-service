@@ -52,6 +52,11 @@ const astoolsModule = (function () {
             const records = await astoolsModule.get_workspace_packages();
             let html = '';
 
+            if (records.data.length === 0) {
+                domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> The "digital objects" workspace is empty</div>');
+                return false;
+            }
+
             for (let i = 0; i < records.data.length; i++) {
 
                 let batch = records.data[i].result.batch;
@@ -97,7 +102,7 @@ const astoolsModule = (function () {
             document.querySelector('.x_panel').style.visibility = 'visible';
 
         } catch (error) {
-            domModule.html('#message', '<div class="alert alert-info"><i class=""></i> ' + error.message + '</div>');
+            domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
         }
     }
 
@@ -296,7 +301,7 @@ const astoolsModule = (function () {
                         is_make_digital_objects_complete: 1
                     });
 
-                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ${batch} complete - Proceed to Metadata QA page</div>`);
+                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ${batch} <strong>complete</strong> - Proceed to Metadata QA page</div>`);
                     window.localStorage.setItem('job_uuid', job_uuid);
 
                     /*

@@ -49,12 +49,13 @@ const metadataModule = (function () {
 
         try {
 
-            const job_uuid = helperModule.getParameterByName('job_uuid');
+            const job_uuid = window.localStorage.getItem('job_uuid');
+            //helperModule.getParameterByName('job_uuid');
             let records;
 
             if (job_uuid !== null && job_uuid.length > 0) {
                 records = await jobsModule.get_active_job(job_uuid);
-                window.localStorage.setItem('job_uuid', job_uuid);
+                // window.localStorage.setItem('job_uuid', job_uuid);
                 console.log('job ', records);
             } else {
                 records = await metadataModule.get_metadata_check_batches();
@@ -183,7 +184,7 @@ const metadataModule = (function () {
         try {
 
             const api_key = helperModule.getParameterByName('api_key');
-            const job_uuid = helperModule.getParameterByName('job_uuid');
+            const job_uuid = window.localStorage.getItem('job_uuid'); // helperModule.getParameterByName('job_uuid');
 
             if (job_uuid === null || job_uuid.length === 0) {
                 // TODO: create job uuid here
@@ -192,8 +193,7 @@ const metadataModule = (function () {
             const data = {
                 'uuid': job_uuid,
                 'batch': batch,
-                'ingest_package': ingest_package,
-                'is_kaltura': ''
+                'ingest_package': ingest_package
             };
 
             domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Checking metadata for "${ingest_package}"...</div>`);
