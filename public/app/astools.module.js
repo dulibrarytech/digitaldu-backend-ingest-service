@@ -184,10 +184,10 @@ const astoolsModule = (function () {
 
                 domModule.html('#message', '<div class="alert alert-info"><i class=""></i> (' + batch + ') Retrieving Entry IDs from Kaltura...</div>');
 
-                let  result = await get_entry_ids(json);
+                let result = await get_entry_ids(json);
                 let errors = [];
 
-                for (let i=0; i < result.files.length; i++) {
+                for (let i = 0; i < result.files.length; i++) {
 
                     if (result.files[i].message !== 'success') {
                         console.log(result.files[i]);
@@ -219,7 +219,7 @@ const astoolsModule = (function () {
 
             } else {
 
-                for (let i=0; i < json.packages.length; i++) {
+                for (let i = 0; i < json.packages.length; i++) {
                     files.push(json.packages[i].files);
                 }
             }

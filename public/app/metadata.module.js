@@ -67,12 +67,8 @@ const metadataModule = (function () {
             if (job_uuid !== null && job_uuid.length > 0) {
                 window.localStorage.setItem('job_uuid', job_uuid);
                 records = await jobsModule.get_active_job(job_uuid);
-                console.log('job ', records);
             } else { // gets all records in jobs that have not had QA run on packages
                 records = await metadataModule.get_metadata_check_batches();
-                console.log('not job ', records.data);
-                // TODO: check if job_uuid exists in localStorage
-                // const job_uuid = window.localStorage.getItem('job_uuid');
             }
 
             if (records.data.length === 0) {
@@ -130,13 +126,10 @@ const metadataModule = (function () {
             if (batch_ !== null) {
 
                 let packages = [];
-                console.log('batch_', batch_.packages);
 
                 for (let i = 0; i < batch_.packages.length; i++) {
                     packages.push(batch_.packages[i].package);
                 }
-
-                console.log('packages', packages);
 
                 domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Packages retrieved for "${batch}" batch</div>`);
 
@@ -185,7 +178,7 @@ const metadataModule = (function () {
                     console.log(response.data.data.errors);
                     return false;
                 }
-                console.log('api packages ', response.data.data.result);
+
                 const packages = response.data.data.result;
                 domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Packages retrieved for "${batch}" batch</div>`);
 
@@ -212,26 +205,40 @@ const metadataModule = (function () {
                 if (packages.length === 0) {
                     clearInterval(timer);
                     // TODO: override message if no file is found
-                    // TODO: check key + '_errors' for errors
                     // TODO: - Please proceed to Ingest Packages
                     let errors = window.localStorage.getItem(batch + '_errors');
 
                     if (errors !== null) {
                         // TODO: show errors
                         console.log('ERRORS ', errors);
+                        domModule.html('#message', `<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> Metadata errors detected</div>`);
                         return false;
                     }
 
-                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Metadata checks complete - Proceed to ingest packages</div>`);
+                    let batch_ = JSON.parse(window.localStorage.getItem(batch + '_'));
 
-                    // TODO: update job
+                    if (batch_ === null) {
+                        domModule.html('#message', `<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> Unable to update QA job</div>`);
+                        return false;
+                    }
+
+                    await jobsModule.update_job({
+                        uuid: batch_.job_uuid,
+                        is_metadata_checks_complete: 1
+                    });
+
+                    setTimeout(async () => {
+                        // TODO: redirect to ingest
+                        domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Metadata checks complete - Proceed to ingest packages</div>`);
+                    }, 3000);
+
                     return false;
                 }
 
                 let ingest_package = packages.pop();
                 await check_metadata(batch, ingest_package);
 
-            }, 5000);
+            }, 4000);
 
         } catch (error) {
             domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
@@ -416,7 +423,7 @@ const metadataModule = (function () {
                         message = 'Please check if record is cataloged in ArchivesSpace and/or the package has a uri.txt file.';
                     }
 
-                    html += '<small><i class="fa fa-exclamation-circle"></i> ' + records[i].errors.toString() + ' ' + message +'</small>';
+                    html += '<small><i class="fa fa-exclamation-circle"></i> ' + records[i].errors.toString() + ' ' + message + '</small>';
 
                 } else {
                     html += '<small><i class="fa fa-check"></i></small>';
