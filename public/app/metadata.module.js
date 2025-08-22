@@ -228,8 +228,14 @@ const metadataModule = (function () {
                     });
 
                     setTimeout(async () => {
-                        // TODO: redirect to ingest
-                        domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Metadata checks complete - Proceed to ingest packages</div>`);
+
+                        domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Metadata QA checks complete</div>`);
+
+                        setTimeout(async () => {
+                            const api_key = helperModule.getParameterByName('api_key');
+                            window.location.href = nginx_path + '/dashboard/metadata?job_uuid=' + batch_.job_uuid + '&api_key=' + api_key;
+                        }, 2000)
+
                     }, 3000);
 
                     return false;

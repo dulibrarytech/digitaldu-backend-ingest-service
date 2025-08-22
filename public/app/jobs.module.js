@@ -119,6 +119,58 @@ const jobsModule = (function () {
         }
     };
 
+    obj.get_ingest_jobs = async function () {
+
+        try {
+
+            const api_key = helperModule.getParameterByName('api_key');
+            const response = await httpModule.req({
+                method: 'GET',
+                url: nginx_path + endpoint + '/ingest?&api_key=' + api_key,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                timeout: 600000
+            });
+
+            if (response.status === 200) {
+
+                if (response.data.data.length === 0) {
+                    return response.data.data;
+                }
+
+                let record = [];
+                let is_kaltura = false;
+
+                if (response.data.data.length > 0) {
+
+                    for (let i = 0; i < response.data.data.length; i++) {
+
+                        if (response.data.data[i].is_kaltura === 1) {
+                            is_kaltura = true;
+                        }
+
+                        record.push({
+                            result: {
+                                job_uuid: response.data.data[i].uuid,
+                                batch: response.data.data[i].batch_name,
+                                packages: JSON.parse(response.data.data[i].packages),
+                                is_kaltura: is_kaltura
+                            }
+                        });
+                    }
+
+                    return {
+                        data: record
+                    };
+                }
+            }
+
+        } catch (error) {
+            domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
+        }
+    };
+
     obj.update_job = async function (job) {
 
         try {

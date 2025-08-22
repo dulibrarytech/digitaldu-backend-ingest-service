@@ -98,6 +98,23 @@ const Job_tasks = class {
         }
     }
 
+    async get_ingest_jobs() {
+
+        try {
+
+            return await this.DB(this.TABLES.repo_jobs)
+                .select('*')
+                .where({
+                    is_make_digital_objects_complete: 1,
+                    is_metadata_checks_complete: 1,
+                    is_ingested: 0
+                });
+
+        } catch (error) {
+            LOGGER.module().error('ERROR: [/astools/tasks (get_jobs)] unable to get job record ' + error.message);
+        }
+    }
+
 }
 
 module.exports = Job_tasks;

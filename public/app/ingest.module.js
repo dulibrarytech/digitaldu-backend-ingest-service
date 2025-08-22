@@ -218,7 +218,11 @@ const ingestModule = (function () {
     async function display_packages() {
 
         const key = helperModule.getParameterByName('api_key');
-        const packages = await get_packages();
+        // const packages = await get_packages();
+        const packages = await jobsModule.get_ingest_jobs();
+        console.log(packages);
+
+       return false;
         let html = '';
 
         if (packages === false) {

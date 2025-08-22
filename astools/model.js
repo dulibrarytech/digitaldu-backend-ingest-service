@@ -71,3 +71,15 @@ exports.get_metadata_jobs = async function () {
         return false;
     }
 };
+
+exports.get_ingest_jobs = async function () {
+
+    try {
+
+        return await TASKS.get_ingest_jobs();
+
+    } catch (error) {
+        LOGGER.module().error('ERROR: [/astools/task (get_ingest_jobs)] unable to get ingest jobs ' + error.message);
+        return false;
+    }
+};
