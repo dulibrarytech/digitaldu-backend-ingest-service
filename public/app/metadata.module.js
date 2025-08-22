@@ -38,24 +38,16 @@ const metadataModule = (function () {
 
             if (response.status === 200) {
 
-                // get job records
+                // get records that have not had metadata QA
                 let jobs = await jobsModule.get_metadata_jobs();
 
                 if (jobs === undefined || jobs.length === 0) {
                     jobs = {
                         data: []
                     }
-                    return jobs;
-                }
-                /*
-                // TODO: compare response and jobs results
-                else if () {
-
                 }
 
-                return response.data;
-
-                 */
+                return jobs;
             }
 
         } catch (error) {
@@ -67,17 +59,20 @@ const metadataModule = (function () {
 
         try {
 
-            const job_uuid = window.localStorage.getItem('job_uuid');
+            window.localStorage.clear();
+            const job_uuid = helperModule.getParameterByName('job_uuid');
             let records;
 
+            // gets single record by job uuid
             if (job_uuid !== null && job_uuid.length > 0) {
+                window.localStorage.setItem('job_uuid', job_uuid);
                 records = await jobsModule.get_active_job(job_uuid);
-                // window.localStorage.setItem('job_uuid', job_uuid);
                 console.log('job ', records);
-            } else {
+            } else { // gets all records in jobs that have not had QA run on packages
                 records = await metadataModule.get_metadata_check_batches();
-                console.log('not job ', records);
+                console.log('not job ', records.data);
                 // TODO: check if job_uuid exists in localStorage
+                // const job_uuid = window.localStorage.getItem('job_uuid');
             }
 
             if (records.data.length === 0) {
@@ -90,14 +85,14 @@ const metadataModule = (function () {
             for (let i = 0; i < records.data.length; i++) {
 
                 let batch = records.data[i].result.batch;
+                let key = batch + '_';
 
                 if (batch.indexOf('new_') === -1 || batch.indexOf('-resources_') === -1) {
                     console.log('Removing ', batch);
                     continue;
                 }
 
-                // clear batch
-                window.localStorage.removeItem(batch + '_m')
+                window.localStorage.setItem(key, JSON.stringify(records.data[i].result));
 
                 html += '<tr>';
                 // workspace folder name
@@ -125,15 +120,42 @@ const metadataModule = (function () {
 
         try {
 
-            document.querySelector('#digital-object-workspace-table').innerHTML = '';
-            document.querySelector('#batch').innerHTML = `<em>Processing packages in ${batch}</em>`;
-
             if (batch === null || batch === undefined) {
                 domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> Unable to get packages</div>');
                 return false;
             }
 
+            const batch_ = JSON.parse(window.localStorage.getItem(batch + '_'));
+
+            if (batch_ !== null) {
+
+                let packages = [];
+                console.log('batch_', batch_.packages);
+
+                for (let i = 0; i < batch_.packages.length; i++) {
+                    packages.push(batch_.packages[i].package);
+                }
+
+                console.log('packages', packages);
+
+                domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Packages retrieved for "${batch}" batch</div>`);
+
+
+                setTimeout(async () => {
+
+                    document.querySelector('#digital-object-workspace-table').innerHTML = '';
+                    document.querySelector('#batch').innerHTML = `<em>Processing packages in ${batch}</em>`;
+
+                    await process_packages(batch, packages);
+
+                }, 1000);
+
+                return false;
+            }
+
             const api_key = helperModule.getParameterByName('api_key');
+            document.querySelector('#digital-object-workspace-table').innerHTML = '';
+            document.querySelector('#batch').innerHTML = `<em>Processing packages in ${batch}</em>`;
 
             if (api_key === null) {
                 domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> Permission Denied</div>');
@@ -159,10 +181,11 @@ const metadataModule = (function () {
             if (response.status === 200) {
 
                 if (response.data.data.errors.length > 0) {
+                    // TODO
                     console.log(response.data.data.errors);
                     return false;
                 }
-
+                console.log('api packages ', response.data.data.result);
                 const packages = response.data.data.result;
                 domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Packages retrieved for "${batch}" batch</div>`);
 
@@ -188,13 +211,24 @@ const metadataModule = (function () {
 
                 if (packages.length === 0) {
                     clearInterval(timer);
-                    // TODO: override message if no file is found // - Please proceed to Ingest Packages
-                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Metadata checks complete - Proceed to ingest packages if there are no errors</div>`);
+                    // TODO: override message if no file is found
+                    // TODO: check key + '_errors' for errors
+                    // TODO: - Please proceed to Ingest Packages
+                    let errors = window.localStorage.getItem(batch + '_errors');
+
+                    if (errors !== null) {
+                        // TODO: show errors
+                        console.log('ERRORS ', errors);
+                        return false;
+                    }
+
+                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Metadata checks complete - Proceed to ingest packages</div>`);
+
+                    // TODO: update job
                     return false;
                 }
 
                 let ingest_package = packages.pop();
-
                 await check_metadata(batch, ingest_package);
 
             }, 5000);
@@ -209,14 +243,9 @@ const metadataModule = (function () {
         try {
 
             const api_key = helperModule.getParameterByName('api_key');
-            const job_uuid = window.localStorage.getItem('job_uuid'); // helperModule.getParameterByName('job_uuid');
-
-            if (job_uuid === null || job_uuid.length === 0) {
-                // TODO: create job uuid here
-            }
-
+            const batch_data = JSON.parse(window.localStorage.getItem(batch + '_'));
             const data = {
-                'uuid': job_uuid,
+                'uuid': batch_data.job_uuid,
                 'batch': batch,
                 'ingest_package': ingest_package
             };
@@ -239,7 +268,7 @@ const metadataModule = (function () {
                 const data = response.data.data;
                 const key = batch + '_m';
                 let list_exist = window.localStorage.getItem(key);
-                console.log(data);
+
                 if (list_exist === null || list_exist === undefined) {
                     await create_list(key, batch, ingest_package, data);
                 } else {
@@ -282,7 +311,8 @@ const metadataModule = (function () {
             }
 
             if (data.errors !== undefined && data.errors.length > 0) {
-                record.errors = data.errors;
+                record.errors.push(data.errors);
+                window.localStorage.setItem(key + '_errors', JSON.stringify(record.errors));
             } else {
                 record.errors = false;
             }
@@ -319,6 +349,16 @@ const metadataModule = (function () {
 
             if (data.errors !== undefined && data.errors.length > 0) {
                 record.errors = data.errors;
+
+                let list_exist = window.localStorage.getItem(key + '_errors');
+
+                if (list_exist === null || list_exist === undefined) {
+                    window.localStorage.setItem(key + '_errors', JSON.stringify(record.errors));
+                } else {
+                    record.errors.push(data.errors);
+                    window.localStorage.setItem(key + '_errors', JSON.stringify(record.errors));
+                }
+
             } else {
                 record.errors = false;
             }

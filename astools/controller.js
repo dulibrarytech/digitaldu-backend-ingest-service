@@ -157,28 +157,6 @@ exports.check_metadata = function (req, res) {
             return false;
         }
 
-        // TODO: change to await
-        /*
-        (async function() {
-
-            let response = await SERVICE.check_metadata(batch, ingest_package);
-            console.log(response);
-            return false;
-            const result = await check_metadata_parts(batch, ingest_package, job_uuid, response);
-
-            if (result !== true) {
-                response.errors = result;
-                console.log('metadata check result ', result);
-            }
-
-            console.log('error prop? ', response);
-            res.status(200).send({
-                data: response
-            });
-
-        })();
-        */
-
         SERVICE.check_metadata(batch, ingest_package, (response) => {
 
             (async function() {
@@ -204,8 +182,9 @@ exports.check_metadata = function (req, res) {
 async function check_metadata_parts(batch, ingest_package, job_uuid, metadata) {
 
     try {
-
+        console.log('job uuid ', job_uuid);
         const job = await MODEL.get_job(job_uuid);
+        console.log('JOB ', job);
         let packages = JSON.parse(job[0].packages);
         let package_files;
         let part_files = [];

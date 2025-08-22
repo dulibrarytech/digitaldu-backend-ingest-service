@@ -81,10 +81,8 @@ const jobsModule = (function () {
                 timeout: 600000
             });
 
-            console.log('resp ', response);
-
             if (response.status === 200) {
-                console.log(response);
+
                 if (response.data.data.length === 0) {
                     return response.data.data;
                 }
@@ -92,23 +90,28 @@ const jobsModule = (function () {
                 let record = [];
                 let is_kaltura = false;
 
-                if (response.data.data[0].is_kaltura === 1) {
-                    is_kaltura = true;
-                }
+                if (response.data.data.length > 0) {
 
-                let data = {
-                    result: {
-                        batch: response.data.data[0].batch_name,
-                        packages: JSON.parse(response.data.data[0].packages),
-                        is_kaltura: is_kaltura
+                    for (let i = 0; i < response.data.data.length; i++) {
+
+                        if (response.data.data[i].is_kaltura === 1) {
+                            is_kaltura = true;
+                        }
+
+                        record.push({
+                            result: {
+                                job_uuid: response.data.data[i].uuid,
+                                batch: response.data.data[i].batch_name,
+                                packages: JSON.parse(response.data.data[i].packages),
+                                is_kaltura: is_kaltura
+                            }
+                        });
                     }
-                };
-                console.log('jobs module ', data);
-                record.push(data);
 
-                return {
-                    data: record
-                };
+                    return {
+                        data: record
+                    };
+                }
             }
 
         } catch (error) {
