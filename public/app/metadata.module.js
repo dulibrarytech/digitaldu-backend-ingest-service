@@ -72,7 +72,7 @@ const metadataModule = (function () {
             }
 
             if (records.data.length === 0) {
-                domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> The "metadata QA" workspace is empty</div>');
+                domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> No collection folders are ready</div>');
                 return false;
             }
 
@@ -90,10 +90,22 @@ const metadataModule = (function () {
 
                 window.localStorage.setItem(key, JSON.stringify(records.data[i].result));
 
+                let package_list = '<ul>';
+
+                for (let j = 0; j < records.data[i].result.packages.length; j++) {
+                    package_list += '<li><small>' + records.data[i].result.packages[j].package + '</small></li>';
+                }
+
+                package_list += '</ul>';
+
                 html += '<tr>';
                 // workspace folder name
-                html += '<td style="text-align: left;vertical-align: middle; width: 75%">';
+                html += '<td style="text-align: left;vertical-align: middle; width: 50%">';
                 html += '<small>' + batch + '</small>';
+                html += '</td>';
+                // packages
+                html += '<td style="text-align: left;vertical-align: middle; width: 25%">';
+                html += package_list;
                 html += '</td>';
                 // actions
                 html += '<td style="text-align: center;vertical-align: middle; width: 25%">';

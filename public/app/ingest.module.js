@@ -253,8 +253,6 @@ const ingestModule = (function () {
 
                 window.localStorage.setItem(key, JSON.stringify(records.data[i].result));
 
-                console.log('records', records.data[i].result.packages);
-
                 let package_list = '<ul>';
 
                 for (let j = 0; j < records.data[i].result.packages.length; j++) {

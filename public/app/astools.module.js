@@ -53,7 +53,7 @@ const astoolsModule = (function () {
             let html = '';
 
             if (records.data.length === 0) {
-                domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> The "digital objects" workspace is empty</div>');
+                domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> No collection folders are ready</div>');
                 return false;
             }
 
