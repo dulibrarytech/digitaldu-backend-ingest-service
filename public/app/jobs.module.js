@@ -84,7 +84,9 @@ const jobsModule = (function () {
             if (response.status === 200) {
 
                 if (response.data.data.length === 0) {
-                    return response.data.data;
+                    return {
+                        data: []
+                    };
                 }
 
                 let record = [];
@@ -136,7 +138,9 @@ const jobsModule = (function () {
             if (response.status === 200) {
 
                 if (response.data.data.length === 0) {
-                    return response.data.data;
+                    return {
+                        data: []
+                    };
                 }
 
                 let record = [];

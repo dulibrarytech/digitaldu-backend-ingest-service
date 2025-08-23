@@ -221,7 +221,6 @@ const ingestModule = (function () {
 
             // TODO: check if ingest is in progress
             window.localStorage.clear();
-            // const packages = await get_packages();
             const api_key = helperModule.getParameterByName('api_key');
             const job_uuid = helperModule.getParameterByName('job_uuid');
             let records;
@@ -235,7 +234,7 @@ const ingestModule = (function () {
             }
 
             if (records.data.length === 0) {
-                domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> The "Ingest" workspace is empty</div>');
+                domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> No collection folders are ready</div>');
                 return false;
             }
 

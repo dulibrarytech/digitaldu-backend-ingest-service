@@ -68,9 +68,10 @@ const metadataModule = (function () {
                 window.localStorage.setItem('job_uuid', job_uuid);
                 records = await jobsModule.get_active_job(job_uuid);
             } else { // gets all records in jobs that have not had QA run on packages
-                records = await metadataModule.get_metadata_check_batches();
+                // records = await metadataModule.get_metadata_check_batches();
+                records = await jobsModule.get_metadata_jobs();
             }
-
+            console.log(records);
             if (records.data.length === 0) {
                 domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> No collection folders are ready</div>');
                 return false;
