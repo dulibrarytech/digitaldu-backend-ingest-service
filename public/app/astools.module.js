@@ -69,11 +69,25 @@ const astoolsModule = (function () {
 
                 window.localStorage.setItem(batch, JSON.stringify(records.data[i].result));
 
+                let package_list = '<ul>';
+
+                for (let j = 0; j < records.data[i].result.packages.length; j++) {
+                    package_list += '<li><small>' + records.data[i].result.packages[j].package + '</small></li>';
+                }
+
+                package_list += '</ul>';
+
                 html += '<tr>';
                 // workspace folder name
                 html += '<td style="text-align: left;vertical-align: middle; width: 55%">';
                 html += '<small>' + batch + '</small>';
                 html += '</td>';
+
+                // archival object folders
+                html += '<td style="text-align: left;vertical-align: middle; width: 35%">';
+                html += package_list;
+                html += '</td>';
+
                 // type
                 html += '<td style="text-align: left;vertical-align: middle; width: 20%">';
 
