@@ -223,8 +223,6 @@ async function check_metadata_parts(batch, ingest_package, job_uuid, metadata) {
             if (packagef[i] !== partf[i]) {
                 errors.push('Package files do not match ArchivesSpace record.');
                 return false;
-            } else {
-                console.log('PASS');
             }
         }
 

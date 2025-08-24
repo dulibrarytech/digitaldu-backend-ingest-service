@@ -23,6 +23,7 @@ const metadataModule = (function () {
     let obj = {};
     const nginx_path = '/ingester';
 
+    // TODO: deprecate
     obj.get_metadata_check_batches = async function () {
 
         try {
@@ -68,10 +69,9 @@ const metadataModule = (function () {
                 window.localStorage.setItem('job_uuid', job_uuid);
                 records = await jobsModule.get_active_job(job_uuid);
             } else { // gets all records in jobs that have not had QA run on packages
-                // records = await metadataModule.get_metadata_check_batches();
                 records = await jobsModule.get_metadata_jobs();
             }
-            console.log(records);
+
             if (records.data.length === 0) {
                 domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> No archival object folders are ready for <strong>ArchivesSpace Descriptive QA</strong></div>');
                 return false;
@@ -135,9 +135,15 @@ const metadataModule = (function () {
             }
 
             const batch_ = JSON.parse(window.localStorage.getItem(batch + '_'));
-            console.log('in get packages ', batch_);
 
             if (batch_ !== null) {
+
+                let job_uuid = window.localStorage.getItem('job_uuid');
+
+                if (job_uuid === null) {
+                    job_uuid = batch_.job_uuid;
+                    window.localStorage.setItem('job_uuid', job_uuid);
+                }
 
                 let packages = [];
 
@@ -147,11 +153,9 @@ const metadataModule = (function () {
 
                 domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Packages retrieved for "${batch}" batch</div>`);
 
-
                 setTimeout(async () => {
 
                     document.querySelector('#digital-object-workspace-table').innerHTML = '';
-                    // document.querySelector('#batch').innerHTML = `<em>Processing packages in ${batch}</em>`;
                     await process_packages(batch, packages);
                 }, 1000);
 
@@ -230,16 +234,16 @@ const metadataModule = (function () {
                         return false;
                     }
 
-                    let batch_ = JSON.parse(window.localStorage.getItem(batch + '_'));
-                    console.log('batch_ ', batch_);
-                    return false;
-                    if (batch_ === null) {
+                    // TODO:
+                    let job_uuid = window.localStorage.getItem('job_uuid');
+
+                    if (job_uuid === null) {
                         domModule.html('#message', `<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> Unable to update QA job</div>`);
                         return false;
                     }
 
                     await jobsModule.update_job({
-                        uuid: batch_.job_uuid,
+                        uuid: job_uuid,
                         is_metadata_checks_complete: 1
                     });
 
@@ -247,11 +251,11 @@ const metadataModule = (function () {
 
                         domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ArchivesSpace Description QA checks complete</div>`);
 
-                        console.log('job uuid ', batch_.job_uuid);
-
                         setTimeout(async () => {
                             const api_key = helperModule.getParameterByName('api_key');
-                            window.location.href = nginx_path + '/dashboard/metadata?job_uuid=' + batch_.job_uuid + '&api_key=' + api_key;
+
+                            console.log('QA complete');
+                            window.location.href = nginx_path + '/dashboard/ingest?job_uuid=' + job_uuid + '&api_key=' + api_key;
                         }, 2000);
 
                     }, 3000);
@@ -275,7 +279,6 @@ const metadataModule = (function () {
 
             const api_key = helperModule.getParameterByName('api_key');
             const job_uuid = window.localStorage.getItem('job_uuid');
-            // const batch_data = JSON.parse(window.localStorage.getItem(batch + '_'));
             const data = {
                 'uuid': job_uuid,
                 'batch': batch,
@@ -312,7 +315,7 @@ const metadataModule = (function () {
                 html += await create_table(records);
 
                 document.querySelector('#metadata-results').innerHTML = html;
-                document.querySelector('#batch').innerHTML = batch;
+                // document.querySelector('#batch').innerHTML = batch;
             }
 
         } catch (error) {
