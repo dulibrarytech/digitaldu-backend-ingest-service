@@ -135,6 +135,7 @@ const metadataModule = (function () {
             }
 
             const batch_ = JSON.parse(window.localStorage.getItem(batch + '_'));
+            console.log('in get packages ', batch_);
 
             if (batch_ !== null) {
 
@@ -150,18 +151,17 @@ const metadataModule = (function () {
                 setTimeout(async () => {
 
                     document.querySelector('#digital-object-workspace-table').innerHTML = '';
-                    document.querySelector('#batch').innerHTML = `<em>Processing packages in ${batch}</em>`;
-
+                    // document.querySelector('#batch').innerHTML = `<em>Processing packages in ${batch}</em>`;
                     await process_packages(batch, packages);
-
                 }, 1000);
 
                 return false;
             }
 
+            /*
             const api_key = helperModule.getParameterByName('api_key');
             document.querySelector('#digital-object-workspace-table').innerHTML = '';
-            document.querySelector('#batch').innerHTML = `<em>Processing packages in ${batch}</em>`;
+            // document.querySelector('#batch').innerHTML = `<em>Processing packages in ${batch}</em>`;
 
             if (api_key === null) {
                 domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> Permission Denied</div>');
@@ -185,7 +185,7 @@ const metadataModule = (function () {
             });
 
             if (response.status === 200) {
-
+                console.log('packages response ', response);
                 if (response.data.data.errors.length > 0) {
                     // TODO
                     console.log(response.data.data.errors);
@@ -199,6 +199,8 @@ const metadataModule = (function () {
                     await process_packages(batch, packages);
                 }, 1000);
             }
+
+             */
 
         } catch (error) {
             domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
@@ -216,20 +218,21 @@ const metadataModule = (function () {
             const timer = setInterval(async () => {
 
                 if (packages.length === 0) {
+
                     clearInterval(timer);
-                    // TODO: override message if no file is found
-                    // TODO: - Please proceed to Ingest Packages
+
                     let errors = window.localStorage.getItem(batch + '_errors');
 
                     if (errors !== null) {
                         // TODO: show errors
                         console.log('ERRORS ', errors);
-                        domModule.html('#message', `<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> Metadata errors detected</div>`);
+                        domModule.html('#message', `<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> ArchivesSpace description errors detected</div>`);
                         return false;
                     }
 
                     let batch_ = JSON.parse(window.localStorage.getItem(batch + '_'));
-
+                    console.log('batch_ ', batch_);
+                    return false;
                     if (batch_ === null) {
                         domModule.html('#message', `<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> Unable to update QA job</div>`);
                         return false;
@@ -242,12 +245,14 @@ const metadataModule = (function () {
 
                     setTimeout(async () => {
 
-                        domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Metadata QA checks complete</div>`);
+                        domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ArchivesSpace Description QA checks complete</div>`);
+
+                        console.log('job uuid ', batch_.job_uuid);
 
                         setTimeout(async () => {
                             const api_key = helperModule.getParameterByName('api_key');
                             window.location.href = nginx_path + '/dashboard/metadata?job_uuid=' + batch_.job_uuid + '&api_key=' + api_key;
-                        }, 2000)
+                        }, 2000);
 
                     }, 3000);
 
@@ -269,9 +274,10 @@ const metadataModule = (function () {
         try {
 
             const api_key = helperModule.getParameterByName('api_key');
-            const batch_data = JSON.parse(window.localStorage.getItem(batch + '_'));
+            const job_uuid = window.localStorage.getItem('job_uuid');
+            // const batch_data = JSON.parse(window.localStorage.getItem(batch + '_'));
             const data = {
-                'uuid': batch_data.job_uuid,
+                'uuid': job_uuid,
                 'batch': batch,
                 'ingest_package': ingest_package
             };
@@ -326,14 +332,10 @@ const metadataModule = (function () {
 
             if (data.title !== undefined && data.title.length > 0) {
                 record.title = data.title;
-            } else {
-                // record.title = '-----';
             }
 
             if (data.uri !== undefined && data.uri.length > 0) {
                 record.uri = data.uri;
-            } else {
-                // record.uri = '-----';
             }
 
             if (data.errors !== undefined && data.errors.length > 0) {

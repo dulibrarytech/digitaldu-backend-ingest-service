@@ -24,7 +24,8 @@ const ARCHIVESSPACE_CONFIG = require('../config/archivesspace_config')();
 const ARCHIVESSPACE = require('../libs/archivesspace');
 const LOGGER = require('../libs/log4');
 
-// TODO:
+// TODO: Deprecate?
+/*
 exports.get_processed_packages = function (callback) {
 
     (async function () {
@@ -123,6 +124,7 @@ exports.get_processed_packages = function (callback) {
 
     })();
 };
+*/
 
 exports.get_workspace_packages = function (callback) {
 

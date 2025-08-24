@@ -20,6 +20,7 @@
 
 const MODEL = require('../astools/model');
 const SERVICE = require('../astools/service');
+const LOGGER = require('../libs/log4');
 
 exports.workspace = function (req, res) {
 
@@ -32,10 +33,12 @@ exports.workspace = function (req, res) {
         });
 
     } catch (error) {
+        LOGGER.module().error('ERROR: [/astools/controller (workspace)] unable to get workspace packages ' + error.message);
         res.status(500).send({message: `${error.message}`});
     }
 };
 
+/*
 exports.processed = function (req, res) {
 
     try {
@@ -50,6 +53,7 @@ exports.processed = function (req, res) {
         res.status(500).send({message: `${error.message}`});
     }
 };
+*/
 
 exports.make_digital_objects = function (req, res) {
 
@@ -96,6 +100,7 @@ exports.make_digital_objects = function (req, res) {
         });
 
     } catch (error) {
+        LOGGER.module().error('ERROR: [/astools/controller (make_digital_objects)] unable to make digital objects ' + error.message);
         res.status(500).send({message: `${error.message}`});
     }
 };
@@ -118,6 +123,7 @@ exports.check_uri_txt = function (req, res) {
         });
 
     } catch (error) {
+        LOGGER.module().error('ERROR: [/astools/controller (check_uri_txt)] unable to check uri txt ' + error.message);
         res.status(500).send({message: `${error.message}`});
     }
 };
@@ -140,6 +146,7 @@ exports.get_packages = function (req, res) {
         });
 
     } catch (error) {
+        LOGGER.module().error('ERROR: [/astools/controller (get_packages)] unable to get packages ' + error.message);
         res.status(500).send({message: `${error.message}`});
     }
 };
@@ -149,10 +156,10 @@ exports.check_metadata = function (req, res) {
     try {
 
         const batch = req.body.batch;
-        const ingest_package = req.body.ingest_package;
         const job_uuid = req.body.uuid;
+        const ingest_package = req.body.ingest_package;
 
-        if (batch === undefined) {
+        if (batch === undefined || job_uuid === undefined || ingest_package === undefined) {
             res.status(400).send('Bad request.');
             return false;
         }
@@ -175,6 +182,7 @@ exports.check_metadata = function (req, res) {
         });
 
     } catch (error) {
+        LOGGER.module().error('ERROR: [/astools/controller (check_metadata)] unable to check metadata ' + error.message);
         res.status(500).send({message: `${error.message}`});
     }
 };
@@ -182,32 +190,28 @@ exports.check_metadata = function (req, res) {
 async function check_metadata_parts(batch, ingest_package, job_uuid, metadata) {
 
     try {
-        console.log('job uuid ', job_uuid);
+
         const job = await MODEL.get_job(job_uuid);
-        console.log('JOB ', job);
         let packages = JSON.parse(job[0].packages);
         let package_files;
         let part_files = [];
         let errors = [];
 
         for (let i = 0; i < metadata.parts.length; i++) {
-            console.log(metadata.parts[i].title);
+
+            if (job[0].is_kaltura === 1) {
+                if (metadata.parts[i].kaltura_id === undefined) {
+                    errors.push(metadata.parts[i].title + ' is missing its kaltura_id');
+                }
+            }
+
             part_files.push(metadata.parts[i].title);
         }
 
         if (packages.length > 0) {
 
             for (let i = 0; i < packages.length; i++) {
-
                 package_files = packages[i].files.sort();
-
-                /* TODO: test
-                if (packages[i].files.length > 0) {
-                    for (let j = 0; j < packages[i].files.length; j++) {
-                        console.log('package files ', packages[i].files[j]);
-                    }
-                }
-                 */
             }
         }
 
@@ -215,26 +219,12 @@ async function check_metadata_parts(batch, ingest_package, job_uuid, metadata) {
         const partf = part_files.concat().sort();
 
         for (let i = 0; i < packagef.length; i++) {
+
             if (packagef[i] !== partf[i]) {
                 errors.push('Package files do not match ArchivesSpace record.');
                 return false;
             } else {
                 console.log('PASS');
-            }
-        }
-
-        // TODO
-        // check for entry ids if kaltura packages
-        if (job[0].is_kaltura === 1) {
-
-            for (let i = 0; i < metadata.parts.length; i++) {
-                console.log(metadata.parts[i].kaltura_id);
-                console.log(metadata.parts[i].title);
-                if (metadata.parts[i].kaltura_id === undefined || metadata.parts[i].kaltura_id.length === 0) {
-                    console.log(metadata.parts[i].title);
-                    console.log('missing kaltura id');
-                }
-
             }
         }
 
@@ -245,9 +235,8 @@ async function check_metadata_parts(batch, ingest_package, job_uuid, metadata) {
         }
 
     } catch (error) {
-        console.log(error);
+        LOGGER.module().error('ERROR: [/astools/controller (check_metadata_parts)] unable to check metadata parts ' + error.message);
     }
-
 }
 
 exports.get_job = async function (req, res) {
@@ -262,6 +251,7 @@ exports.get_job = async function (req, res) {
         });
 
     } catch (error) {
+        LOGGER.module().error('ERROR: [/astools/controller (get_job)] unable to get job ' + error.message);
         res.status(500).send({message: `${error.message}`});
     }
 };
@@ -277,6 +267,7 @@ exports.get_metadata_jobs = async function (req, res) {
         });
 
     } catch (error) {
+        LOGGER.module().error('ERROR: [/astools/controller (get_metadata_jobs)] unable to get metadata jobs ' + error.message);
         res.status(500).send({message: `${error.message}`});
     }
 };
@@ -292,6 +283,7 @@ exports.get_ingest_jobs = async function (req, res) {
         });
 
     } catch (error) {
+        LOGGER.module().error('ERROR: [/astools/controller (get_ingest_jobs)] unable to get ingest jobs ' + error.message);
         res.status(500).send({message: `${error.message}`});
     }
 };
@@ -308,6 +300,7 @@ exports.update_job = async function (req, res) {
         });
 
     } catch (error) {
+        LOGGER.module().error('ERROR: [/astools/controller (update_job)] unable to get update job ' + error.message);
         res.status(500).send({message: `${error.message}`});
     }
 };
