@@ -72,7 +72,19 @@ const metadataModule = (function () {
                 records = await jobsModule.get_metadata_jobs();
             }
 
-            if (records.data.length === 0) {
+
+            let collection_folders = [];
+
+            for (let i = 0; i < records.data.length; i++) {
+
+                if (records.data[i].result.batch.indexOf('new_') === -1 || records.data[i].result.batch.indexOf('-resources_') === -1) {
+                    console.log('Removing ', records.data[i].result.batch);
+                } else {
+                    collection_folders.push(records.data[i]);
+                }
+            }
+
+            if (collection_folders.length === 0) {
                 domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> No archival object folders are ready for <strong>ArchivesSpace Descriptive QA</strong></div>');
                 return false;
             }
@@ -83,11 +95,6 @@ const metadataModule = (function () {
 
                 let batch = records.data[i].result.batch;
                 let key = batch + '_';
-
-                if (batch.indexOf('new_') === -1 || batch.indexOf('-resources_') === -1) {
-                    console.log('Removing ', batch);
-                    continue;
-                }
 
                 window.localStorage.setItem(key, JSON.stringify(records.data[i].result));
 
