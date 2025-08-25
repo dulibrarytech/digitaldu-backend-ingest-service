@@ -52,6 +52,13 @@ const astoolsModule = (function () {
             const records = await astoolsModule.get_workspace_packages();
             let html = '';
 
+            for (let i = 0; i < records.data.length; i++) {
+                if (records.data[i].result.batch.indexOf('new_') === -1 || records.data[i].result.batch.indexOf('-resources_') === -1) {
+                    console.log('Removing ', records.data[i].result.batch);
+                    records.data.splice(i, 1);
+                }
+            }
+
             if (records.data.length === 0) {
                 domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> No collection folders are ready</div>');
                 return false;
@@ -61,11 +68,6 @@ const astoolsModule = (function () {
 
                 let batch = records.data[i].result.batch;
                 let is_kaltura = records.data[i].result.is_kaltura;
-
-                if (batch.indexOf('new_') === -1 || batch.indexOf('-resources_') === -1) {
-                    console.log('Removing ', batch);
-                    continue;
-                }
 
                 window.localStorage.setItem(batch, JSON.stringify(records.data[i].result));
 
