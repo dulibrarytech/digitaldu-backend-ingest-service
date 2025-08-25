@@ -51,15 +51,18 @@ const astoolsModule = (function () {
 
             const records = await astoolsModule.get_workspace_packages();
             let html = '';
+            let collection_folders = [];
 
             for (let i = 0; i < records.data.length; i++) {
+
                 if (records.data[i].result.batch.indexOf('new_') === -1 || records.data[i].result.batch.indexOf('-resources_') === -1) {
                     console.log('Removing ', records.data[i].result.batch);
-                    records.data.splice(i, 1);
+                } else {
+                    collection_folders.push(records.data[i]);
                 }
             }
 
-            if (records.data.length === 0) {
+            if (collection_folders.length === 0) {
                 domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> No collection folders are ready</div>');
                 return false;
             }
