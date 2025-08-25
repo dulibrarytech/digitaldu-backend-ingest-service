@@ -24,7 +24,85 @@ const ingestModule = (function () {
     const nginx_path = '/ingester';
 
     /**
-     * Starts ingest process TODO: rename to start_QA
+     * Displays collection packages
+     */
+    async function display_packages() {
+
+        try {
+
+            // TODO: check if ingest is in progress
+            window.localStorage.clear();
+            const api_key = helperModule.getParameterByName('api_key');
+            const job_uuid = helperModule.getParameterByName('job_uuid');
+            let records;
+
+            // gets single record by job uuid
+            if (job_uuid !== null && job_uuid.length > 0) {
+                window.localStorage.setItem('job_uuid', job_uuid);
+                records = await jobsModule.get_active_job(job_uuid);
+            } else { // gets all records in jobs that have been processed in MDO and metadata QA
+                records = await jobsModule.get_ingest_jobs();
+            }
+
+            if (records.data.length === 0) {
+                domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> No archival object folders are ready for <strong>Archivematica Ingest</strong></div>');
+                return false;
+            }
+
+            let html = '';
+
+            for (let i = 0; i < records.data.length; i++) {
+
+                let batch = records.data[i].result.batch;
+                let key = batch + '_';
+
+                if (batch.indexOf('new_') === -1 || batch.indexOf('-resources_') === -1) {
+                    console.log('Removing ', batch);
+                    continue;
+                }
+
+                window.localStorage.setItem(key, JSON.stringify(records.data[i].result));
+
+                let package_list = '<ul>';
+
+                for (let j = 0; j < records.data[i].result.packages.length; j++) {
+                    package_list += '<li><small>' + records.data[i].result.packages[j].package + '</small></li>';
+                }
+
+                package_list += '</ul>';
+
+                html += '<tr>';
+                // workspace folder name
+                html += '<td style="text-align: left;vertical-align: middle; width: 40%">';
+                html += '<small>' + batch + '</small>';
+                html += '</td>';
+                // packages
+                html += '<td style="text-align: left;vertical-align: middle; width: 25%">';
+                html += package_list;
+                html += '</td>';
+                // package count
+                html += '<td style="text-align: left;vertical-align: middle; width: 5%">';
+                html += '<small>' + records.data[i].result.packages.length + '</small>';
+                html += '</td>';
+                // actions
+                html += '<td style="text-align: center;vertical-align: middle; width: 20%">';
+                html += '<a href="' + nginx_path + '/dashboard/ingest/status?batch=' + batch + '&api_key=' + api_key + '" type="button" class="btn btn-sm btn-default run-qa"><i class="fa fa-cogs"></i> <span>Start</span></a>';
+                html += '</td>';
+                html += '</tr>';
+            }
+
+            domModule.html('#packages', html);
+            document.querySelector('#message').innerHTML = '';
+            document.querySelector('.x_panel').style.visibility = 'visible';
+            // document.querySelector('#digital-object-workspace-table').style.visibility = 'visible';
+
+        } catch (error) {
+            domModule.html('#message', '<div class="alert alert-info"><i class=""></i> ' + error.message + '</div>');
+        }
+    }
+
+    /**
+     * Starts ingest process
      */
     obj.start_ingest = async function () {
 
@@ -174,6 +252,7 @@ const ingestModule = (function () {
     /**
      * Gets ingest packages
      */
+    /*
     async function get_packages () {
 
         try {
@@ -211,85 +290,8 @@ const ingestModule = (function () {
             domModule.html('#message', message);
         }
     }
+    */
 
-    /**
-     * Displays collection packages
-     */
-    async function display_packages() {
-
-        try {
-
-            // TODO: check if ingest is in progress
-            window.localStorage.clear();
-            const api_key = helperModule.getParameterByName('api_key');
-            const job_uuid = helperModule.getParameterByName('job_uuid');
-            let records;
-
-            // gets single record by job uuid
-            if (job_uuid !== null && job_uuid.length > 0) {
-                window.localStorage.setItem('job_uuid', job_uuid);
-                records = await jobsModule.get_active_job(job_uuid);
-            } else { // gets all records in jobs that have been processed in MDO and metadata QA
-                records = await jobsModule.get_ingest_jobs();
-            }
-
-            if (records.data.length === 0) {
-                domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> No archival object folders are ready for <strong>Archivematica Ingest</strong></div>');
-                return false;
-            }
-
-            let html = '';
-
-            for (let i = 0; i < records.data.length; i++) {
-
-                let batch = records.data[i].result.batch;
-                let key = batch + '_';
-
-                if (batch.indexOf('new_') === -1 || batch.indexOf('-resources_') === -1) {
-                    console.log('Removing ', batch);
-                    continue;
-                }
-
-                window.localStorage.setItem(key, JSON.stringify(records.data[i].result));
-
-                let package_list = '<ul>';
-
-                for (let j = 0; j < records.data[i].result.packages.length; j++) {
-                    package_list += '<li><small>' + records.data[i].result.packages[j].package + '</small></li>';
-                }
-
-                package_list += '</ul>';
-
-                html += '<tr>';
-                // workspace folder name
-                html += '<td style="text-align: left;vertical-align: middle; width: 40%">';
-                html += '<small>' + batch + '</small>';
-                html += '</td>';
-                // packages
-                html += '<td style="text-align: left;vertical-align: middle; width: 25%">';
-                html += package_list;
-                html += '</td>';
-                // package count
-                html += '<td style="text-align: left;vertical-align: middle; width: 5%">';
-                html += '<small>' + records.data[i].result.packages.length + '</small>';
-                html += '</td>';
-                // actions
-                html += '<td style="text-align: center;vertical-align: middle; width: 20%">';
-                html += '<a href="' + nginx_path + '/dashboard/ingest/status?batch=' + batch + '&api_key=' + api_key + '" type="button" class="btn btn-sm btn-default run-qa"><i class="fa fa-cogs"></i> <span>Start</span></a>';
-                //html += '<a href="#" onclick="metadataModule.get_packages(\'' + batch + '\');" type="button" class="btn btn-sm btn-default run-qa"><i class="fa fa-cogs"></i> <span>Start</span></a>';
-                html += '</td>';
-                html += '</tr>';
-            }
-
-            domModule.html('#packages', html);
-            document.querySelector('#message').innerHTML = '';
-            document.querySelector('.x_panel').style.visibility = 'visible';
-            document.querySelector('#digital-object-workspace-table').style.visibility = 'visible';
-
-        } catch (error) {
-            domModule.html('#message', '<div class="alert alert-info"><i class=""></i> ' + error.message + '</div>');
-        }
-    }
 
         /*
         if (packages === false) {

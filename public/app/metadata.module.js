@@ -225,16 +225,13 @@ const metadataModule = (function () {
 
                     clearInterval(timer);
 
-                    let errors = window.localStorage.getItem(batch + '_errors');
+                    let errors = window.localStorage.getItem(batch + '_m_errors');
 
                     if (errors !== null) {
-                        // TODO: show errors
-                        console.log('ERRORS ', errors);
                         domModule.html('#message', `<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> ArchivesSpace description errors detected</div>`);
                         return false;
                     }
 
-                    // TODO:
                     let job_uuid = window.localStorage.getItem('job_uuid');
 
                     if (job_uuid === null) {
@@ -253,12 +250,10 @@ const metadataModule = (function () {
 
                         setTimeout(async () => {
                             const api_key = helperModule.getParameterByName('api_key');
-
-                            console.log('QA complete');
                             window.location.href = nginx_path + '/dashboard/ingest?job_uuid=' + job_uuid + '&api_key=' + api_key;
-                        }, 2000);
+                        }, 3000);
 
-                    }, 3000);
+                    }, 2000);
 
                     return false;
                 }
@@ -300,22 +295,29 @@ const metadataModule = (function () {
             if (response.status === 200) {
 
                 document.querySelector('#metadata-workspace-table').style.visibility = 'visible';
-                const data = response.data.data;
+                const metadata = response.data.data;
                 const key = batch + '_m';
+                let records;
                 let list_exist = window.localStorage.getItem(key);
-
-                if (list_exist === null || list_exist === undefined) {
-                    await create_list(key, batch, ingest_package, data);
-                } else {
-                    await update_list(key, batch, ingest_package, data);
-                }
-
-                let records = JSON.parse(window.localStorage.getItem(key));
                 let html = '';
-                html += await create_table(records);
 
-                document.querySelector('#metadata-results').innerHTML = html;
-                // document.querySelector('#batch').innerHTML = batch;
+                if (list_exist === null) {
+
+                    records = await create_list(key, batch, ingest_package, metadata);
+                    window.localStorage.setItem(key, JSON.stringify(records));
+
+                    html += await create_table(records);
+                    document.querySelector('#metadata-results').innerHTML = html;
+
+                } else {
+
+                    console.log('updating list');
+                    records = await update_list(key, batch, ingest_package, metadata);
+                    window.localStorage.setItem(key, JSON.stringify(records));
+
+                    html += await create_table(records);
+                    document.querySelector('#metadata-results').innerHTML = html;
+                }
             }
 
         } catch (error) {
@@ -341,15 +343,27 @@ const metadataModule = (function () {
                 record.uri = data.uri;
             }
 
-            if (data.errors !== undefined && data.errors.length > 0) {
-                record.errors.push(data.errors);
-                window.localStorage.setItem(key + '_errors', JSON.stringify(record.errors));
+            let errors = JSON.parse(data.errors);
+
+            if (errors.length > 0) {
+
+                let obj = {
+                    package: ingest_package,
+                    error: errors.toString()
+                };
+
+                let m_errors = key + '_errors';
+                let metadata_errors = [];
+                metadata_errors.push(obj);
+                window.localStorage.setItem(m_errors, JSON.stringify(metadata_errors));
+                record.errors = JSON.stringify(metadata_errors);
+
             } else {
                 record.errors = false;
             }
 
             records.push(record);
-            window.localStorage.setItem(key, JSON.stringify(records));
+            return records;
 
         } catch (error) {
             domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
@@ -378,24 +392,27 @@ const metadataModule = (function () {
                 record.uri = '-----';
             }
 
-            if (data.errors !== undefined && data.errors.length > 0) {
-                record.errors = data.errors;
+            let errors = JSON.parse(data.errors);
 
-                let list_exist = window.localStorage.getItem(key + '_errors');
+            if (errors.length > 0) {
 
-                if (list_exist === null || list_exist === undefined) {
-                    window.localStorage.setItem(key + '_errors', JSON.stringify(record.errors));
-                } else {
-                    record.errors.push(data.errors);
-                    window.localStorage.setItem(key + '_errors', JSON.stringify(record.errors));
-                }
+                let obj = {
+                    package: ingest_package,
+                    error: errors.toString()
+                };
+
+                let m_errors = key + '_errors';
+                let metadata_errors = [];
+                metadata_errors.push(obj);
+                window.localStorage.setItem(m_errors, JSON.stringify(metadata_errors));
+                record.errors = JSON.stringify(metadata_errors);
 
             } else {
                 record.errors = false;
             }
 
             records.unshift(record);
-            window.localStorage.setItem(key, JSON.stringify(records));
+            return records;
 
         } catch (error) {
             domModule.html('#message', '<div class="alert alert-danger"><i class="fa fa-exclamation"></i> ' + error.message + '</div>');
@@ -442,12 +459,15 @@ const metadataModule = (function () {
                 html += '<td style="text-align: center;vertical-align: middle;">';
 
                 if (records[i].errors !== false) {
+
                     let message = '';
+
                     if (records[i].errors.toString().indexOf('Record not found.') !== -1) {
                         message = 'Please check if record is cataloged in ArchivesSpace and/or the package has a uri.txt file.';
                     }
 
-                    html += '<small><i class="fa fa-exclamation-circle"></i> ' + records[i].errors.toString() + ' ' + message + '</small>';
+                    let metadata_errors = JSON.parse(records[i].errors);
+                    html += '<small><i class="fa fa-exclamation-circle"></i> ' + metadata_errors[0].error + ' ' + message + '</small>';
 
                 } else {
                     html += '<small><i class="fa fa-check"></i></small>';
