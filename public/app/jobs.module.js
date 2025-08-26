@@ -39,7 +39,7 @@ const jobsModule = (function () {
             });
 
             if (response.status === 200) {
-
+                console.log(response.data.data);
                 let record = [];
                 let is_kalture = false;
 
@@ -82,7 +82,7 @@ const jobsModule = (function () {
             });
 
             if (response.status === 200) {
-
+                console.log(response.data.data);
                 if (response.data.data.length === 0) {
                     return {
                         data: []

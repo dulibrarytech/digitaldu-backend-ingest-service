@@ -151,7 +151,6 @@ const metadataModule = (function () {
                 domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Packages retrieved for "${batch}" batch</div>`);
 
                 setTimeout(async () => {
-
                     document.querySelector('#digital-object-workspace-table').innerHTML = '';
                     await process_packages(batch, packages);
                 }, 1000);
@@ -236,9 +235,17 @@ const metadataModule = (function () {
                         return false;
                     }
 
+                    let ingest_user = window.sessionStorage.getItem('ingest_user');
+
+                    if (ingest_user === null) {
+                        domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> Unable to get Ingest user information</div>');
+                        return false;
+                    }
+
                     await jobsModule.update_job({
                         uuid: job_uuid,
-                        is_metadata_checks_complete: 1
+                        is_metadata_checks_complete: 1,
+                        job_run_by: ingest_user
                     });
 
                     setTimeout(async () => {
@@ -246,8 +253,23 @@ const metadataModule = (function () {
                         domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ArchivesSpace Description QA checks complete</div>`);
 
                         setTimeout(async () => {
+
                             const api_key = helperModule.getParameterByName('api_key');
-                            window.location.href = nginx_path + '/dashboard/ingest?job_uuid=' + job_uuid + '&api_key=' + api_key;
+                            let uid = helperModule.getParameterByName('id');
+                            let name = helperModule.getParameterByName('name');
+                            let user;
+                            let redirect;
+
+                            if (uid === 'null' || name === 'null') {
+                                user = JSON.parse(window.sessionStorage.getItem('ingest_user'));
+                                redirect = nginx_path + '/dashboard/ingest?job_uuid=' + job_uuid + '&api_key=' + api_key + '&id=' + user[0].uid + '&name=' + user[0].name
+                            } else {
+                                redirect = nginx_path + '/dashboard/ingest?job_uuid=' + job_uuid + '&api_key=' + api_key + '&id=' + uid + '&name=' + name
+                            }
+
+                            console.log(redirect);
+                            // window.location.href = redirect;
+
                         }, 3000);
 
                     }, 2000);
@@ -308,7 +330,6 @@ const metadataModule = (function () {
 
                 } else {
 
-                    console.log('updating list');
                     records = await update_list(key, batch, ingest_package, metadata);
                     window.localStorage.setItem(key, JSON.stringify(records));
 
@@ -325,7 +346,7 @@ const metadataModule = (function () {
     const create_list = async function (key, batch, ingest_package, data) {
 
         try {
-
+            console.log('create ', data);
             let records = [];
             let record = {}
 
@@ -340,21 +361,23 @@ const metadataModule = (function () {
                 record.uri = data.uri;
             }
 
-            let errors = JSON.parse(data.errors);
+            if (data.errors !== undefined) {
 
-            if (errors.length > 0) {
+                let errors = JSON.parse(data.errors);
 
-                let obj = {
-                    package: ingest_package,
-                    error: errors.toString()
-                };
+                if (errors.length > 0) {
 
-                let m_errors = key + '_errors';
-                let metadata_errors = [];
-                metadata_errors.push(obj);
-                window.localStorage.setItem(m_errors, JSON.stringify(metadata_errors));
-                record.errors = JSON.stringify(metadata_errors);
+                    let obj = {
+                        package: ingest_package,
+                        error: errors.toString()
+                    };
 
+                    let m_errors = key + '_errors';
+                    let metadata_errors = [];
+                    metadata_errors.push(obj);
+                    window.localStorage.setItem(m_errors, JSON.stringify(metadata_errors));
+                    record.errors = JSON.stringify(metadata_errors);
+                }
             } else {
                 record.errors = false;
             }
@@ -363,6 +386,7 @@ const metadataModule = (function () {
             return records;
 
         } catch (error) {
+            console.log(error);
             domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
         }
     };
@@ -389,20 +413,23 @@ const metadataModule = (function () {
                 record.uri = '-----';
             }
 
-            let errors = JSON.parse(data.errors);
+            if (data.errors !== undefined) {
 
-            if (errors.length > 0) {
+                let errors = JSON.parse(data.errors);
 
-                let obj = {
-                    package: ingest_package,
-                    error: errors.toString()
-                };
+                if (errors.length > 0) {
 
-                let m_errors = key + '_errors';
-                let metadata_errors = [];
-                metadata_errors.push(obj);
-                window.localStorage.setItem(m_errors, JSON.stringify(metadata_errors));
-                record.errors = JSON.stringify(metadata_errors);
+                    let obj = {
+                        package: ingest_package,
+                        error: errors.toString()
+                    };
+
+                    let m_errors = key + '_errors';
+                    let metadata_errors = [];
+                    metadata_errors.push(obj);
+                    window.localStorage.setItem(m_errors, JSON.stringify(metadata_errors));
+                    record.errors = JSON.stringify(metadata_errors);
+                }
 
             } else {
                 record.errors = false;
@@ -412,6 +439,7 @@ const metadataModule = (function () {
             return records;
 
         } catch (error) {
+            console.log(error);
             domModule.html('#message', '<div class="alert alert-danger"><i class="fa fa-exclamation"></i> ' + error.message + '</div>');
         }
     }
@@ -477,6 +505,7 @@ const metadataModule = (function () {
             return html;
 
         } catch (error) {
+            console.log(error);
             domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
         }
     };
@@ -484,6 +513,32 @@ const metadataModule = (function () {
     obj.init = async function () {
 
         try {
+
+            // check if same ingest user
+            const user_id = helperModule.getParameterByName('id');
+            const name = helperModule.getParameterByName('name');
+
+            if (user_id !== undefined && name !== undefined) {
+
+                let user = JSON.parse(window.sessionStorage.getItem('ingest_user'));
+
+                if (user === null) {
+                    domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> Unable to get Ingest user information</div>');
+                    return false;
+                }
+
+                let profile = {
+                    uid: user_id,
+                    name: name,
+                    job_type: 'ArchivesSpace_description_QA',
+                    run_date: new Date()
+                };
+
+                if (user.length === 1) {
+                    user.push(profile);
+                    window.sessionStorage.setItem('ingest_user', JSON.stringify(user));
+                }
+            }
 
             document.querySelector('#message').innerHTML = '<div class="alert alert-info"><i class=""></i> Loading...</div>';
             await metadataModule.display_metadata_check_batches();

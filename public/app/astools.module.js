@@ -119,7 +119,6 @@ const astoolsModule = (function () {
             const ks = await get_ks();
             window.localStorage.setItem('ks', ks);
 
-            // TODO: check if items already have kaltura id?
             document.querySelector('#message').innerHTML = '';
             document.querySelector('.x_panel').style.visibility = 'visible';
 
@@ -327,8 +326,20 @@ const astoolsModule = (function () {
                     domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ${batch} <strong>complete</strong> - Proceed to Metadata QA page</div>`);
                     window.localStorage.setItem('job_uuid', job_uuid);
 
+                    let uid = helperModule.getParameterByName('id');
+                    let name = helperModule.getParameterByName('name');
+                    let user;
+                    let redirect;
+
+                    if (uid === 'null' || name === 'null') {
+                        user = JSON.parse(window.sessionStorage.getItem('ingest_user'));
+                        redirect = nginx_path + '/dashboard/metadata?job_uuid=' + job_uuid + '&api_key=' + api_key + '&id=' + user[0].uid + '&name=' + user[0].name
+                    } else {
+                        redirect = nginx_path + '/dashboard/metadata?job_uuid=' + job_uuid + '&api_key=' + api_key + '&id=' + uid + '&name=' + name
+                    }
+
                     setTimeout(() => {
-                        window.location.href = nginx_path + '/dashboard/metadata?job_uuid=' + job_uuid + '&api_key=' + api_key;
+                        window.location.href = redirect;
                     }, 3000);
                 }
             }
@@ -346,7 +357,6 @@ const astoolsModule = (function () {
             document.querySelector('#message').innerHTML = '<div class="alert alert-info"><i class=""></i> Loading...</div>';
             await astoolsModule.display_workspace_packages();
 
-            // const api_key = helperModule.getParameterByName('api_key');
             const user_id = helperModule.getParameterByName('id');
             const name = helperModule.getParameterByName('name');
 
@@ -356,7 +366,9 @@ const astoolsModule = (function () {
 
                 profile.push({
                     uid: user_id,
-                    name: name
+                    name: name,
+                    job_type: 'make_digital_objects',
+                    run_data: new Date()
                 });
 
                 window.sessionStorage.setItem('ingest_user', JSON.stringify(profile));

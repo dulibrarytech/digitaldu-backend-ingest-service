@@ -40,15 +40,15 @@ const Job_tasks = class {
             });
 
             if (result.length !== 1) {
-                LOGGER.module().info('INFO: [/astools/tasks (save_job)] Unable to save job.');
+                LOGGER.module().info('INFO: [/astools/tasks (create_job)] Unable to save job.');
                 return false;
             } else {
-                LOGGER.module().info('INFO: [/astools/tasks (save_job)] ' + result.length + ' Packages added to queue.');
+                LOGGER.module().info('INFO: [/astools/tasks (create_job)] ' + result.length + ' Packages added to queue.');
                 return true;
             }
 
         } catch (error) {
-            LOGGER.module().error('ERROR: [/astools/tasks (save_job)] Unable to save job ' + error.message);
+            LOGGER.module().error('ERROR: [/astools/tasks (create_job)] Unable to create job ' + error.message);
         }
     }
 
@@ -114,7 +114,6 @@ const Job_tasks = class {
             LOGGER.module().error('ERROR: [/astools/tasks (get_jobs)] unable to get job record ' + error.message);
         }
     }
-
 }
 
 module.exports = Job_tasks;
