@@ -45,7 +45,7 @@ const ingestModule = (function () {
             }
 
             if (records.data.length === 0) {
-                domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> No archival object folders are ready for <strong>Archivematica Ingest</strong></div>');
+                domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> No archival object folders are ready for <strong>Packaging and Ingesting</strong></div>');
                 return false;
             }
 
