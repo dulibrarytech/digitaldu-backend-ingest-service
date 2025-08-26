@@ -57,6 +57,7 @@ const astoolsModule = (function () {
 
                 if (records.data[i].result.batch.indexOf('new_') === -1 || records.data[i].result.batch.indexOf('-resources_') === -1) {
                     console.log('Removing ', records.data[i].result.batch);
+
                 } else {
                     collection_folders.push(records.data[i]);
                 }
@@ -66,6 +67,8 @@ const astoolsModule = (function () {
                 domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> No collection folders are ready</div>');
                 return false;
             }
+
+            records.data = collection_folders;
 
             for (let i = 0; i < records.data.length; i++) {
 

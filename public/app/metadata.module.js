@@ -63,6 +63,7 @@ const metadataModule = (function () {
             window.localStorage.clear();
             const job_uuid = helperModule.getParameterByName('job_uuid');
             let records;
+            // let collection_folders = [];
 
             // gets single record by job uuid
             if (job_uuid !== null && job_uuid.length > 0) {
@@ -72,9 +73,8 @@ const metadataModule = (function () {
                 records = await jobsModule.get_metadata_jobs();
             }
 
-
-            let collection_folders = [];
-
+            /*
+            console.log(records);
             for (let i = 0; i < records.data.length; i++) {
 
                 if (records.data[i].result.batch.indexOf('new_') === -1 || records.data[i].result.batch.indexOf('-resources_') === -1) {
@@ -84,7 +84,9 @@ const metadataModule = (function () {
                 }
             }
 
-            if (collection_folders.length === 0) {
+             */
+
+            if (records.data.length === 0) {
                 domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> No archival object folders are ready for <strong>ArchivesSpace Descriptive QA</strong></div>');
                 return false;
             }

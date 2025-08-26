@@ -82,11 +82,12 @@ const helperModule = (function () {
      */
     function set_api_key() {
         const key = helperModule.getParameterByName('api_key');
-        document.querySelector('#workspace').href = nginx_path + '/dashboard/workspace?api_key=' + key;
-        document.querySelector('#metadata').href = nginx_path + '/dashboard/metadata?api_key=' + key;
-        document.querySelector('#ingest').href = nginx_path + '/dashboard/ingest?api_key=' + key;
-        document.querySelector('#workspace').href = nginx_path + '/dashboard/workspace?api_key=' + key;
-        document.querySelector('#ingest-status').href = nginx_path + '/dashboard/ingest/status?api_key=' + key;
+        const id = helperModule.getParameterByName('id');
+        document.querySelector('#workspace').href = nginx_path + '/dashboard/workspace?id=' + id + '&api_key=' + key;
+        document.querySelector('#metadata').href = nginx_path + '/dashboard/metadata?id=' + id + '&api_key=' + key;
+        document.querySelector('#ingest').href = nginx_path + '/dashboard/ingest?id=' + id + '&api_key=' + key;
+        document.querySelector('#workspace').href = nginx_path + '/dashboard/workspace?id=' + id + '&api_key=' + key;
+        document.querySelector('#ingest-status').href = nginx_path + '/dashboard/ingest/status?id=' + id + '&api_key=' + key;
         // document.querySelector('#add-collections').href = nginx_path + '/dashboard/collections?api_key=' + key;
     }
 
