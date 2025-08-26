@@ -173,6 +173,8 @@ exports.check_metadata = function (req, res) {
 
                 if (result !== true) {
                     response.errors = result;
+                } else {
+                    response.errors = false;
                 }
 
                 res.status(200).send({

@@ -23,41 +23,6 @@ const metadataModule = (function () {
     let obj = {};
     const nginx_path = '/ingester';
 
-    // TODO: deprecate
-    /*
-    obj.get_metadata_check_batches = async function () {
-
-        try {
-
-            const api_key = helperModule.getParameterByName('api_key');
-            const response = await httpModule.req({
-                method: 'GET',
-                url: nginx_path + '/api/v1/astools/processed?api_key=' + api_key,
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (response.status === 200) {
-
-                // get records that have not had metadata QA
-                let jobs = await jobsModule.get_metadata_jobs();
-
-                if (jobs === undefined || jobs.length === 0) {
-                    jobs = {
-                        data: []
-                    }
-                }
-
-                return jobs;
-            }
-
-        } catch (error) {
-            domModule.html('#message', '<div class="alert alert-info"><i class=""></i> ' + error.message + '</div>');
-        }
-    }
-    */
-
     obj.display_metadata_check_batches = async function () {
 
         try {
@@ -158,50 +123,6 @@ const metadataModule = (function () {
                 return false;
             }
 
-            /*
-            const api_key = helperModule.getParameterByName('api_key');
-            document.querySelector('#digital-object-workspace-table').innerHTML = '';
-            // document.querySelector('#batch').innerHTML = `<em>Processing packages in ${batch}</em>`;
-
-            if (api_key === null) {
-                domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> Permission Denied</div>');
-                return false;
-            }
-
-            const data = {
-                'batch': batch
-            };
-
-            domModule.html('#message', '<div class="alert alert-info"><i class=""></i> Retrieving packages...</div>');
-
-            const response = await httpModule.req({
-                method: 'POST',
-                url: nginx_path + '/api/v1/astools/packages?api_key=' + api_key,
-                data: data,
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                timeout: 600000
-            });
-
-            if (response.status === 200) {
-                console.log('packages response ', response);
-                if (response.data.data.errors.length > 0) {
-                    // TODO
-                    console.log(response.data.data.errors);
-                    return false;
-                }
-
-                const packages = response.data.data.result;
-                domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Packages retrieved for "${batch}" batch</div>`);
-
-                setTimeout(async () => {
-                    await process_packages(batch, packages);
-                }, 1000);
-            }
-
-             */
-
         } catch (error) {
             domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
         }
@@ -267,8 +188,7 @@ const metadataModule = (function () {
                                 redirect = nginx_path + '/dashboard/ingest?job_uuid=' + job_uuid + '&api_key=' + api_key + '&id=' + uid + '&name=' + name
                             }
 
-                            console.log(redirect);
-                            // window.location.href = redirect;
+                            window.location.href = redirect;
 
                         }, 3000);
 
@@ -346,7 +266,7 @@ const metadataModule = (function () {
     const create_list = async function (key, batch, ingest_package, data) {
 
         try {
-            console.log('create ', data);
+
             let records = [];
             let record = {}
 
@@ -361,10 +281,11 @@ const metadataModule = (function () {
                 record.uri = data.uri;
             }
 
-            if (data.errors !== undefined) {
+            console.log(data.errors);
+            if (data.errors !== false) {
 
                 let errors = JSON.parse(data.errors);
-
+                console.log('create errors ', errors);
                 if (errors.length > 0) {
 
                     let obj = {
@@ -413,10 +334,11 @@ const metadataModule = (function () {
                 record.uri = '-----';
             }
 
-            if (data.errors !== undefined) {
+            console.log(data.errors);
+            if (data.errors !== false) {
 
                 let errors = JSON.parse(data.errors);
-
+                console.log('update errors ', typeof errors);
                 if (errors.length > 0) {
 
                     let obj = {
