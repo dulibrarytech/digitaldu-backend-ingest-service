@@ -349,14 +349,18 @@ const astoolsModule = (function () {
             // const api_key = helperModule.getParameterByName('api_key');
             const user_id = helperModule.getParameterByName('id');
             const name = helperModule.getParameterByName('name');
-            console.log(user_id);
-            console.log(name);
+
             if (user_id !== undefined && name !== undefined) {
-                // history.replaceState({}, '', '/ingester/dashboard/workspace?api_key=' + api_key);
-                window.sessionStorage.setItem('ingest_user', JSON.stringify({
+
+                let profile = [];
+
+                profile.push({
                     uid: user_id,
                     name: name
-                }));
+                });
+
+                window.sessionStorage.setItem('ingest_user', JSON.stringify(profile));
+
             } else {
                 console.log(window.sessionStorage.getItem('ingest_user'));
             }

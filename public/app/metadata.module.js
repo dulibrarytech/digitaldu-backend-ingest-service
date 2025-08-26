@@ -24,6 +24,7 @@ const metadataModule = (function () {
     const nginx_path = '/ingester';
 
     // TODO: deprecate
+    /*
     obj.get_metadata_check_batches = async function () {
 
         try {
@@ -55,6 +56,7 @@ const metadataModule = (function () {
             domModule.html('#message', '<div class="alert alert-info"><i class=""></i> ' + error.message + '</div>');
         }
     }
+    */
 
     obj.display_metadata_check_batches = async function () {
 
@@ -63,7 +65,6 @@ const metadataModule = (function () {
             window.localStorage.clear();
             const job_uuid = helperModule.getParameterByName('job_uuid');
             let records;
-            // let collection_folders = [];
 
             // gets single record by job uuid
             if (job_uuid !== null && job_uuid.length > 0) {
@@ -72,19 +73,6 @@ const metadataModule = (function () {
             } else { // gets all records in jobs that have not had QA run on packages
                 records = await jobsModule.get_metadata_jobs();
             }
-
-            /*
-            console.log(records);
-            for (let i = 0; i < records.data.length; i++) {
-
-                if (records.data[i].result.batch.indexOf('new_') === -1 || records.data[i].result.batch.indexOf('-resources_') === -1) {
-                    console.log('Removing ', records.data[i].result.batch);
-                } else {
-                    collection_folders.push(records.data[i]);
-                }
-            }
-
-             */
 
             if (records.data.length === 0) {
                 domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> No archival object folders are ready for <strong>ArchivesSpace Descriptive QA</strong></div>');
