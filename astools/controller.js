@@ -63,9 +63,7 @@ exports.make_digital_objects = function (req, res) {
             res.status(400).send('Bad request.');
             return false;
         }
-        console.log('id', req.query.id);
-        console.log(atob(req.query.id));
-        return false;
+
         // data is sent to astools script
         const args = {
             folder: req.body.batch,
@@ -89,7 +87,7 @@ exports.make_digital_objects = function (req, res) {
             is_kaltura: is_kaltura,
             log: '---',
             error: '---',
-            job_run_by: ''
+            job_run_by: req.body.job_run_by
         };
 
         (async function() {

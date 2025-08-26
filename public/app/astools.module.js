@@ -252,7 +252,8 @@ const astoolsModule = (function () {
                 'batch': batch,
                 'packages': json.packages,
                 'files': files,
-                'is_kaltura': is_kaltura
+                'is_kaltura': is_kaltura,
+                'job_run_by': window.sessionStorage.getItem('ingest_user')
             };
 
             domModule.html('#message', '<div class="alert alert-info"><i class=""></i> Making digital objects...</div>');
@@ -344,6 +345,21 @@ const astoolsModule = (function () {
             window.localStorage.clear();
             document.querySelector('#message').innerHTML = '<div class="alert alert-info"><i class=""></i> Loading...</div>';
             await astoolsModule.display_workspace_packages();
+
+            // const api_key = helperModule.getParameterByName('api_key');
+            const user_id = helperModule.getParameterByName('id');
+            const name = helperModule.getParameterByName('name');
+            console.log(user_id);
+            console.log(name);
+            if (user_id !== undefined && name !== undefined) {
+                // history.replaceState({}, '', '/ingester/dashboard/workspace?api_key=' + api_key);
+                window.sessionStorage.setItem('ingest_user', JSON.stringify({
+                    uid: user_id,
+                    name: name
+                }));
+            } else {
+                console.log(window.sessionStorage.getItem('ingest_user'));
+            }
 
         } catch (error) {
             domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
