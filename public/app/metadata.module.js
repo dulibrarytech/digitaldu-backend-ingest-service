@@ -142,13 +142,6 @@ const metadataModule = (function () {
 
                     clearInterval(timer);
 
-                    let errors = window.localStorage.getItem(batch + '_m_errors');
-
-                    if (errors !== null) {
-                        domModule.html('#message', `<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> ArchivesSpace description errors detected</div>`);
-                        return false;
-                    }
-
                     let job_uuid = window.localStorage.getItem('job_uuid');
 
                     if (job_uuid === null) {
@@ -160,6 +153,21 @@ const metadataModule = (function () {
 
                     if (ingest_user === null) {
                         domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> Unable to get Ingest user information</div>');
+                        return false;
+                    }
+
+                    let errors = window.localStorage.getItem(batch + '_m_errors');
+
+                    if (errors !== null) {
+
+                        await jobsModule.update_job({
+                            uuid: job_uuid,
+                            is_metadata_checks_complete: 1,
+                            job_run_by: ingest_user,
+                            error: errors
+                        });
+
+                        domModule.html('#message', `<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> ArchivesSpace description errors detected</div>`);
                         return false;
                     }
 
@@ -281,7 +289,6 @@ const metadataModule = (function () {
                 record.uri = data.uri;
             }
 
-            console.log(data.errors);
             if (data.errors !== false) {
 
                 let errors = JSON.parse(data.errors);
@@ -334,11 +341,10 @@ const metadataModule = (function () {
                 record.uri = '-----';
             }
 
-            console.log(data.errors);
             if (data.errors !== false) {
 
                 let errors = JSON.parse(data.errors);
-                console.log('update errors ', typeof errors);
+
                 if (errors.length > 0) {
 
                     let obj = {
@@ -361,7 +367,6 @@ const metadataModule = (function () {
             return records;
 
         } catch (error) {
-            console.log(error);
             domModule.html('#message', '<div class="alert alert-danger"><i class="fa fa-exclamation"></i> ' + error.message + '</div>');
         }
     }
@@ -427,7 +432,6 @@ const metadataModule = (function () {
             return html;
 
         } catch (error) {
-            console.log(error);
             domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
         }
     };
