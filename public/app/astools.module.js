@@ -354,6 +354,7 @@ const astoolsModule = (function () {
         try {
 
             window.localStorage.clear();
+            window.sessionStorage.clear();
             document.querySelector('#message').innerHTML = '<div class="alert alert-info"><i class=""></i> Loading...</div>';
             await astoolsModule.display_workspace_packages();
 

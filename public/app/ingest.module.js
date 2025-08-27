@@ -249,131 +249,167 @@ const ingestModule = (function () {
         }
     }
 
-    /**
-     * Gets ingest packages
-     */
-    /*
-    async function get_packages () {
+    obj.init = async function () {
 
-        try {
+        const user_id = helperModule.getParameterByName('id');
+        const name = helperModule.getParameterByName('name');
 
-            let data = await get_ingest_status();
-            let ingest_status = false;
+        if (user_id !== undefined && name !== undefined) {
 
-            for (let i=0;i<data.length;i++) {
-                if (data[i].is_complete === 0) {
-                    ingest_status = true;
-                    break;
-                }
-            }
+            let user = JSON.parse(window.sessionStorage.getItem('ingest_user'));
 
-            if (ingest_status === true) {
+            if (user === null) {
+                domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> Unable to get Ingest user information</div>');
                 return false;
             }
 
-            const key = helperModule.getParameterByName('api_key');
-            let url = nginx_path + '/api/v1/ingest/packages?api_key=' + key;
-            let response = await httpModule.req({
-                method: 'GET',
-                url: url,
-                headers: {
-                    'Content-Type': 'application/json'
+            let profile = {
+                uid: user_id,
+                name: name,
+                job_type: 'packaging_and_ingesting',
+                run_date: new Date()
+            };
+
+            let exist = false;
+
+            for (let i=0;i<user.length;i++) {
+                if (user[i].job_type === 'packaging_and_ingesting') {
+                    exist = true;
                 }
-            });
-
-            if (response.status === 200) {
-                return response.data;
             }
 
-        } catch(error) {
-            let message = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; ' + error.message + '</strong></div>';
-            domModule.html('#message', message);
-        }
-    }
-    */
-
-
-        /*
-        if (packages === false) {
-            let message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; An ingest is in progress. Please try again later.</strong></div>';
-            domModule.html('#message', message);
-            document.querySelector('#import-table').style.visibility = 'hidden';
-            return false;
-        }
-        */
-
-        /*
-        if (packages === undefined) {
-            html = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; Ingest service is not available.</strong></div>';
-            domModule.html('#message', html);
-            document.querySelector('#import-table').style.visibility = 'hidden';
-            return false;
-        }
-        */
-
-        /*
-        if (Object.keys(packages.result).length === 0) {
-            html = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; There are no ingest packages ready for ingest.</strong></div>';
-            domModule.html('#message', html);
-            document.querySelector('#import-table').style.visibility = 'hidden';
-            return false;
-        }
-
-        if (packages.errors.length > 0) {
-
-            html = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; The collection folder contains errors.</strong></div>';
-
-            // TODO
-            console.log(packages.errors);
-
-            for (let i=0;i<packages.errors.length;i++) {
-                console.log(packages.errors[i]);
+            if (exist === false) {
+                user.push(profile);
+                window.sessionStorage.setItem('ingest_user', JSON.stringify(user));
             }
-
-            domModule.html('#packages', html);
-            return false;
         }
 
-        for (let prop in packages.result) {
+        console.log(JSON.parse(window.sessionStorage.getItem('ingest_user')));
 
-            if (prop.indexOf('new_') === -1 || prop.indexOf('-resources_') === -1) {
-
-                delete packages.result[prop];
-
-                if (Object.keys(packages.result).length === 0) {
-                    html = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; There are no packages ready for ingest.</strong></div>';
-                    domModule.html('#message', html);
-                    document.querySelector('#import-table').style.visibility = 'hidden';
-                    return false;
-                }
-
-                continue;
-            }
-
-            html += '<tr>';
-            // collection folder name
-            html += '<td style="text-align: left;vertical-align: middle; width: 55%">';
-            html += '<small>' + prop + '</small>';
-            html += '</td>';
-            // package count
-            html += '<td style="text-align: left;vertical-align: middle; width: 15%">';
-            html += '<small>' + packages.result[prop] + '</small>';
-            html += '</td>';
-            // Action button column
-            html += '<td style="text-align: center;vertical-align: middle; width: 15%"><a href="' + nginx_path + '/dashboard/ingest/status?batch=' + prop + '&api_key=' + key + '" type="button" class="btn btn-sm btn-default run-qa"><i class="fa fa-cogs"></i> <span>Start</span></a></td>';
-            html += '</tr>';
-        }
-
-        domModule.html('#packages', html);
-
-
-    };
-    */
-
-    obj.init = async function () {
         await display_packages();
     };
 
     return obj;
 
 }());
+
+/**
+ * Gets ingest packages
+ */
+/*
+async function get_packages () {
+
+    try {
+
+        let data = await get_ingest_status();
+        let ingest_status = false;
+
+        for (let i=0;i<data.length;i++) {
+            if (data[i].is_complete === 0) {
+                ingest_status = true;
+                break;
+            }
+        }
+
+        if (ingest_status === true) {
+            return false;
+        }
+
+        const key = helperModule.getParameterByName('api_key');
+        let url = nginx_path + '/api/v1/ingest/packages?api_key=' + key;
+        let response = await httpModule.req({
+            method: 'GET',
+            url: url,
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.status === 200) {
+            return response.data;
+        }
+
+    } catch(error) {
+        let message = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; ' + error.message + '</strong></div>';
+        domModule.html('#message', message);
+    }
+}
+*/
+
+
+/*
+if (packages === false) {
+    let message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; An ingest is in progress. Please try again later.</strong></div>';
+    domModule.html('#message', message);
+    document.querySelector('#import-table').style.visibility = 'hidden';
+    return false;
+}
+*/
+
+/*
+if (packages === undefined) {
+    html = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; Ingest service is not available.</strong></div>';
+    domModule.html('#message', html);
+    document.querySelector('#import-table').style.visibility = 'hidden';
+    return false;
+}
+*/
+
+/*
+if (Object.keys(packages.result).length === 0) {
+    html = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; There are no ingest packages ready for ingest.</strong></div>';
+    domModule.html('#message', html);
+    document.querySelector('#import-table').style.visibility = 'hidden';
+    return false;
+}
+
+if (packages.errors.length > 0) {
+
+    html = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; The collection folder contains errors.</strong></div>';
+
+    // TODO
+    console.log(packages.errors);
+
+    for (let i=0;i<packages.errors.length;i++) {
+        console.log(packages.errors[i]);
+    }
+
+    domModule.html('#packages', html);
+    return false;
+}
+
+for (let prop in packages.result) {
+
+    if (prop.indexOf('new_') === -1 || prop.indexOf('-resources_') === -1) {
+
+        delete packages.result[prop];
+
+        if (Object.keys(packages.result).length === 0) {
+            html = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; There are no packages ready for ingest.</strong></div>';
+            domModule.html('#message', html);
+            document.querySelector('#import-table').style.visibility = 'hidden';
+            return false;
+        }
+
+        continue;
+    }
+
+    html += '<tr>';
+    // collection folder name
+    html += '<td style="text-align: left;vertical-align: middle; width: 55%">';
+    html += '<small>' + prop + '</small>';
+    html += '</td>';
+    // package count
+    html += '<td style="text-align: left;vertical-align: middle; width: 15%">';
+    html += '<small>' + packages.result[prop] + '</small>';
+    html += '</td>';
+    // Action button column
+    html += '<td style="text-align: center;vertical-align: middle; width: 15%"><a href="' + nginx_path + '/dashboard/ingest/status?batch=' + prop + '&api_key=' + key + '" type="button" class="btn btn-sm btn-default run-qa"><i class="fa fa-cogs"></i> <span>Start</span></a></td>';
+    html += '</tr>';
+}
+
+domModule.html('#packages', html);
+
+
+};
+*/

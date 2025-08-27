@@ -436,7 +436,6 @@ const metadataModule = (function () {
 
         try {
 
-            // check if same ingest user
             const user_id = helperModule.getParameterByName('id');
             const name = helperModule.getParameterByName('name');
 
@@ -456,7 +455,15 @@ const metadataModule = (function () {
                     run_date: new Date()
                 };
 
-                if (user.length === 1) {
+                let exist = false;
+
+                for (let i=0;i<user.length;i++) {
+                    if (user[i].job_type === 'ArchivesSpace_description_QA') {
+                        exist = true;
+                    }
+                }
+
+                if (exist === false) {
                     user.push(profile);
                     window.sessionStorage.setItem('ingest_user', JSON.stringify(user));
                 }
