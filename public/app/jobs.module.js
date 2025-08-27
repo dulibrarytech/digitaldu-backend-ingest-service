@@ -260,11 +260,6 @@ const jobsModule = (function () {
         }
     }
 
-    obj.display_jobs_history_ = async function () {
-        let jobs_history = await jobsModule.get_jobs_history();
-        console.log(jobs_history);
-    };
-
     obj.display_jobs_history = async function () {
 
         try {
@@ -291,7 +286,6 @@ const jobsModule = (function () {
                         jobs.name = job_run_by[j].name;
                         jobs.job_type = job_run_by[j].job_type;
                         jobs.run_date = job_run_by[j].run_date;
-                        console.log('job ', jobs);
                         run_jobs.push(jobs);
                         jobs = {};
                     }
@@ -343,7 +337,7 @@ const jobsModule = (function () {
                  */
 
                 // collection folder
-                html += '<td style="text-align: left;vertical-align: middle; width: 30%">';
+                html += '<td style="vertical-align: middle;">'; //  style="text-align: left;vertical-align: middle; width: 30%"
                 html += '<small>' + records.data[i].result.batch + '</small>';
                 html += '</td>';
 
@@ -356,13 +350,12 @@ const jobsModule = (function () {
                  */
 
                 // jobs run by
-                html += '<td style="text-align: left;vertical-align: middle; width: 20%">';
-                // html += '<small>' + records.data[i].result.job_run_by + '</small>';
+                html += '<td style="vertical-align: middle;">';  //  style="text-align: left;vertical-align: middle; width: 20%"
                 html += run_jobs_list;
                 html += '</td>';
 
                 // make digital objects
-                html += '<td style="text-align: left;vertical-align: middle; width: 10%">';
+                html += '<td style="vertical-align: middle;text-align: center;">'; //  style="text-align: left;vertical-align: middle; width: 10%"
 
                 if (records.data[i].result.is_make_digital_objects_complete === 1) {
                     html += '<small>Complete</small>';
@@ -373,7 +366,7 @@ const jobsModule = (function () {
                 html += '</td>';
 
                 // metadata QA
-                html += '<td style="text-align: left;vertical-align: middle; width: 10%">';
+                html += '<td style="vertical-align: middle;text-align: center;">';
 
                 if ( records.data[i].result.is_metadata_checks_complete === 1) {
                     html += '<small>Complete</small>';
@@ -384,7 +377,7 @@ const jobsModule = (function () {
                 html += '</td>';
 
                 // packaging and ingest
-                html += '<td style="text-align: left;vertical-align: middle; width: 10%">';
+                html += '<td style="vertical-align: middle;text-align: center;">';
 
                 if (records.data[i].result.is_ingested === 1) {
                     html += '<small>Complete</small>';
