@@ -270,7 +270,7 @@ const jobsModule = (function () {
         try {
 
             let records = await jobsModule.get_jobs_history();
-            console.log(records);
+
             if (records.data.length === 0) {
                 domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> No archival object folders are ready for <strong>ArchivesSpace Descriptive QA</strong></div>');
                 return false;
@@ -280,16 +280,50 @@ const jobsModule = (function () {
 
             for (let i = 0; i < records.data.length; i++) {
 
-                // TODO: records.data[i].result.job_run_by compare to completed jobs and render name along with completed run
-                console.log(JSON.parse(records.data[i].result.job_run_by));
-                // let job_run_by = JSON.parse(records.data[i].result.job_run_by);
-                // console.log(job_run_by);
-                /*
+                // get completed jobs by ingest user
+                let run_jobs = [];
+                let jobs = {};
+                let job_run_by = JSON.parse(records.data[i].result.job_run_by);
+
                 for (let j = 0; j < job_run_by.length; j++) {
-                    console.log(job_run_by[j]);
-                    // console.log(records.data[i].result.is_make_digital_objects_complete);
+
+                    if (job_run_by[j].job_type === 'make_digital_objects' && records.data[i].result.is_make_digital_objects_complete === 1) {
+                        jobs.name = job_run_by[j].name;
+                        jobs.job_type = job_run_by[j].job_type;
+                        jobs.run_date = job_run_by[j].run_date;
+                        console.log('job ', jobs);
+                        run_jobs.push(jobs);
+                        jobs = {};
+                    }
+
+                    if (job_run_by[j].job_type === 'ArchivesSpace_description_QA' && records.data[i].result.is_metadata_checks_complete === 1) {
+                        jobs.name = job_run_by[j].name;
+                        jobs.job_type = job_run_by[j].job_type;
+                        jobs.run_date = job_run_by[j].run_date;
+                        run_jobs.push(jobs);
+                        jobs = {};
+                    }
+
+                    if (job_run_by[j].job_type === 'packaging_and_ingesting' && records.data[i].result.is_ingested === 1) {
+                        jobs.name = job_run_by[j].name;
+                        jobs.job_type = job_run_by[j].job_type;
+                        jobs.run_date = job_run_by[j].run_date;
+                        run_jobs.push(jobs);
+                        jobs = {};
+                    }
                 }
-                */
+
+                let run_jobs_list = '<ul>';
+
+                for (let j = 0; j < run_jobs.length; j++) {
+                    run_jobs_list += '<li><small>' + run_jobs[j].name + '</small></li>';
+                    run_jobs_list += '<ul>';
+                    run_jobs_list += '<li><small>' + run_jobs[j].job_type + '</small></li>';
+                    run_jobs_list += '<li><small>' + run_jobs[j].run_date + '</small></li>';
+                    run_jobs_list += '</ul>';
+                }
+
+                run_jobs_list += '</ul>';
 
                 let package_list = '<ul>';
 
@@ -300,43 +334,72 @@ const jobsModule = (function () {
                 package_list += '</ul>';
 
                 html += '<tr>';
+
                 // job uuid
+                /*
                 html += '<td style="text-align: left;vertical-align: middle; width: 50%">';
                 html += '<small>' + records.data[i].result.job_uuid + '</small>';
                 html += '</td>';
+                 */
+
                 // collection folder
-                html += '<td style="text-align: left;vertical-align: middle; width: 50%">';
+                html += '<td style="text-align: left;vertical-align: middle; width: 30%">';
                 html += '<small>' + records.data[i].result.batch + '</small>';
                 html += '</td>';
+
                 // packages
-                html += '<td style="text-align: left;vertical-align: middle; width: 25%">';
+                /*
+                html += '<td style="text-align: left;vertical-align: middle; width: 20%">';
                 html += package_list;
                 html += '</td>';
+
+                 */
+
                 // jobs run by
-                html += '<td style="text-align: left;vertical-align: middle; width: 50%">';
-                html += '<small>' + records.data[i].result.job_run_by + '</small>';
+                html += '<td style="text-align: left;vertical-align: middle; width: 20%">';
+                // html += '<small>' + records.data[i].result.job_run_by + '</small>';
+                html += run_jobs_list;
                 html += '</td>';
+
                 // make digital objects
-                html += '<td style="text-align: left;vertical-align: middle; width: 50%">';
-                html += '<small>' + records.data[i].result.is_make_digital_objects_complete + '</small>';
+                html += '<td style="text-align: left;vertical-align: middle; width: 10%">';
+
+                if (records.data[i].result.is_make_digital_objects_complete === 1) {
+                    html += '<small>Complete</small>';
+                } else {
+                    html += '<small>Not complete</small>';
+                }
+
                 html += '</td>';
+
                 // metadata QA
-                html += '<td style="text-align: left;vertical-align: middle; width: 50%">';
-                html += '<small>' + records.data[i].result.is_metadata_checks_complete + '</small>';
+                html += '<td style="text-align: left;vertical-align: middle; width: 10%">';
+
+                if ( records.data[i].result.is_metadata_checks_complete === 1) {
+                    html += '<small>Complete</small>';
+                } else {
+                    html += '<small>Not complete</small>';
+                }
+
                 html += '</td>';
+
                 // packaging and ingest
-                html += '<td style="text-align: left;vertical-align: middle; width: 50%">';
-                html += '<small>' + records.data[i].result.is_ingested + '</small>';
+                html += '<td style="text-align: left;vertical-align: middle; width: 10%">';
+
+                if (records.data[i].result.is_ingested === 1) {
+                    html += '<small>Complete</small>';
+                } else {
+                    html += '<small>Not complete</small>';
+                }
+
                 html += '</td>';
+
                 // kaltura
+                /*
                 html += '<td style="text-align: left;vertical-align: middle; width: 50%">';
                 html += '<small>' + records.data[i].result.is_kaltura + '</small>';
                 html += '</td>';
-                // actions
-                // html += '<td style="text-align: center;vertical-align: middle; width: 25%">';
-                // html += '<a href="#" onclick="metadataModule.get_packages(\'' + batch + '\');" type="button" class="btn btn-sm btn-default run-qa"><i class="fa fa-cogs"></i> <span>Start</span></a>';
-                // html += 'TODO';
-                // html += '</td>';
+                 */
                 html += '</tr>';
             }
 
