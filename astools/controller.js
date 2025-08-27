@@ -310,6 +310,8 @@ exports.update_job = async function (req, res) {
     try {
 
         const job = req.body;
+        job.job_run_by = JSON.stringify(job.job_run_by);
+
         const response = await MODEL.update_job(job);
 
         res.status(200).send({

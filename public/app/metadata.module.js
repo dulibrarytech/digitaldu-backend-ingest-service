@@ -174,7 +174,7 @@ const metadataModule = (function () {
                     await jobsModule.update_job({
                         uuid: job_uuid,
                         is_metadata_checks_complete: 1,
-                        job_run_by: ingest_user
+                        job_run_by: JSON.parse(ingest_user)
                     });
 
                     setTimeout(async () => {
