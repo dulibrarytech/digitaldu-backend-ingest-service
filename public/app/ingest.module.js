@@ -238,6 +238,8 @@ const ingestModule = (function () {
                     }
                 }
 
+                // TODO:  update job when ingest is complete
+
                 html += '</tr>';
             }
 

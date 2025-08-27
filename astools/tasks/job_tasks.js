@@ -122,7 +122,7 @@ const Job_tasks = class {
             return await this.DB(this.TABLES.repo_jobs)
                 .select('*');
 
-                /* TODO: by 30 days
+                /* TODO: by 30 days? or dataTables with paging
                 .where({
                     is_make_digital_objects_complete: 1,
                     is_metadata_checks_complete: 1,

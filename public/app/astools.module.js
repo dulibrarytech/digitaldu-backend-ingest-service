@@ -251,7 +251,7 @@ const astoolsModule = (function () {
                 'packages': json.packages,
                 'files': files,
                 'is_kaltura': is_kaltura,
-                'job_run_by': window.sessionStorage.getItem('ingest_user')
+                'job_run_by': JSON.parse(window.sessionStorage.getItem('ingest_user'))
             };
 
             domModule.html('#message', '<div class="alert alert-info"><i class=""></i> Making digital objects...</div>');
@@ -378,7 +378,7 @@ const astoolsModule = (function () {
                     uid: user_id,
                     name: name,
                     job_type: 'make_digital_objects',
-                    run_data: new Date()
+                    run_date: new Date()
                 });
 
                 window.sessionStorage.setItem('ingest_user', JSON.stringify(profile));

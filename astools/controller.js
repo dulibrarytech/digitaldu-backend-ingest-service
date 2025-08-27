@@ -87,7 +87,7 @@ exports.make_digital_objects = function (req, res) {
             is_kaltura: is_kaltura,
             log: '---',
             error: '---',
-            job_run_by: req.body.job_run_by
+            job_run_by: JSON.stringify(req.body.job_run_by)
         };
 
         (async function() {
@@ -293,7 +293,7 @@ exports.get_jobs_history = async function (req, res) {
 
     try {
 
-        const response = await MODEL.get_ingest_jobs();
+        const response = await MODEL.get_jobs_history();
 
         res.status(200).send({
             data: response

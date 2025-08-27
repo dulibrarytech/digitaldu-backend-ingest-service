@@ -208,12 +208,19 @@ const jobsModule = (function () {
                             is_kaltura = true;
                         }
 
-                        // TODO
                         record.push({
                             result: {
                                 job_uuid: response.data.data[i].uuid,
                                 batch: response.data.data[i].batch_name,
                                 packages: JSON.parse(response.data.data[i].packages),
+                                error: response.data.data[i].error,
+                                log: response.data.data[i].log,
+                                job_run_by: response.data.data[i].job_run_by,
+                                job_date: response.data.data[i].job_date,
+                                is_make_digital_objects_complete: response.data.data[i].is_make_digital_objects_complete,
+                                is_metadata_checks_complete: response.data.data[i].is_metadata_checks_complete,
+                                is_ingested: response.data.data[i].is_ingested,
+                                status: response.data.data[i].status,
                                 is_kaltura: is_kaltura
                             }
                         });
@@ -253,11 +260,97 @@ const jobsModule = (function () {
         }
     }
 
+    obj.display_jobs_history_ = async function () {
+        let jobs_history = await jobsModule.get_jobs_history();
+        console.log(jobs_history);
+    };
+
+    obj.display_jobs_history = async function () {
+
+        try {
+
+            let records = await jobsModule.get_jobs_history();
+            console.log(records);
+            if (records.data.length === 0) {
+                domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> No archival object folders are ready for <strong>ArchivesSpace Descriptive QA</strong></div>');
+                return false;
+            }
+
+            let html = '';
+
+            for (let i = 0; i < records.data.length; i++) {
+
+                // TODO: records.data[i].result.job_run_by compare to completed jobs and render name along with completed run
+                console.log(JSON.parse(records.data[i].result.job_run_by));
+                // let job_run_by = JSON.parse(records.data[i].result.job_run_by);
+                // console.log(job_run_by);
+                /*
+                for (let j = 0; j < job_run_by.length; j++) {
+                    console.log(job_run_by[j]);
+                    // console.log(records.data[i].result.is_make_digital_objects_complete);
+                }
+                */
+
+                let package_list = '<ul>';
+
+                for (let j = 0; j < records.data[i].result.packages.length; j++) {
+                    package_list += '<li><small>' + records.data[i].result.packages[j].package + '</small></li>';
+                }
+
+                package_list += '</ul>';
+
+                html += '<tr>';
+                // job uuid
+                html += '<td style="text-align: left;vertical-align: middle; width: 50%">';
+                html += '<small>' + records.data[i].result.job_uuid + '</small>';
+                html += '</td>';
+                // collection folder
+                html += '<td style="text-align: left;vertical-align: middle; width: 50%">';
+                html += '<small>' + records.data[i].result.batch + '</small>';
+                html += '</td>';
+                // packages
+                html += '<td style="text-align: left;vertical-align: middle; width: 25%">';
+                html += package_list;
+                html += '</td>';
+                // jobs run by
+                html += '<td style="text-align: left;vertical-align: middle; width: 50%">';
+                html += '<small>' + records.data[i].result.job_run_by + '</small>';
+                html += '</td>';
+                // make digital objects
+                html += '<td style="text-align: left;vertical-align: middle; width: 50%">';
+                html += '<small>' + records.data[i].result.is_make_digital_objects_complete + '</small>';
+                html += '</td>';
+                // metadata QA
+                html += '<td style="text-align: left;vertical-align: middle; width: 50%">';
+                html += '<small>' + records.data[i].result.is_metadata_checks_complete + '</small>';
+                html += '</td>';
+                // packaging and ingest
+                html += '<td style="text-align: left;vertical-align: middle; width: 50%">';
+                html += '<small>' + records.data[i].result.is_ingested + '</small>';
+                html += '</td>';
+                // kaltura
+                html += '<td style="text-align: left;vertical-align: middle; width: 50%">';
+                html += '<small>' + records.data[i].result.is_kaltura + '</small>';
+                html += '</td>';
+                // actions
+                // html += '<td style="text-align: center;vertical-align: middle; width: 25%">';
+                // html += '<a href="#" onclick="metadataModule.get_packages(\'' + batch + '\');" type="button" class="btn btn-sm btn-default run-qa"><i class="fa fa-cogs"></i> <span>Start</span></a>';
+                // html += 'TODO';
+                // html += '</td>';
+                html += '</tr>';
+            }
+
+            domModule.html('#jobs-history', html);
+
+        } catch (error) {
+            domModule.html('#message', '<div class="alert alert-info"><i class=""></i> ' + error.message + '</div>');
+        }
+    }
+
     obj.init = async function () {
 
         try {
 
-            // window.localStorage.clear();
             document.querySelector('#message').innerHTML = '<div class="alert alert-info"><i class=""></i> Loading...</div>';
             await astoolsModule.display_workspace_packages();
 
