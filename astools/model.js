@@ -83,3 +83,15 @@ exports.get_ingest_jobs = async function () {
         return false;
     }
 };
+
+exports.get_jobs_history = async function () {
+
+    try {
+
+        return await TASKS.get_jobs_history();
+
+    } catch (error) {
+        LOGGER.module().error('ERROR: [/astools/task (get_jobs_history)] unable to get jobs history' + error.message);
+        return false;
+    }
+};

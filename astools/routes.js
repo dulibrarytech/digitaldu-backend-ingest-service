@@ -31,6 +31,7 @@ module.exports = async function (app) {
     app.route(`${APP_CONFIG.app_path}/api/v1/astools/processed`)
         .get(TOKEN.verify, CONTROLLER.processed);
     */
+
     app.route(`${APP_CONFIG.app_path}/api/v1/astools/make-digital-objects`)
         .post(TOKEN.verify, CONTROLLER.make_digital_objects);
 
@@ -51,6 +52,9 @@ module.exports = async function (app) {
 
     app.route(`${APP_CONFIG.app_path}/api/v1/astools/jobs/ingest`)
         .get(TOKEN.verify, CONTROLLER.get_ingest_jobs);
+
+    app.route(`${APP_CONFIG.app_path}/api/v1/astools/jobs/history`)
+        .get(TOKEN.verify, CONTROLLER.get_jobs_history);
 
     app.route(`${APP_CONFIG.app_path}/api/v1/astools/jobs`)
         .put(TOKEN.verify, CONTROLLER.update_job);

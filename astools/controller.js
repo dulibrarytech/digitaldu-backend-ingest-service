@@ -289,6 +289,22 @@ exports.get_ingest_jobs = async function (req, res) {
     }
 };
 
+exports.get_jobs_history = async function (req, res) {
+
+    try {
+
+        const response = await MODEL.get_ingest_jobs();
+
+        res.status(200).send({
+            data: response
+        });
+
+    } catch (error) {
+        LOGGER.module().error('ERROR: [/astools/controller (get_ingest_jobs)] unable to get ingest jobs ' + error.message);
+        res.status(500).send({message: `${error.message}`});
+    }
+};
+
 exports.update_job = async function (req, res) {
 
     try {

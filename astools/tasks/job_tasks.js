@@ -114,6 +114,26 @@ const Job_tasks = class {
             LOGGER.module().error('ERROR: [/astools/tasks (get_jobs)] unable to get job record ' + error.message);
         }
     }
+
+    async get_jobs_history() {
+
+        try {
+
+            return await this.DB(this.TABLES.repo_jobs)
+                .select('*');
+
+                /* TODO: by 30 days
+                .where({
+                    is_make_digital_objects_complete: 1,
+                    is_metadata_checks_complete: 1,
+                    is_ingested: 0
+                });
+                 */
+
+        } catch (error) {
+            LOGGER.module().error('ERROR: [/astools/tasks (get_jobs_history)] unable to get jobs history ' + error.message);
+        }
+    }
 }
 
 module.exports = Job_tasks;

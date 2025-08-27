@@ -284,8 +284,6 @@ const ingestModule = (function () {
             }
         }
 
-        console.log(JSON.parse(window.sessionStorage.getItem('ingest_user')));
-
         await display_packages();
     };
 
