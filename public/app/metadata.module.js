@@ -162,7 +162,7 @@ const metadataModule = (function () {
 
                         await jobsModule.update_job({
                             uuid: job_uuid,
-                            is_metadata_checks_complete: 1,
+                            is_metadata_checks_complete: 0,
                             job_run_by: ingest_user,
                             error: errors
                         });
