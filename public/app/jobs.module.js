@@ -267,7 +267,8 @@ const jobsModule = (function () {
             let records = await jobsModule.get_jobs_history();
 
             if (records.data.length === 0) {
-                domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> No archival object folders are ready for <strong>ArchivesSpace Descriptive QA</strong></div>');
+                document.querySelector('.x_panel').style.display = 'none';
+                domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> No jobs found</div>');
                 return false;
             }
 

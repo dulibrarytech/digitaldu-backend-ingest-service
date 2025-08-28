@@ -54,7 +54,7 @@ const Ingest_service = class {
     constructor() {
         this.batch = 'PENDING';
         this.collection_uuid = 0;
-        this.archival_package = 'PENDING';
+        // this.archival_package = 'PENDING';
         this.metadata_uri = 'PENDING';
         this.metadata = 'PENDING';
     }
@@ -107,19 +107,22 @@ const Ingest_service = class {
     /**
      * Queues archival packages
      * @param batch
+     * @param job_uuid
      */
-    async queue_packages(batch) {
+    async queue_packages(batch, job_uuid) {
 
         try {
 
             this.batch = batch;
             const item_package_names = await QA_TASKS.get_item_packages(batch);
+
             let packages = [];
 
             for (let i = 0; i < item_package_names.packages.length; i++) {
                 let obj = {}
                 obj.batch = batch;
                 obj.package = item_package_names.packages[i];
+                obj.job_uuid = job_uuid;
                 packages.push(obj);
             }
 
@@ -246,7 +249,6 @@ const Ingest_service = class {
             }
 
             LOGGER.module().info('INFO: [/ingester/service module (start_ingest)] collection folder set');
-
 
             /*
             let folder_name_checked = await QA_TASKS.check_folder_name(batch);
@@ -457,13 +459,9 @@ const Ingest_service = class {
                     is_complete: 0
                 });
 
-                // TODO:
-                console.log('Move packages to SFTP');
-                // console.log('QA complete - manually copy batch folder to SFTP here');
-                // return false;
-
                 let file_count = await INGEST_TASKS.get_file_count();
 
+                console.log('Move packages to SFTP');
                 await this.move_to_sftp(batch, this.collection_uuid, file_count, (data) => {
                     console.log('moving to sftp cb ', data);
                 });

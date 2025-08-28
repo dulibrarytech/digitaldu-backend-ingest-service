@@ -60,7 +60,8 @@ const Ingest_controller = class {
      */
     async start_ingest(req) {
         const batch = req.query.batch;
-        await INGEST_SERVICE.queue_packages(batch);
+        const job_uuid = req.query.job_uuid;
+        await INGEST_SERVICE.queue_packages(batch, job_uuid);
     }
 
     /**

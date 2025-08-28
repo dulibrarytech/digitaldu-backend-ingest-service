@@ -111,15 +111,25 @@ const ingestModule = (function () {
             let batch = helperModule.getParameterByName('batch');
             const key = helperModule.getParameterByName('api_key');
 
+            let batch_ = batch + '_';
+            let batch_i = JSON.parse(window.localStorage.getItem(batch_));
+
+            if (batch_i === null) {
+                domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> Unable to get job uuid</div>');
+                return false;
+            }
+
             if (batch === null) {
                 await status_checks();
                 return false;
             }
 
+            let job_uuid = batch_i.job_uuid;
+
             let message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; Starting Ingest...</strong></div>';
             domModule.html('#message', message);
 
-            let url = nginx_path + '/api/v1/ingest?batch=' + batch + '&api_key=' + key;
+            let url = nginx_path + '/api/v1/ingest?batch=' + batch + '&job_uuid=' + job_uuid + '&api_key=' + key;
             let response = await httpModule.req({
                 method: 'POST',
                 url: url,
@@ -238,9 +248,20 @@ const ingestModule = (function () {
                     }
                 }
 
-                // TODO:  update job when ingest is complete
-
                 html += '</tr>';
+
+                /*
+                if (data[i].is_complete === 1) {
+                    (async function() {
+                        await jobsModule.update_job({
+                            uuid: job_uuid, // TODO
+                            is_ingested: 1,
+                            job_run_by:  JSON.parse(window.sessionStorage.getItem('ingest_user'))
+                        });
+                    })();
+                }
+
+                 */
             }
 
             domModule.html('#batch', html);
