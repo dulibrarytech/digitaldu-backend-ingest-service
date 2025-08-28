@@ -110,23 +110,20 @@ const ingestModule = (function () {
 
         try {
 
-            let batch = helperModule.getParameterByName('batch');
             const key = helperModule.getParameterByName('api_key');
-
+            let batch = helperModule.getParameterByName('batch');
             let batch_ = batch + '_';
             let batch_i = JSON.parse(window.localStorage.getItem(batch_));
+            let job_uuid = '000-000'
 
-            if (batch_i === null) {
-                domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> Unable to get job uuid</div>');
-                return false;
+            if (batch_i !== null) {
+                job_uuid = batch_i.job_uuid;
             }
 
             if (batch === null) {
                 await status_checks();
                 return false;
             }
-
-            let job_uuid = batch_i.job_uuid;
 
             let message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; Starting Ingest...</strong></div>';
             domModule.html('#message', message);
@@ -145,6 +142,7 @@ const ingestModule = (function () {
             }
 
         } catch(error) {
+            console.log(error);
             let message = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; ' + error.message + '</strong></div>';
             domModule.html('#message', message);
         }
@@ -163,7 +161,7 @@ const ingestModule = (function () {
             let data = await get_ingest_status();
             let message = '';
             domModule.html('#message', '');
-            console.log('data ', data); // undefined
+
             if (data.length > 0) {
 
                 for (let i=0;i<data.length;i++) {
@@ -173,7 +171,6 @@ const ingestModule = (function () {
                         break;
                     } else if (data[i].error === null && data[i].is_complete === 0) {
                         message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; An ingest is in progress.</strong></div>';
-                        // message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; QA complete.  Please upload the folder in 002-ingest to the Archivematica SFTP server.</strong></div>';
                     }
                 }
 
