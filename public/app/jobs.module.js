@@ -329,15 +329,8 @@ const jobsModule = (function () {
 
                 html += '<tr>';
 
-                // job uuid
-                /*
-                html += '<td style="text-align: left;vertical-align: middle; width: 50%">';
-                html += '<small>' + records.data[i].result.job_uuid + '</small>';
-                html += '</td>';
-                 */
-
                 // collection folder
-                html += '<td style="vertical-align: middle;">'; //  style="text-align: left;vertical-align: middle; width: 30%"
+                html += '<td style="vertical-align: middle;">';
                 html += '<small>' + records.data[i].result.batch + '</small>';
                 html += '</td>';
 
@@ -346,21 +339,20 @@ const jobsModule = (function () {
                 html += '<td style="text-align: left;vertical-align: middle; width: 20%">';
                 html += package_list;
                 html += '</td>';
-
                  */
 
                 // jobs run by
-                html += '<td style="vertical-align: middle;">';  //  style="text-align: left;vertical-align: middle; width: 20%"
+                html += '<td style="vertical-align: middle;">';
                 html += run_jobs_list;
                 html += '</td>';
 
                 // make digital objects
-                html += '<td style="vertical-align: middle;text-align: center;">'; //  style="text-align: left;vertical-align: middle; width: 10%"
+                html += '<td style="vertical-align: middle;text-align: center;">';
 
                 if (records.data[i].result.is_make_digital_objects_complete === 1) {
-                    html += '<small>Complete</small>';
+                    html += '<small>Completed</small>';
                 } else {
-                    html += '<small>Not complete</small>';
+                    html += '<small>Not completed</small>';
                 }
 
                 html += '</td>';
@@ -369,9 +361,9 @@ const jobsModule = (function () {
                 html += '<td style="vertical-align: middle;text-align: center;">';
 
                 if ( records.data[i].result.is_metadata_checks_complete === 1) {
-                    html += '<small>Complete</small>';
+                    html += '<small>Completed</small>';
                 } else {
-                    html += '<small>Not complete</small>';
+                    html += '<small>Not completed</small>';
                 }
 
                 html += '</td>';
@@ -380,19 +372,12 @@ const jobsModule = (function () {
                 html += '<td style="vertical-align: middle;text-align: center;">';
 
                 if (records.data[i].result.is_ingested === 1) {
-                    html += '<small>Complete</small>';
+                    html += '<small>Completed</small>';
                 } else {
-                    html += '<small>Not complete</small>';
+                    html += '<small>Not completed</small>';
                 }
 
                 html += '</td>';
-
-                // kaltura
-                /*
-                html += '<td style="text-align: left;vertical-align: middle; width: 50%">';
-                html += '<small>' + records.data[i].result.is_kaltura + '</small>';
-                html += '</td>';
-                 */
                 html += '</tr>';
             }
 
