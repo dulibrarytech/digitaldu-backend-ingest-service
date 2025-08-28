@@ -34,6 +34,8 @@ const ingestModule = (function () {
             window.localStorage.clear();
             const api_key = helperModule.getParameterByName('api_key');
             const job_uuid = helperModule.getParameterByName('job_uuid');
+            const id = helperModule.getParameterByName('id');
+            const name = helperModule.getParameterByName('name');
             let records;
 
             // gets single record by job uuid
@@ -86,7 +88,7 @@ const ingestModule = (function () {
                 html += '</td>';
                 // actions
                 html += '<td style="text-align: center;vertical-align: middle; width: 20%">';
-                html += '<a href="' + nginx_path + '/dashboard/ingest/status?batch=' + batch + '&api_key=' + api_key + '" type="button" class="btn btn-sm btn-default run-qa"><i class="fa fa-cogs"></i> <span>Start</span></a>';
+                html += '<a href="' + nginx_path + '/dashboard/ingest/status?batch=' + batch + '&api_key=' + api_key + '&id=' + id + '&name=' + name + '" type="button" class="btn btn-sm btn-default run-qa"><i class="fa fa-cogs"></i> <span>Start</span></a>';
                 html += '</td>';
                 html += '</tr>';
             }

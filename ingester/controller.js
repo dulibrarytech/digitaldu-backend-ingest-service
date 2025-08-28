@@ -57,19 +57,34 @@ const Ingest_controller = class {
     /**
      * Starts ingest process - QA process starts first
      * @param req
+     * @param res
      */
-    async start_ingest(req) {
+    async start_ingest(req, res) {
         const batch = req.query.batch;
         const job_uuid = req.query.job_uuid;
+
+        if (batch === undefined || job_uuid === undefined) {
+            res.status(400).send('Bad Request');
+            return false;
+        }
+
         await INGEST_SERVICE.queue_packages(batch, job_uuid);
     }
 
     /**
      * Bypasses automatic upload to archivematica sftp - CLI
      * @param req
+     * @param res
      */
     async start_archivematica_ingest(req, res) {
+
         const batch = req.query.batch;
+
+        if (batch === undefined) {
+            res.status(400).send('Bad Request');
+            return false;
+        }
+
         await INGEST_SERVICE.ingest_packages(batch);
         res.status(200).send({message: 'ingest started'});
     }
@@ -80,7 +95,14 @@ const Ingest_controller = class {
      * @param res
      */
     async check_ingest(req, res) {
+
         const uuid = req.query.uuid;
+
+        if (uuid === undefined) {
+            res.status(400).send('Bad Request');
+            return false;
+        }
+
         const response = await INGEST_SERVICE.check_ingest(uuid);
         res.status(200).send(response);
     }
