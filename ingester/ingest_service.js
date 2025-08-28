@@ -1346,7 +1346,7 @@ const Ingest_service = class {
 
             console.log('Completing ', this.job_uuid);
             await JOBS_TASK.update_job({
-                job_uuid: this.job_uuid,
+                uuid: this.job_uuid,
                 is_ingested: 1
             });
 
