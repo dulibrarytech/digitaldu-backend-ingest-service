@@ -37,6 +37,8 @@ const DURACLOUD_LIB = new DURACLOUD(DURACLOUD_CONFIG, CONVERT_SERVICE_CONFIG);
 const DB = require('../config/db_config')();
 const DB_QUEUE = require('../config/dbqueue_config')();
 const DB_TABLES = require('../config/db_tables_config')();
+const JOBS_TASKS = require('../astools/tasks/job_tasks');
+const JOBS_TASK = new JOBS_TASKS(DB_QUEUE, DB_TABLES);
 const QA_SERVICE_TASKS = require('../ingester/tasks/qa_service_tasks');
 const INGEST_SERVICE_TASKS = require('../ingester/tasks/ingest_service_tasks');
 const INGEST_TASKS = new INGEST_SERVICE_TASKS(WEB_SERVICES_CONFIG, DB, DB_QUEUE, DB_TABLES);
@@ -53,8 +55,8 @@ const Ingest_service = class {
 
     constructor() {
         this.batch = 'PENDING';
+        this.job_uuid = 0
         this.collection_uuid = 0;
-        // this.archival_package = 'PENDING';
         this.metadata_uri = 'PENDING';
         this.metadata = 'PENDING';
     }
@@ -113,6 +115,7 @@ const Ingest_service = class {
 
         try {
 
+            this.job_uuid = job_uuid;
             this.batch = batch;
             const item_package_names = await QA_TASKS.get_item_packages(batch);
 
@@ -320,6 +323,7 @@ const Ingest_service = class {
      * Checks uri txt files
      * @param batch
      */
+
     /* TODO: moved to astools module
     async check_uri_txt(batch) {
 
@@ -467,7 +471,6 @@ const Ingest_service = class {
                 });
 
                 // console.log('END QA -> sftp next');
-
                 return false;
 
             } else {
@@ -1341,9 +1344,15 @@ const Ingest_service = class {
                 is_complete: 1
             });
 
+            console.log('Completing ', this.job_uuid);
+            await JOBS_TASK.update_job({
+                job_uuid: this.job_uuid,
+                is_ingested: 1
+            });
+
             setTimeout(async () => {
                 await INGEST_TASKS.remove_completed_queue_record(sip_uuid);
-                await this.next(batch); // record.is_member_of_collection
+                await this.next(batch);
             }, 10000); // 10sec
 
         } catch (error) {
