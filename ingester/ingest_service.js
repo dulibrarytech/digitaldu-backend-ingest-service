@@ -1244,11 +1244,15 @@ const Ingest_service = class {
             const aspace_id = tmp[tmp.length - 1];
             const batch = data[0].batch;
 
+            /*
             INGEST_TASKS.add_handle(handle, aspace_id, (response) => {
+                console.log('add handle ', response);
                 if (response === false) {
                     LOGGER.module().error('ERROR: [/ingester/service module (create_repo_record)] Unable to add ArchivesSpace handle');
                 }
             });
+
+             */
 
             const master_data = JSON.parse(data[0].master_data);
 

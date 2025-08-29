@@ -630,7 +630,7 @@ const Ingest_service_tasks = class {
                     let response = await HTTP.get(endpoint, {
                         timeout: 15000
                     });
-
+                    console.log('aspace response', response);
                     if (response.data !== 'OK') {
                         LOGGER.module().error('ERROR: [/ingester/ingest_service_tasks (add_handle)] Unable to add ArchivesSpace handle');
                         callback(false);
@@ -647,6 +647,7 @@ const Ingest_service_tasks = class {
 
         } catch (error) {
             LOGGER.module().error('ERROR: [/ingester/ingest_service_tasks (add_handle)] unable to add handle to ArchivesSpace record ' + error.message);
+            callback(false);
         }
     }
 
