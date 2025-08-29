@@ -1244,7 +1244,7 @@ const Ingest_service = class {
             const aspace_id = tmp[tmp.length - 1];
             const batch = data[0].batch;
 
-            /*
+            /* TODO: service is malfunctioning
             INGEST_TASKS.add_handle(handle, aspace_id, (response) => {
                 console.log('add handle ', response);
                 if (response === false) {

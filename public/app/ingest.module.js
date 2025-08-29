@@ -138,11 +138,16 @@ const ingestModule = (function () {
             });
 
             if (response.status === 200) {
+
+                await jobsModule.update_job({
+                    uuid: job_uuid,
+                    job_run_by: JSON.parse(window.sessionStorage.getItem('ingest_user'))
+                });
+
                 await status_checks();
             }
 
         } catch(error) {
-            console.log(error);
             let message = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; ' + error.message + '</strong></div>';
             domModule.html('#message', message);
         }
@@ -248,19 +253,6 @@ const ingestModule = (function () {
                 }
 
                 html += '</tr>';
-
-                /*
-                if (data[i].is_complete === 1) {
-                    (async function() {
-                        await jobsModule.update_job({
-                            uuid: job_uuid, // TODO
-                            is_ingested: 1,
-                            job_run_by:  JSON.parse(window.sessionStorage.getItem('ingest_user'))
-                        });
-                    })();
-                }
-
-                 */
             }
 
             domModule.html('#batch', html);
@@ -271,7 +263,7 @@ const ingestModule = (function () {
         }
     }
 
-    obj.init = async function () {
+    obj.update_job_run_by = async function () {
 
         const user_id = helperModule.getParameterByName('id');
         const name = helperModule.getParameterByName('name');
@@ -305,7 +297,10 @@ const ingestModule = (function () {
                 window.sessionStorage.setItem('ingest_user', JSON.stringify(user));
             }
         }
+    };
 
+    obj.init = async function () {
+        await ingestModule.update_job_run_by();
         await display_packages();
     };
 
