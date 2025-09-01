@@ -300,6 +300,7 @@ const ingestModule = (function () {
     };
 
     obj.init = async function () {
+        // TODO: move to helper
         await ingestModule.update_job_run_by();
         await display_packages();
     };

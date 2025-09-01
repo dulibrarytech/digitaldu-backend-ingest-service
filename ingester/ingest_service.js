@@ -124,7 +124,7 @@ const Ingest_service = class {
             for (let i = 0; i < item_package_names.packages.length; i++) {
                 let obj = {}
                 obj.batch = batch;
-                obj.package = item_package_names.packages[i];
+                obj.package = item_package_names.packages[i].toLowerCase();
                 obj.job_uuid = job_uuid;
                 packages.push(obj);
             }
@@ -491,6 +491,7 @@ const Ingest_service = class {
                 return false;
             }
 
+            console.log('Processing archival package ' + archival_package.package);
             let package_file_count = await QA_TASKS.get_package_file_count(batch, archival_package.package);
             console.log('package_file_count ', package_file_count);
 
