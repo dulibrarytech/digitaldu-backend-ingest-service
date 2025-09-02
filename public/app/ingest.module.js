@@ -244,7 +244,7 @@ const ingestModule = (function () {
                         const id = helperModule.getParameterByName('id');
                         const name = helperModule.getParameterByName('name');
                         window.location.href = nginx_path + '/dashboard/ingest?api_key=' + api_key + '&id=' + id + '&name=' + name;
-                    }, 3000)
+                    }, 7000)
                     return false;
                 }
 
