@@ -236,6 +236,18 @@ const ingestModule = (function () {
 
             for (let i=0;i<data.length;i++) {
 
+                console.log('STATUS ', data[i].status);
+
+                if (data[i].status === 'COMPLETE' && data.length === 1) {
+                    setTimeout(() => {
+                        const api_key = helperModule.getParameterByName('api_key');
+                        const id = helperModule.getParameterByName('id');
+                        const name = helperModule.getParameterByName('name');
+                        window.location.href = nginx_path + '/dashboard/ingest?api_key=' + api_key + '&id=' + id + '&name=' + name;
+                    }, 3000)
+                    return false;
+                }
+
                 if (data[i].status !== 'PENDING') {
                     html += '<tr>';
                     html += '<td>' + data[i].batch + '</td>';
