@@ -119,7 +119,8 @@ const astoolsModule = (function () {
             window.localStorage.setItem('ks', ks);
 
             document.querySelector('#message').innerHTML = '';
-            document.querySelector('.x_panel').style.visibility = 'visible';
+            document.querySelector('#digital-object-workspace-table').style.visibility = 'visible';
+            // document.querySelector('.x_panel').style.visibility = 'visible';
 
         } catch (error) {
             domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
@@ -181,7 +182,7 @@ const astoolsModule = (function () {
 
         try {
 
-            document.querySelector('.x_panel').style.visibility = 'hidden';
+            document.querySelector('#digital-object-workspace-table').style.visibility = 'hidden';
             const batch_data = window.localStorage.getItem(batch);
 
             if (batch_data === null || batch_data === undefined) {
@@ -349,6 +350,7 @@ const astoolsModule = (function () {
 
                     setTimeout(() => {
                         // window.location.href = redirect;
+                        window.location.reload();
                     }, 3000);
                 }
             }

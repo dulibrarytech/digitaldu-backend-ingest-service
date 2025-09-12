@@ -102,7 +102,7 @@ function process_metadata(data, session, callback) {
         if (file_response.totalCount === 0) {
 
             term_response = await SERVICE.get_ks_metadata(term, session);
-            pairs = get_entry_ids(term_response, term);
+            pairs = get_entry_ids(term_response, file);
         } else {
             pairs = get_entry_ids(file_response, file);
         }
