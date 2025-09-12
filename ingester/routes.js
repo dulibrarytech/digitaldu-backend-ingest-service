@@ -70,4 +70,7 @@ module.exports = async function (app) {
 
     app.route(`${APP_CONFIG.app_path}/dashboard/metadata`)
         .get(CONTROLLER.get_dashboard_metadata_view); // TOKEN.verify,
+
+    app.route(`${APP_CONFIG.app_path}/api/v1/ingest/queue/clear`)
+        .post(CONTROLLER.clear_ingest_queue);
 };

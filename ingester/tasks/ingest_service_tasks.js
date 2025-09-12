@@ -805,6 +805,18 @@ const Ingest_service_tasks = class {
             LOGGER.module().error('ERROR: [/ingester/tasks (upload_status)] unable to clean up sftp - ' + error.message);
         }
     }
+
+    async clear_ingest_queue() {
+
+        try {
+
+            return await this.DB_QUEUE(this.TABLES.repo_queue.repo_ingest_queue)
+                .delete();
+
+        } catch (error) {
+            LOGGER.module().error('ERROR: [/ingester/tasks (clear_ingest_queue)] unable to clear ingest queue ' + error.message);
+        }
+    }
 };
 
 module.exports = Ingest_service_tasks;

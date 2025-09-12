@@ -332,7 +332,7 @@ const astoolsModule = (function () {
                         is_make_digital_objects_complete: 1
                     });
 
-                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ${batch} <strong>complete</strong> - Proceed to Metadata QA page</div>`);
+                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ${batch} <strong>successful</strong> - Proceed to Metadata QA page</div>`);
                     window.localStorage.setItem('job_uuid', job_uuid);
 
                     let uid = helperModule.getParameterByName('id');
@@ -348,7 +348,7 @@ const astoolsModule = (function () {
                     }
 
                     setTimeout(() => {
-                        window.location.href = redirect;
+                        // window.location.href = redirect;
                     }, 3000);
                 }
             }

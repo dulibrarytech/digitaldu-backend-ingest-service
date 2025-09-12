@@ -1382,6 +1382,15 @@ const Ingest_service = class {
             LOGGER.module().error('ERROR: [/ingester/service module (check_ingest)] Unable to check ingested record ' + error.message);
         }
     }
+
+    async clear_ingest_queue() {
+
+        try {
+            return INGEST_TASKS.clear_ingest_queue();
+        } catch (error) {
+            LOGGER.module().error('ERROR: [/ingester/service module (clear_ingest_queue)] Unable clear ingested queue ' + error.message);
+        }
+    }
 }
 
 module.exports = Ingest_service;

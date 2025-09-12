@@ -278,6 +278,17 @@ const Ingest_controller = class {
             app_path: CONFIG.app_path
         });
     };
+
+    async clear_ingest_queue(req, res) {
+
+        const result = await INGEST_SERVICE.clear_ingest_queue();
+
+        console.log('CLEARED QUEUE ', result);
+
+        res.status(200).send({
+            data: []
+        });
+    }
 }
 
 module.exports = Ingest_controller;

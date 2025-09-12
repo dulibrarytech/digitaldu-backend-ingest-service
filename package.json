@@ -30,6 +30,7 @@
     "request": "^2.88.2",
     "uuid": "^8.3.2",
     "validator": "^13.7.0",
+    "xml2js": "^0.6.2",
     "xmldoc": "^1.1.2"
   },
   "devDependencies": {

@@ -29,4 +29,7 @@ module.exports = async function (app) {
 
     app.route(`${APP_CONFIG.app_path}/api/v1/kaltura/metadata`)
         .post(CONTROLLER.get_ks_metadata); // TOKEN.verify,
+
+    app.route(`${APP_CONFIG.app_path}/api/v1/kaltura/export`)
+        .post(CONTROLLER.export_data); // TOKEN.verify,
 };
