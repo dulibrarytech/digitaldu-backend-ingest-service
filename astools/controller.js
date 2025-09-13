@@ -81,13 +81,13 @@ exports.make_digital_objects = function (req, res) {
         // data used to create job record
         const job = {
             uuid: req.body.uuid,
-            job_type: 'ingest',
+            job_type: 'make_digital_objects',
             batch_name: req.body.batch,
             packages: JSON.stringify(req.body.packages),
             is_kaltura: is_kaltura,
             log: '---',
             error: '---',
-            job_run_by: JSON.stringify(req.body.job_run_by)
+            job_run_by: req.body.job_run_by
         };
 
         (async function() {

@@ -211,6 +211,7 @@ const jobsModule = (function () {
                         record.push({
                             result: {
                                 job_uuid: response.data.data[i].uuid,
+                                job_type: response.data.data[i].job_type,
                                 batch: response.data.data[i].batch_name,
                                 packages: JSON.parse(response.data.data[i].packages),
                                 error: response.data.data[i].error,
@@ -273,14 +274,15 @@ const jobsModule = (function () {
             }
 
             let html = '';
-
+            console.log(records);
             for (let i = 0; i < records.data.length; i++) {
 
                 // get completed jobs by ingest user
                 let run_jobs = [];
                 let jobs = {};
-                let job_run_by = JSON.parse(records.data[i].result.job_run_by);
+                // let job_run_by = JSON.parse(records.data[i].result.job_run_by);
 
+                /*
                 for (let j = 0; j < job_run_by.length; j++) {
 
                     if (job_run_by[j].job_type === 'make_digital_objects' && records.data[i].result.is_make_digital_objects_complete === 1) {
@@ -307,7 +309,9 @@ const jobsModule = (function () {
                         jobs = {};
                     }
                 }
+                */
 
+                /*
                 let run_jobs_list = '<ul>';
 
                 for (let j = 0; j < run_jobs.length; j++) {
@@ -319,7 +323,9 @@ const jobsModule = (function () {
                 }
 
                 run_jobs_list += '</ul>';
+                */
 
+                /*
                 let package_list = '<ul>';
 
                 for (let j = 0; j < records.data[i].result.packages.length; j++) {
@@ -327,8 +333,18 @@ const jobsModule = (function () {
                 }
 
                 package_list += '</ul>';
+                */
 
                 html += '<tr>';
+
+                // job uuid
+                html += '<td style="vertical-align: middle;">';
+                html += '<small>' + records.data[i].result.job_uuid + '</small>';
+                html += '</td>';
+
+                html += '<td style="vertical-align: middle;">';
+                html += '<small>' + records.data[i].result.job_type + '</small>';
+                html += '</td>';
 
                 // collection folder
                 html += '<td style="vertical-align: middle;">';
@@ -344,41 +360,49 @@ const jobsModule = (function () {
 
                 // jobs run by
                 html += '<td style="vertical-align: middle;">';
-                html += run_jobs_list;
+                html += records.data[i].result.job_run_by;
                 html += '</td>';
 
+
+                /*
                 // make digital objects
                 html += '<td style="vertical-align: middle;text-align: center;">';
 
                 if (records.data[i].result.is_make_digital_objects_complete === 1) {
-                    html += '<small>Completed</small>';
+                    html += '<small>Successful</small>';
                 } else {
-                    html += '<small>Not completed</small>';
+                    html += '<small>Not Run</small>';
                 }
 
                 html += '</td>';
+                */
 
+                /*
                 // metadata QA
                 html += '<td style="vertical-align: middle;text-align: center;">';
 
                 if ( records.data[i].result.is_metadata_checks_complete === 1) {
-                    html += '<small>Completed</small>';
+                    html += '<small>Successful</small>';
                 } else {
-                    html += '<small>Not completed</small>';
+                    html += '<small>Not Run</small>';
                 }
 
                 html += '</td>';
+                */
 
+                /*
                 // packaging and ingest
                 html += '<td style="vertical-align: middle;text-align: center;">';
 
                 if (records.data[i].result.is_ingested === 1) {
-                    html += '<small>Completed</small>';
+                    html += '<small>Successful</small>';
                 } else {
-                    html += '<small>Not completed</small>';
+                    html += '<small>Not Run</small>';
                 }
 
                 html += '</td>';
+
+                 */
                 html += '</tr>';
             }
 

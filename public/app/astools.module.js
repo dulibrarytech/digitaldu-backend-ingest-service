@@ -245,6 +245,8 @@ const astoolsModule = (function () {
                 }
             }
 
+            let ingest_user = JSON.parse(window.sessionStorage.getItem('ingest_user'));
+
             // data used to create job record
             const data = {
                 'uuid': job_uuid,
@@ -252,7 +254,7 @@ const astoolsModule = (function () {
                 'packages': json.packages,
                 'files': files,
                 'is_kaltura': is_kaltura,
-                'job_run_by': JSON.parse(window.sessionStorage.getItem('ingest_user'))
+                'job_run_by': ingest_user[0].name,
             };
 
             domModule.html('#message', '<div class="alert alert-info"><i class=""></i> Making digital objects...</div>');
