@@ -71,7 +71,7 @@ const Kaltura_package_tasks = class {
     async save_kaltura_ids(data) {
 
         try {
-            console.log('SAVE IDs ', data);
+
             const result = await this.DB.transaction((trx) => {
                 this.DB.insert(data)
                     .into('tbl_kaltura_ids')
@@ -93,6 +93,7 @@ const Kaltura_package_tasks = class {
         }
     }
 
+    /*
     async update_queue_data(package_name, pairs) {
 
         try {
@@ -109,6 +110,7 @@ const Kaltura_package_tasks = class {
             LOGGER.module().error('ERROR: [/astools/tasks (update_queue_data)] Unable to update queue data ' + error.message);
         }
     }
+    */
 
     async update_queue_status(package_name) {
 
@@ -127,6 +129,47 @@ const Kaltura_package_tasks = class {
         }
     }
 
+    async check_queue_status() {
+
+        try {
+
+            return await this.DB('tbl_kaltura_package_queue')
+                .select('*')
+                .where({
+                    is_processed: 0
+                });
+
+        } catch (error) {
+            LOGGER.module().error('ERROR: [/astools/tasks (get_jobs)] unable to get job record ' + error.message);
+        }
+    }
+
+    async get_ks_entry_ids() {
+
+        try {
+
+            return await this.DB('tbl_kaltura_ids')
+                .select('*');
+
+        } catch (error) {
+            LOGGER.module().error('ERROR: [/astools/tasks (get_ks_entry_ids)] unable to get ks entry ids ' + error.message);
+        }
+    }
+
+    async clear_ks_queue() {
+
+        try {
+
+            await this.DB('tbl_kaltura_package_queue')
+                .del();
+
+            await this.DB('tbl_kaltura_ids')
+                .del();
+
+        } catch (error) {
+            LOGGER.module().error('ERROR: [/astools/tasks (clear_ks_queue)] unable to clear ks queue ' + error.message);
+        }
+    }
 }
 
 module.exports = Kaltura_package_tasks;

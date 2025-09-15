@@ -135,6 +135,7 @@ const Job_tasks = class {
         }
     }
 
+    /*
     async queue_kaltura_packages(data) {
 
         try {
@@ -159,6 +160,8 @@ const Job_tasks = class {
             LOGGER.module().error('ERROR: [/astools/tasks (queue_kaltura_packages)] Unable to create package queue ' + error.message);
         }
     }
+
+     */
 }
 
 module.exports = Job_tasks;

@@ -147,20 +147,18 @@ function process_metadata(data, session, callback) {
                         await KALTURA_TASK.save_kaltura_ids(pairs);
 
                     } else {
-                        console.log(kaltura_package.package);
                         pairs = get_entry_ids(term_response, file, kaltura_package.package);
                         await KALTURA_TASK.save_kaltura_ids(pairs);
                     }
 
                 } else {
-                    console.log(kaltura_package.package);
                     pairs = get_entry_ids(file_response, file, kaltura_package.package);
                     await KALTURA_TASK.save_kaltura_ids(pairs);
                 }
 
-            }, 900)
+            }, 500)
 
-        }, 3000);
+        }, 2000);
 
     })();
 
@@ -205,6 +203,48 @@ function get_entry_ids(metadata, file, package_name) {
 
     return pairs;
 }
+
+exports.check_ks_queue = async function (req, res) {
+
+    try {
+
+       let response = await KALTURA_TASK.check_queue_status();
+       res.status(200).send({
+            data: response
+        });
+
+    } catch (error) {
+        res.status(500).send({message: `Unable to check ks queue. ${error.message}`});
+    }
+};
+
+exports.get_ks_entry_ids = async function (req, res) {
+
+    try {
+
+        let response = await KALTURA_TASK.get_ks_entry_ids();
+        res.status(200).send({
+            data: response
+        });
+
+    } catch (error) {
+        res.status(500).send({message: `Unable to get ks entry ids. ${error.message}`});
+    }
+};
+
+exports.clear_ks_queue = async function (req, res) {
+
+    try {
+
+        await KALTURA_TASK.clear_ks_queue();
+        res.status(204).send({
+            data: 'cleared'
+        });
+
+    } catch (error) {
+        res.status(500).send({message: `Unable to clear ks queue ${error.message}`});
+    }
+};
 
 ///////////////////////////////////////////////////////////////////////
 

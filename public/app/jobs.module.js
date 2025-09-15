@@ -413,6 +413,75 @@ const jobsModule = (function () {
         }
     }
 
+    obj.check_make_digital_objects_ks_queue = async function (batch) {
+
+        try {
+
+            const api_key = helperModule.getParameterByName('api_key');
+            const response = await httpModule.req({
+                method: 'GET',
+                url: nginx_path + '/api/v1/kaltura/queue?&api_key=' + api_key,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                timeout: 600000
+            });
+
+            if (response.status === 200) {
+                return response.data;
+            }
+
+        } catch (error) {
+            domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
+        }
+    }
+
+    obj.get_ks_entry_ids = async function (batch) {
+
+        try {
+
+            const api_key = helperModule.getParameterByName('api_key');
+            const response = await httpModule.req({
+                method: 'GET',
+                url: nginx_path + '/api/v1/kaltura/queue/entry_ids?&api_key=' + api_key,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                timeout: 600000
+            });
+
+            if (response.status === 200) {
+                return response.data;
+            }
+
+        } catch (error) {
+            domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
+        }
+    }
+
+    obj.clear_ks_queue = async function () {
+
+        try {
+
+            const api_key = helperModule.getParameterByName('api_key');
+            const response = await httpModule.req({
+                method: 'POST',
+                url: nginx_path + '/api/v1/kaltura/queue/clear?&api_key=' + api_key,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                timeout: 600000
+            });
+
+            if (response.status === 204) {
+                return response.data;
+            }
+
+        } catch (error) {
+            domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
+        }
+    }
+
     obj.init = async function () {
 
         try {

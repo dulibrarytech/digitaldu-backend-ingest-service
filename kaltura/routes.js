@@ -30,6 +30,15 @@ module.exports = async function (app) {
     app.route(`${APP_CONFIG.app_path}/api/v1/kaltura/metadata`)
         .post(CONTROLLER.get_ks_metadata); // TOKEN.verify,
 
+    app.route(`${APP_CONFIG.app_path}/api/v1/kaltura/queue`)
+        .get(CONTROLLER.check_ks_queue); // TOKEN.verify,
+
+    app.route(`${APP_CONFIG.app_path}/api/v1/kaltura/queue/entry_ids`)
+        .get(CONTROLLER.get_ks_entry_ids); // TOKEN.verify,
+
+    app.route(`${APP_CONFIG.app_path}/api/v1/kaltura/queue/clear`)
+        .post(CONTROLLER.clear_ks_queue); // TOKEN.verify,
+
     app.route(`${APP_CONFIG.app_path}/api/v1/kaltura/export`)
         .post(CONTROLLER.export_data); // TOKEN.verify,
 };

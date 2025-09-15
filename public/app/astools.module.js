@@ -204,109 +204,74 @@ const astoolsModule = (function () {
             if (is_kaltura === 'true') {
 
                 domModule.html('#message', '<div class="alert alert-info"><i class=""></i> (' + batch + ') Retrieving Entry IDs from Kaltura...</div>');
-                console.log('JSON ', json);
-                let result = await get_entry_ids(json);
-                console.log('RESULT ', result);
-                console.log(result);
-                // TODO: interval to check if processing complete
+                await get_entry_ids(json);
+                let timer = setInterval(async () => {
+
+                   let response = await jobsModule.check_make_digital_objects_ks_queue();
+
+                   if (response.data.length === 0) {
+
+                       clearInterval(timer);
+                       console.log('done');
+
+                       setTimeout(async () => {
+
+                           // get ks pairs
+                           let ids = await jobsModule.get_ks_entry_ids();
+                           let files = [];
+                           let errors = [];
+                           for (let i=0; i<ids.data.length; i++) {
+
+                               if (ids.data[i].status !== 1) {
+                                   errors.push({
+                                       status: ids.data[i].status,
+                                       file: ids.data[i].file,
+                                       message: ids.data[i].message,
+                                       entry_id: ids.data[i].entry_id
+                                   });
+                               } else {
+                                   files.push({
+                                       status: ids.data[i].status,
+                                       file: ids.data[i].file,
+                                       message: ids.data[i].message,
+                                       entry_id: ids.data[i].entry_id
+                                   });
+                               }
+                           }
+
+                           if (errors.length > 0) {
+                               let error = '';
+                               for (let i=0; i<errors.length; i++) {
+                                   error += `${errors[i].file} ${errors[i].message}`;
+                                   if (errors[i].status === 2) {
+                                       let id_errors = JSON.parse(errors[i].entry_id);
+                                       error += ` EntryIDs ${id_errors.toString()}`;
+                                   }
+                               }
+
+                               domModule.html('#message', `<div class="alert alert-danger"><i class=""></i>${error}</div>`);
+                           } else {
+                               await make_digital_objects_init(job_uuid, batch, json, files, is_kaltura);
+                           }
+
+                           await jobsModule.clear_ks_queue();
+
+                       }, 5000);
+
+                       return false;
+                   }
+
+                }, 2500);
+
                 return false;
-                let errors = [];
-
-                for (let i = 0; i < result.files.length; i++) {
-
-                    if (result.files[i].status === 0) {
-                        console.log(result.files[i]);
-                        errors.push(i);
-                    }
-                    /*
-                    if (result.files[i].message !== 'success') {
-                        console.log(result.files[i]);
-                        errors.push(i);
-                    }
-
-                     */
-                }
-
-                console.log(errors);
-
-                return false;
-
-                if (errors.length > 0) {
-
-                    let message;
-
-                    for (let j = 0; j < errors.length; j++) {
-
-                        message = result.files[errors[j]].file + ' ' + result.files[errors[j]].message;
-
-                        if (result.files[errors[j]].entry_id.length > 1) {
-                            for (let k = 0; k < result.files[errors[j]].entry_id.length; k++) {
-                                message += ' "' + result.files[errors[j]].entry_id[k] + '"';
-                            }
-                        }
-
-                        domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + message + '</div>');
-                    }
-
-                    return false;
-                }
-
-                files = result.files;
 
             } else {
 
                 for (let i = 0; i < json.packages.length; i++) {
                     files.push(json.packages[i].files);
                 }
-            }
 
-            let ingest_user = JSON.parse(window.sessionStorage.getItem('ingest_user'));
-
-            // data used to create job record
-            const data = {
-                'uuid': job_uuid,
-                'batch': batch,
-                'packages': json.packages,
-                'files': files,
-                'is_kaltura': is_kaltura,
-                'job_run_by': ingest_user[0].name,
-            };
-
-            domModule.html('#message', '<div class="alert alert-info"><i class=""></i> Making digital objects...</div>');
-
-            const response = await httpModule.req({
-                method: 'POST',
-                url: nginx_path + '/api/v1/astools/make-digital-objects?api_key=' + api_key,
-                data: data,
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                timeout: 600000
-            });
-
-            if (response.status === 200) {
-
-                domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Digital objects created for "${batch}" batch</div>`);
-
-                let log = response.data.data;
-                let error = response.data.data.search('Error:');
-
-                if (error !== -1) {
-                    error = log;
-                } else {
-                    error = '-----'
-                }
-
-                await jobsModule.update_job({
-                    uuid: job_uuid,
-                    log: response.data.data,
-                    error: error
-                });
-
-                setTimeout(async () => {
-                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Checking package updates for "${batch}" batch</div>`);
-                    await check_uri_txt(batch, job_uuid);
-                }, 3000);
+                await make_digital_objects_init(job_uuid, batch, json, files, is_kaltura);
             }
 
         } catch (error) {
@@ -315,6 +280,58 @@ const astoolsModule = (function () {
 
         return false;
     };
+
+    async function make_digital_objects_init(job_uuid, batch, json, files, is_kaltura) {
+
+        let ingest_user = JSON.parse(window.sessionStorage.getItem('ingest_user'));
+
+        // data used to create job record
+        const data = {
+            'uuid': job_uuid,
+            'batch': batch,
+            'packages': json.packages,
+            'files': files,
+            'is_kaltura': is_kaltura,
+            'job_run_by': ingest_user[0].name,
+        };
+
+        domModule.html('#message', '<div class="alert alert-info"><i class=""></i> Making digital objects...</div>');
+        const api_key = helperModule.getParameterByName('api_key');
+        const response = await httpModule.req({
+            method: 'POST',
+            url: nginx_path + '/api/v1/astools/make-digital-objects?api_key=' + api_key,
+            data: data,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            timeout: 600000
+        });
+
+        if (response.status === 200) {
+
+            domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Digital objects created for "${batch}" batch</div>`);
+
+            let log = response.data.data;
+            let error = response.data.data.search('Error:');
+
+            if (error !== -1) {
+                error = log;
+            } else {
+                error = '-----'
+            }
+
+            await jobsModule.update_job({
+                uuid: job_uuid,
+                log: response.data.data,
+                error: error
+            });
+
+            setTimeout(async () => {
+                domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Checking package updates for "${batch}" batch</div>`);
+                await check_uri_txt(batch, job_uuid);
+            }, 3000);
+        }
+    }
 
     // confirms that a uri.txt file was created in the packages
     async function check_uri_txt(batch, job_uuid) {
