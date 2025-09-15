@@ -19,6 +19,10 @@
 'use strict';
 
 const SERVICE = require('../kaltura/service');
+const DB_QUEUE = require('../config/dbqueue_config')();
+const DB_TABLES = require('../config/db_tables_config')();
+const KALTURA_TASKS = require('../astools/tasks/kaltra_package_tasks');
+const KALTURA_TASK = new KALTURA_TASKS(DB_QUEUE, DB_TABLES);
 
 exports.get_ks_session = function (req, res) {
 
@@ -79,38 +83,95 @@ exports.get_ks_metadata = function (req, res) {
 
 function process_metadata(data, session, callback) {
 
-    let pairs = [];
-    let files = data.packages[0].files;
+    let updated_archival_packages = [];
+    let archival_packages = data.packages;
 
-    let timer = setInterval(async () => {
+    // serialize files
+    for (let i = 0; i < archival_packages.length; i++) {
+        updated_archival_packages.push({
+            files: JSON.stringify(archival_packages[i].files),
+            package: archival_packages[i].package
+        });
+    }
 
-        if (files.length === 0) {
-            clearInterval(timer);
-            data.files = pairs;
-            console.log('complete');
-            callback(data);
-            return false;
-        }
+    // save to DB queue
+    (async () => {
 
-        let file = files.pop();
-        let term = file.slice(0, -4);
-        let file_response;
-        let term_response;
+        await KALTURA_TASK.queue_kaltura_packages(updated_archival_packages);
 
-        file_response = await SERVICE.get_ks_metadata(file, session);
+        let package_timer = setInterval(async () => {
 
-        if (file_response.totalCount === 0) {
+            let kaltura_package_data = await KALTURA_TASK.get_kaltura_package();
 
-            term_response = await SERVICE.get_ks_metadata(term, session);
-            pairs = get_entry_ids(term_response, file);
-        } else {
-            pairs = get_entry_ids(file_response, file);
-        }
+            if (kaltura_package_data.length === 0) {
+                clearInterval(package_timer);
+                console.log('package processing complete');
+                return false;
+            }
 
-    }, 1000);
+            // process files
+            let kaltura_package = kaltura_package_data.pop();
+            let files = JSON.parse(kaltura_package.files);
+            await KALTURA_TASK.update_queue_status(kaltura_package.package);
+
+            let files_timer = setInterval(async () => {
+
+                if (files.length === 0) {
+                    clearInterval(files_timer);
+                    console.log('files processing complete');
+                    return false;
+                }
+
+                let pairs = [];
+                let file = files.pop();
+                let term = file.slice(0, -4);
+                let file_response;
+                let term_response;
+
+                file_response = await SERVICE.get_ks_metadata(file, session);
+
+                if (file_response.totalCount === 0) {
+
+                    term_response = await SERVICE.get_ks_metadata(term, session);
+
+                    if (term_response.totalCount === 0) {
+
+                        pairs.push({
+                            package: kaltura_package.package,
+                            file: file,
+                            entry_id: '0_0',
+                            status: 0,
+                            message: '- file does not have an Entry ID - Please check Kaltura record for all required fields.'
+                        });
+
+                        await KALTURA_TASK.save_kaltura_ids(pairs);
+
+                    } else {
+                        console.log(kaltura_package.package);
+                        pairs = get_entry_ids(term_response, file, kaltura_package.package);
+                        await KALTURA_TASK.save_kaltura_ids(pairs);
+                    }
+
+                } else {
+                    console.log(kaltura_package.package);
+                    pairs = get_entry_ids(file_response, file, kaltura_package.package);
+                    await KALTURA_TASK.save_kaltura_ids(pairs);
+                }
+
+            }, 900)
+
+        }, 3000);
+
+    })();
+
+    callback({
+        status: 200,
+        message: 'Getting entry ids'
+    });
+    return false;
 }
 
-function get_entry_ids(metadata, file) {
+function get_entry_ids(metadata, file, package_name) {
 
     let pairs = [];
 
@@ -123,34 +184,29 @@ function get_entry_ids(metadata, file) {
         }
 
         pairs.push({
+            package: package_name,
             file: file,
-            entry_id: entry_ids,
+            entry_id: JSON.stringify(entry_ids),
+            status: 2,
             message: '- file has more than 1 Entry ID - Please check Kaltura record(s)'
         });
 
     } else if (metadata.totalCount === 1) {
 
         pairs.push({
+            package: package_name,
             file: file,
             entry_id: metadata.objects[0].object.id,
+            status: 1,
             message: 'success'
         });
 
     }
-    /*
-    else if (metadata.totalCount === 0) {
-
-        pairs.push({
-            file: file,
-            entry_id: [],
-            message: 'Entry ID not found for this file - Please check Kaltura record for all required fields.'
-        });
-    }
-
-     */
 
     return pairs;
 }
+
+///////////////////////////////////////////////////////////////////////
 
 exports.export_data = function (req, res) {
 
@@ -197,3 +253,137 @@ exports.export_data = function (req, res) {
         res.status(500).send({message: `Unable to export data. ${error.message}`});
     }
 }
+
+// files
+// console.log('FILES ', files);
+/*
+for (let j = 0; j < files.length; j++) {
+    console.log('second loop ', files[j]);
+}
+*/
+// TODO: another for loop here to parse out files
+/*
+let files_timer = setInterval(async () => {
+
+    if (files.length === 0) {
+        clearInterval(files_timer);
+        console.log('PAIRS ', pairs);
+        data.files = pairs;
+        console.log('package processing complete');
+        // callback(data);
+        return false;
+    }
+
+    console.log('FILES ', files);
+    let file = files.pop();
+    console.log('FILE ', file);
+
+}, 1000);
+*/
+
+return false;
+/*
+let timer = setInterval(async () => {
+
+    if (archival_packages.length === 0) {
+        clearInterval(timer);
+        console.log('PAIRS ', pairs);
+        data.files = pairs;
+        console.log('package processing complete');
+        // callback(data);
+        return false;
+    }
+
+    let archival_package = archival_packages.pop();
+
+    if (archival_package.files.length === 0) {
+        // console.log('ARCHIVAL PACKAGE FILES ', archival_package.files);
+        // console.log('FILES ', archival_package.files.pop());
+        return false;
+    }
+
+    // process archival package files
+    let file_timer = setInterval(async () => {
+
+        if (archival_package.files.length === 0) {
+            clearInterval(file_timer);
+            console.log(pairs);
+            callback(data);
+            return false;
+        }
+
+        let file = archival_package.files.pop();
+        // let term = file.slice(0, -4);
+
+        console.log('FILE ', file);
+        // console.log('TERM ', term);
+        return false;
+        let file_response;
+        let term_response;
+
+        file_response = await SERVICE.get_ks_metadata(file, session);
+
+        if (file_response.totalCount === 0) {
+
+            term_response = await SERVICE.get_ks_metadata(term, session);
+            // TODO check for 0 result
+            console.log(term_response);
+            let test = 0;
+            // if (term_response.totalCount === 0) {
+            if (test === 0) {
+
+                pairs.push({
+                    file: file,
+                    entry_id: '0_0',
+                    status: 0,
+                    message: '- file does not have an Entry ID - Please check Kaltura record for all required fields.'
+                });
+
+            } else {
+                pairs = get_entry_ids(term_response, file);
+            }
+
+        } else {
+            pairs = get_entry_ids(file_response, file);
+        }
+
+    }, 1000);
+
+    return false;
+
+
+
+    let term = file.slice(0, -4);
+    let file_response;
+    let term_response;
+
+    file_response = await SERVICE.get_ks_metadata(file, session);
+
+    if (file_response.totalCount === 0) {
+
+        term_response = await SERVICE.get_ks_metadata(term, session);
+        // TODO check for 0 result
+        console.log(term_response);
+        let test = 0;
+        // if (term_response.totalCount === 0) {
+        if (test === 0) {
+
+            pairs.push({
+                file: file,
+                entry_id: '0_0',
+                status: 0,
+                message: '- file does not have an Entry ID - Please check Kaltura record for all required fields.'
+            });
+
+        } else {
+            pairs = get_entry_ids(term_response, file);
+        }
+
+    } else {
+        pairs = get_entry_ids(file_response, file);
+    }
+
+
+}, 5000);
+
+ */

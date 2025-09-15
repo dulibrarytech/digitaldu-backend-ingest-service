@@ -38,23 +38,6 @@ exports.workspace = function (req, res) {
     }
 };
 
-/*
-exports.processed = function (req, res) {
-
-    try {
-
-        SERVICE.get_processed_packages((response) => {
-            res.status(200).send({
-                data: response
-            });
-        });
-
-    } catch (error) {
-        res.status(500).send({message: `${error.message}`});
-    }
-};
-*/
-
 exports.make_digital_objects = function (req, res) {
 
     try {
@@ -323,3 +306,20 @@ exports.update_job = async function (req, res) {
         res.status(500).send({message: `${error.message}`});
     }
 };
+
+/*
+exports.processed = function (req, res) {
+
+    try {
+
+        SERVICE.get_processed_packages((response) => {
+            res.status(200).send({
+                data: response
+            });
+        });
+
+    } catch (error) {
+        res.status(500).send({message: `${error.message}`});
+    }
+};
+*/

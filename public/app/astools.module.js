@@ -204,17 +204,32 @@ const astoolsModule = (function () {
             if (is_kaltura === 'true') {
 
                 domModule.html('#message', '<div class="alert alert-info"><i class=""></i> (' + batch + ') Retrieving Entry IDs from Kaltura...</div>');
-
+                console.log('JSON ', json);
                 let result = await get_entry_ids(json);
+                console.log('RESULT ', result);
+                console.log(result);
+                // TODO: interval to check if processing complete
+                return false;
                 let errors = [];
 
                 for (let i = 0; i < result.files.length; i++) {
 
+                    if (result.files[i].status === 0) {
+                        console.log(result.files[i]);
+                        errors.push(i);
+                    }
+                    /*
                     if (result.files[i].message !== 'success') {
                         console.log(result.files[i]);
                         errors.push(i);
                     }
+
+                     */
                 }
+
+                console.log(errors);
+
+                return false;
 
                 if (errors.length > 0) {
 
