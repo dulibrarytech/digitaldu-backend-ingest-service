@@ -321,18 +321,12 @@ const astoolsModule = (function () {
 
     async function make_digital_objects_init(job_uuid, batch, json, files, is_kaltura) {
 
-
-        // folder packages files
-        // let ingest_user = JSON.parse(window.sessionStorage.getItem('ingest_user'));
-
         // data used to create job record
         const data = {
-            // 'uuid': job_uuid,
             'batch': batch,
             'packages': json.packages,
             'files': files,
-            'is_kaltura': is_kaltura,
-            // 'job_run_by': ingest_user[0].name
+            'is_kaltura': is_kaltura
         };
 
         domModule.html('#message', '<div class="alert alert-info"><i class=""></i> Making digital objects...</div>');
