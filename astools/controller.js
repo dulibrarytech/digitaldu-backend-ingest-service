@@ -55,6 +55,7 @@ exports.make_digital_objects = function (req, res) {
             is_kaltura: req.body.is_kaltura
         }
 
+        /*
         let is_kaltura = 0;
 
         if (req.body.is_kaltura === 'true') {
@@ -76,6 +77,8 @@ exports.make_digital_objects = function (req, res) {
         (async function() {
             await MODEL.create_job(job);
         })();
+
+         */
 
         SERVICE.make_digital_objects(args, (response) => {
             res.status(200).send({
@@ -235,9 +238,11 @@ exports.create_job = async function (req, res) {
         const job_run_by = req.body.job_run_by;
         let is_make_digital_objects_complete = 0;
 
+        /*
         if (job_type === 'archivesspace_description_qa') {
             is_make_digital_objects_complete = 1
         }
+         */
 
         const job = {
             uuid: job_uuid,

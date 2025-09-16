@@ -132,7 +132,7 @@ const metadataModule = (function () {
 
                         await jobsModule.update_job({
                             uuid: job_uuid,
-                            is_complete: 0,
+                            is_complete: 2,
                             error: errors
                         });
 

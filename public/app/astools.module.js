@@ -120,7 +120,6 @@ const astoolsModule = (function () {
 
             document.querySelector('#message').innerHTML = '';
             document.querySelector('#digital-object-workspace-table').style.visibility = 'visible';
-            // document.querySelector('.x_panel').style.visibility = 'visible';
 
         } catch (error) {
             domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
@@ -201,65 +200,105 @@ const astoolsModule = (function () {
                 return false;
             }
 
+            let ingest_user = JSON.parse(window.sessionStorage.getItem('ingest_user'));
+
             if (is_kaltura === 'true') {
+                is_kaltura = 1;
+            } else {
+                is_kaltura = 0;
+            }
+
+            const job = {
+                uuid: job_uuid,
+                job_type: 'make_digital_objects',
+                batch_name: batch,
+                packages: json.packages,
+                is_kaltura: is_kaltura,
+                log: '---',
+                error: '---',
+                job_run_by: ingest_user[0].name
+            };
+
+            const response = await httpModule.req({
+                method: 'POST',
+                url: nginx_path + '/api/v1/astools/jobs?api_key=' + api_key,
+                data: job,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                timeout: 600000
+            });
+
+            if (response.status === 200) {
+                console.log('RESPONSE ', response);
+            }
+
+            if (is_kaltura === 1) {
 
                 domModule.html('#message', '<div class="alert alert-info"><i class=""></i> (' + batch + ') Retrieving Entry IDs from Kaltura...</div>');
                 await get_entry_ids(json);
                 let timer = setInterval(async () => {
 
-                   let response = await jobsModule.check_make_digital_objects_ks_queue();
+                    let response = await jobsModule.check_make_digital_objects_ks_queue();
 
-                   if (response.data.length === 0) {
+                    if (response.data.length === 0) {
 
-                       clearInterval(timer);
-                       console.log('done');
+                        clearInterval(timer);
+                        console.log('done');
 
-                       setTimeout(async () => {
+                        setTimeout(async () => {
 
-                           // get ks pairs
-                           let ids = await jobsModule.get_ks_entry_ids();
-                           let files = [];
-                           let errors = [];
-                           for (let i=0; i<ids.data.length; i++) {
+                            // get ks pairs
+                            let ids = await jobsModule.get_ks_entry_ids();
+                            let files = [];
+                            let errors = [];
+                            for (let i = 0; i < ids.data.length; i++) {
 
-                               if (ids.data[i].status !== 1) {
-                                   errors.push({
-                                       status: ids.data[i].status,
-                                       file: ids.data[i].file,
-                                       message: ids.data[i].message,
-                                       entry_id: ids.data[i].entry_id
-                                   });
-                               } else {
-                                   files.push({
-                                       status: ids.data[i].status,
-                                       file: ids.data[i].file,
-                                       message: ids.data[i].message,
-                                       entry_id: ids.data[i].entry_id
-                                   });
-                               }
-                           }
+                                if (ids.data[i].status !== 1) {
+                                    errors.push({
+                                        status: ids.data[i].status,
+                                        file: ids.data[i].file,
+                                        message: ids.data[i].message,
+                                        entry_id: ids.data[i].entry_id
+                                    });
+                                } else {
+                                    files.push({
+                                        status: ids.data[i].status,
+                                        file: ids.data[i].file,
+                                        message: ids.data[i].message,
+                                        entry_id: ids.data[i].entry_id
+                                    });
+                                }
+                            }
 
-                           if (errors.length > 0) {
-                               let error = '';
-                               for (let i=0; i<errors.length; i++) {
-                                   error += `${errors[i].file} ${errors[i].message}`;
-                                   if (errors[i].status === 2) {
-                                       let id_errors = JSON.parse(errors[i].entry_id);
-                                       error += ` EntryIDs ${id_errors.toString()}`;
-                                   }
-                               }
+                            if (errors.length > 0) {
+                                let error = '';
+                                for (let i = 0; i < errors.length; i++) {
+                                    error += `${errors[i].file} ${errors[i].message}`;
+                                    if (errors[i].status === 2) {
+                                        let id_errors = JSON.parse(errors[i].entry_id);
+                                        error += ` EntryIDs ${id_errors.toString()}`;
+                                    }
+                                }
 
-                               domModule.html('#message', `<div class="alert alert-danger"><i class=""></i>${error}</div>`);
-                           } else {
-                               await make_digital_objects_init(job_uuid, batch, json, files, is_kaltura);
-                           }
+                                await jobsModule.update_job({
+                                    uuid: job_uuid,
+                                    is_complete: 2
+                                });
 
-                           await jobsModule.clear_ks_queue();
+                                domModule.html('#message', `<div class="alert alert-danger"><i class=""></i>${error}</div>`);
+                                return false;
 
-                       }, 5000);
+                            } else {
+                                await make_digital_objects_init(job_uuid, batch, json, files, is_kaltura);
+                            }
 
-                       return false;
-                   }
+                            await jobsModule.clear_ks_queue();
+
+                        }, 5000);
+
+                        return false;
+                    }
 
                 }, 2500);
 
@@ -283,16 +322,18 @@ const astoolsModule = (function () {
 
     async function make_digital_objects_init(job_uuid, batch, json, files, is_kaltura) {
 
-        let ingest_user = JSON.parse(window.sessionStorage.getItem('ingest_user'));
+
+        // folder packages files
+        // let ingest_user = JSON.parse(window.sessionStorage.getItem('ingest_user'));
 
         // data used to create job record
         const data = {
-            'uuid': job_uuid,
+            // 'uuid': job_uuid,
             'batch': batch,
             'packages': json.packages,
             'files': files,
             'is_kaltura': is_kaltura,
-            'job_run_by': ingest_user[0].name
+            // 'job_run_by': ingest_user[0].name
         };
 
         domModule.html('#message', '<div class="alert alert-info"><i class=""></i> Making digital objects...</div>');
@@ -359,12 +400,18 @@ const astoolsModule = (function () {
 
                 if (response.data.data.errors.length > 0) {
                     domModule.html('#message', `<div class="alert alert-danger"><i class=""></i> "${response.data.data.errors.toString()}"</div>`);
+
+                    await jobsModule.update_job({
+                        uuid: job_uuid,
+                        is_complete: 2
+                    });
+
                     return false;
+
                 } else {
 
                     await jobsModule.update_job({
                         uuid: job_uuid,
-                        is_make_digital_objects_complete: 1,
                         is_complete: 1
                     });
 
@@ -390,7 +437,6 @@ const astoolsModule = (function () {
                         batch_name: batch,
                         packages: batch_.packages,
                         is_kaltura: batch_.is_kaltura,
-                        is_make_digital_objects_complete: 1,
                         log: '---',
                         error: '---',
                         job_run_by: ingest_user[0].name
@@ -406,35 +452,17 @@ const astoolsModule = (function () {
                         timeout: 600000
                     });
 
-                    console.log('RESPONSE ', response);
                     if (response.status === 200) {
-
+                        console.log('RESPONSE ', response);
                     }
-
-                    // window.localStorage.setItem('job_uuid', job_uuid);
-
-                    /*
-                    let uid = helperModule.getParameterByName('id');
-                    let name = helperModule.getParameterByName('name');
-                    let user;
-                    let redirect;
-
-                    if (uid === 'null' || name === 'null') {
-                        user = JSON.parse(window.sessionStorage.getItem('ingest_user'));
-                        redirect = nginx_path + '/dashboard/metadata?job_uuid=' + job_uuid + '&api_key=' + api_key + '&id=' + user[0].uid + '&name=' + user[0].name
-                    } else {
-                        redirect = nginx_path + '/dashboard/metadata?job_uuid=' + job_uuid + '&api_key=' + api_key + '&id=' + uid + '&name=' + name
-                    }
-                    */
 
                     setTimeout(() => {
                         window.location.reload();
-                    }, 3000);
+                    }, 5000);
                 }
             }
 
         } catch (error) {
-            console.error(error);
             domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
         }
     }

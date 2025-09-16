@@ -91,6 +91,10 @@ const Job_tasks = class {
                 .where({
                     job_type: 'archivesspace_description_qa',
                     is_complete: 0
+                })
+                .orWhere({
+                    job_type: 'archivesspace_description_qa',
+                    is_complete: 2
                 });
 
         } catch (error) {
@@ -107,6 +111,9 @@ const Job_tasks = class {
                 .where({
                     job_type: 'packaging_and_ingesting',
                     is_complete: 0
+                })
+                .orWhere({
+                    is_complete: 2
                 });
 
         } catch (error) {
