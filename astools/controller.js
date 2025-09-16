@@ -223,6 +223,45 @@ async function check_metadata_parts(batch, ingest_package, job_uuid, metadata) {
     }
 }
 
+exports.create_job = async function (req, res) {
+
+    try {
+
+        const job_uuid = req.body.uuid;
+        const job_type = req.body.job_type;
+        const batch_name = req.body.batch_name;
+        const packages = JSON.stringify(req.body.packages);
+        const is_kaltura = req.body.is_kaltura;
+        const job_run_by = req.body.job_run_by;
+        let is_make_digital_objects_complete = 0;
+
+        if (job_type === 'archivesspace_description_qa') {
+            is_make_digital_objects_complete = 1
+        }
+
+        const job = {
+            uuid: job_uuid,
+            job_type: job_type,
+            batch_name: batch_name,
+            packages: packages,
+            is_kaltura: is_kaltura,
+            is_make_digital_objects_complete: is_make_digital_objects_complete,
+            log: '---',
+            error: '---',
+            job_run_by: job_run_by
+        };
+
+        let response = await MODEL.create_job(job);
+        res.status(200).send({
+            data: response
+        });
+
+    } catch (error) {
+        LOGGER.module().error('ERROR: [/astools/controller (create_job)] unable to create job ' + error.message);
+        res.status(500).send({message: `${error.message}`});
+    }
+}
+
 exports.get_job = async function (req, res) {
 
     try {
@@ -245,7 +284,6 @@ exports.get_metadata_jobs = async function (req, res) {
     try {
 
         const response = await MODEL.get_metadata_jobs();
-
         res.status(200).send({
             data: response
         });

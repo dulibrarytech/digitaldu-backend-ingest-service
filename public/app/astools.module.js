@@ -292,7 +292,7 @@ const astoolsModule = (function () {
             'packages': json.packages,
             'files': files,
             'is_kaltura': is_kaltura,
-            'job_run_by': ingest_user[0].name,
+            'job_run_by': ingest_user[0].name
         };
 
         domModule.html('#message', '<div class="alert alert-info"><i class=""></i> Making digital objects...</div>');
@@ -364,12 +364,61 @@ const astoolsModule = (function () {
 
                     await jobsModule.update_job({
                         uuid: job_uuid,
-                        is_make_digital_objects_complete: 1
+                        is_make_digital_objects_complete: 1,
+                        is_complete: 1
                     });
 
-                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ${batch} <strong>successful</strong> - Proceed to Metadata QA page</div>`);
-                    window.localStorage.setItem('job_uuid', job_uuid);
+                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ${batch} <strong>successful</strong></div>`);
+                    console.log('TEST');
 
+
+                    const batch_ = JSON.parse(window.localStorage.getItem(batch));
+                    console.log('BATCH ', batch_);
+
+                    // TODO create job record
+                    const job_uuid_m = self.crypto.randomUUID();
+                    window.localStorage.setItem('job_uuid', job_uuid_m);
+
+                    let packages = [];
+
+                    for (let i = 0; i < batch_.packages.length; i++) {
+                        packages.push(batch_.packages[i].package);
+                    }
+
+                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Packages retrieved for "${batch}" batch</div>`);
+
+                    let ingest_user = JSON.parse(window.sessionStorage.getItem('ingest_user'));
+
+                    const job = {
+                        uuid: job_uuid_m,
+                        job_type: 'archivesspace_description_qa',
+                        batch_name: batch,
+                        packages: batch_.packages,
+                        is_kaltura: batch_.is_kaltura,
+                        is_make_digital_objects_complete: 1,
+                        log: '---',
+                        error: '---',
+                        job_run_by: ingest_user[0].name
+                    }
+
+                    const response = await httpModule.req({
+                        method: 'POST',
+                        url: nginx_path + '/api/v1/astools/jobs?api_key=' + api_key,
+                        data: job,
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        timeout: 600000
+                    });
+
+                    console.log('RESPONSE ', response);
+                    if (response.status === 200) {
+
+                    }
+
+                    // window.localStorage.setItem('job_uuid', job_uuid);
+
+                    /*
                     let uid = helperModule.getParameterByName('id');
                     let name = helperModule.getParameterByName('name');
                     let user;
@@ -381,15 +430,16 @@ const astoolsModule = (function () {
                     } else {
                         redirect = nginx_path + '/dashboard/metadata?job_uuid=' + job_uuid + '&api_key=' + api_key + '&id=' + uid + '&name=' + name
                     }
+                    */
 
                     setTimeout(() => {
-                        // window.location.href = redirect;
                         window.location.reload();
                     }, 3000);
                 }
             }
 
         } catch (error) {
+            console.error(error);
             domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
         }
     }

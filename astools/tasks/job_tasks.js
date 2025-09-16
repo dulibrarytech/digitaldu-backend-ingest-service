@@ -89,8 +89,8 @@ const Job_tasks = class {
             return await this.DB(this.TABLES.repo_jobs)
                 .select('*')
                 .where({
-                    is_make_digital_objects_complete: 1,
-                    is_metadata_checks_complete: 0
+                    job_type: 'archivesspace_description_qa',
+                    is_complete: 0
                 });
 
         } catch (error) {
@@ -134,34 +134,6 @@ const Job_tasks = class {
             LOGGER.module().error('ERROR: [/astools/tasks (get_jobs_history)] unable to get jobs history ' + error.message);
         }
     }
-
-    /*
-    async queue_kaltura_packages(data) {
-
-        try {
-
-            const result = await this.DB.transaction((trx) => {
-                this.DB.insert(data)
-                    .into('tbl_kaltura_package_queue')
-                    .transacting(trx)
-                    .then(trx.commit)
-                    .catch(trx.rollback);
-            });
-
-            if (result.length !== 1) {
-                LOGGER.module().info('INFO: [/astools/tasks (queue_kaltura_packages)] Unable to queue packages.');
-                return false;
-            } else {
-                LOGGER.module().info('INFO: [/astools/tasks (queue_kaltura_packages)] ' + result.length + ' Packages added to queue.');
-                return true;
-            }
-
-        } catch (error) {
-            LOGGER.module().error('ERROR: [/astools/tasks (queue_kaltura_packages)] Unable to create package queue ' + error.message);
-        }
-    }
-
-     */
 }
 
 module.exports = Job_tasks;

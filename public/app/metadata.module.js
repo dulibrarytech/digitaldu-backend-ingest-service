@@ -28,22 +28,13 @@ const metadataModule = (function () {
         try {
 
             window.localStorage.clear();
-            const job_uuid = helperModule.getParameterByName('job_uuid');
-            let records;
-
-            // gets single record by job uuid
-            if (job_uuid !== null && job_uuid.length > 0) {
-                window.localStorage.setItem('job_uuid', job_uuid);
-                records = await jobsModule.get_active_job(job_uuid);
-            } else { // gets all records in jobs that have not had QA run on packages
-                records = await jobsModule.get_metadata_jobs();
-            }
+            let records = await jobsModule.get_metadata_jobs();
 
             if (records.data.length === 0) {
                 domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> No archival object folders are ready for <strong>ArchivesSpace Descriptive QA</strong></div>');
                 return false;
             }
-
+            console.log('RECORDS ', records);
             let html = '';
 
             for (let i = 0; i < records.data.length; i++) {
@@ -79,7 +70,7 @@ const metadataModule = (function () {
 
             domModule.html('#packages', html);
             document.querySelector('#message').innerHTML = '';
-            document.querySelector('.x_panel').style.visibility = 'visible';
+            // document.querySelector('.x_panel').style.visibility = 'visible';
             document.querySelector('#digital-object-workspace-table').style.visibility = 'visible';
 
         } catch (error) {
@@ -97,16 +88,11 @@ const metadataModule = (function () {
             }
 
             const batch_ = JSON.parse(window.localStorage.getItem(batch + '_'));
+            console.log('BATCH ', batch_);
 
             if (batch_ !== null) {
 
-                let job_uuid = window.localStorage.getItem('job_uuid');
-
-                if (job_uuid === null) {
-                    job_uuid = batch_.job_uuid;
-                    window.localStorage.setItem('job_uuid', job_uuid);
-                }
-
+                let job_uuid = batch_.job_uuid;
                 let packages = [];
 
                 for (let i = 0; i < batch_.packages.length; i++) {
@@ -117,7 +103,7 @@ const metadataModule = (function () {
 
                 setTimeout(async () => {
                     document.querySelector('#digital-object-workspace-table').innerHTML = '';
-                    await process_packages(batch, packages);
+                    await process_packages(batch, packages, job_uuid);
                 }, 1000);
 
                 return false;
@@ -130,7 +116,7 @@ const metadataModule = (function () {
         return false;
     };
 
-    const process_packages = async function (batch, packages) {
+    const process_packages = async function (batch, packages, job_uuid) {
 
         try {
 
@@ -142,6 +128,7 @@ const metadataModule = (function () {
 
                     clearInterval(timer);
 
+                    /*
                     let job_uuid = window.localStorage.getItem('job_uuid');
 
                     if (job_uuid === null) {
@@ -149,12 +136,7 @@ const metadataModule = (function () {
                         return false;
                     }
 
-                    let ingest_user = window.sessionStorage.getItem('ingest_user');
-
-                    if (ingest_user === null) {
-                        domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> Unable to get Ingest user information</div>');
-                        return false;
-                    }
+                     */
 
                     let errors = window.localStorage.getItem(batch + '_m_errors');
 
@@ -163,7 +145,7 @@ const metadataModule = (function () {
                         await jobsModule.update_job({
                             uuid: job_uuid,
                             is_metadata_checks_complete: 0,
-                            job_run_by: ingest_user,
+                            is_complete: 0,
                             error: errors
                         });
 
@@ -173,8 +155,8 @@ const metadataModule = (function () {
 
                     await jobsModule.update_job({
                         uuid: job_uuid,
-                        is_metadata_checks_complete: 1,
-                        job_run_by: JSON.parse(ingest_user)
+                        is_complete: 1,
+                        is_metadata_checks_complete: 1
                     });
 
                     setTimeout(async () => {
@@ -187,6 +169,8 @@ const metadataModule = (function () {
                             let uid = helperModule.getParameterByName('id');
                             let name = helperModule.getParameterByName('name');
                             let user;
+
+                            /*
                             let redirect;
 
                             if (uid === 'null' || name === 'null') {
@@ -196,9 +180,12 @@ const metadataModule = (function () {
                                 redirect = nginx_path + '/dashboard/ingest?job_uuid=' + job_uuid + '&api_key=' + api_key + '&id=' + uid + '&name=' + name
                             }
 
-                            window.location.href = redirect;
+                             */
 
-                        }, 3000);
+                            window.location.reload();
+                            // window.location.href = redirect;
+
+                        }, 5000);
 
                     }, 2000);
 
@@ -206,7 +193,7 @@ const metadataModule = (function () {
                 }
 
                 let ingest_package = packages.pop();
-                await check_metadata(batch, ingest_package);
+                await check_metadata(batch, ingest_package, job_uuid);
 
             }, 4000);
 
@@ -215,12 +202,12 @@ const metadataModule = (function () {
         }
     };
 
-    const check_metadata = async function (batch, ingest_package) {
+    const check_metadata = async function (batch, ingest_package, job_uuid) {
 
         try {
 
+            // const job_uuid = window.localStorage.getItem('job_uuid');
             const api_key = helperModule.getParameterByName('api_key');
-            const job_uuid = window.localStorage.getItem('job_uuid');
             const data = {
                 'uuid': job_uuid,
                 'batch': batch,
