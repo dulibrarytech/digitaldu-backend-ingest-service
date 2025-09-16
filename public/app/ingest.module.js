@@ -99,7 +99,7 @@ const ingestModule = (function () {
     obj.start_ingest = async function () {
 
         try {
-            // TODO: confirm that archival objects are there
+            // TODO: confirm that archival objects are there?
             const key = helperModule.getParameterByName('api_key');
             let batch = helperModule.getParameterByName('batch');
             let batch_ = batch + '_';

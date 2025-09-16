@@ -27,7 +27,8 @@ const metadataModule = (function () {
 
         try {
 
-            window.localStorage.clear();
+            // TODO: clear by id
+            // window.localStorage.clear();
             let records = await jobsModule.get_metadata_jobs();
 
             if (records.data.length === 0) {
