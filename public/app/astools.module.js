@@ -287,7 +287,6 @@ const astoolsModule = (function () {
                                 });
 
                                 domModule.html('#message', `<div class="alert alert-danger"><i class=""></i>${error}</div>`);
-                                return false;
 
                             } else {
                                 await make_digital_objects_init(job_uuid, batch, json, files, is_kaltura);
