@@ -221,7 +221,7 @@ const jobsModule = (function () {
                                 is_make_digital_objects_complete: response.data.data[i].is_make_digital_objects_complete,
                                 is_metadata_checks_complete: response.data.data[i].is_metadata_checks_complete,
                                 is_ingested: response.data.data[i].is_ingested,
-                                status: response.data.data[i].status,
+                                is_complete: response.data.data[i].is_complete,
                                 is_kaltura: is_kaltura
                             }
                         });
@@ -275,55 +275,10 @@ const jobsModule = (function () {
 
             let html = '';
             console.log(records);
+
             for (let i = 0; i < records.data.length; i++) {
 
-                // get completed jobs by ingest user
-                let run_jobs = [];
-                let jobs = {};
-                // let job_run_by = JSON.parse(records.data[i].result.job_run_by);
-
-                /*
-                for (let j = 0; j < job_run_by.length; j++) {
-
-                    if (job_run_by[j].job_type === 'make_digital_objects' && records.data[i].result.is_make_digital_objects_complete === 1) {
-                        jobs.name = job_run_by[j].name;
-                        jobs.job_type = job_run_by[j].job_type;
-                        jobs.run_date = job_run_by[j].run_date;
-                        run_jobs.push(jobs);
-                        jobs = {};
-                    }
-
-                    if (job_run_by[j].job_type === 'ArchivesSpace_description_QA' && records.data[i].result.is_metadata_checks_complete === 1) {
-                        jobs.name = job_run_by[j].name;
-                        jobs.job_type = job_run_by[j].job_type;
-                        jobs.run_date = job_run_by[j].run_date;
-                        run_jobs.push(jobs);
-                        jobs = {};
-                    }
-
-                    if (job_run_by[j].job_type === 'packaging_and_ingesting' && records.data[i].result.is_ingested === 1) {
-                        jobs.name = job_run_by[j].name;
-                        jobs.job_type = job_run_by[j].job_type;
-                        jobs.run_date = job_run_by[j].run_date;
-                        run_jobs.push(jobs);
-                        jobs = {};
-                    }
-                }
-                */
-
-                /*
-                let run_jobs_list = '<ul>';
-
-                for (let j = 0; j < run_jobs.length; j++) {
-                    run_jobs_list += '<li><small>' + run_jobs[j].name + '</small></li>';
-                    run_jobs_list += '<ul>';
-                    run_jobs_list += '<li><small>' + run_jobs[j].job_type + '</small></li>';
-                    run_jobs_list += '<li><small>' + run_jobs[j].run_date + '</small></li>';
-                    run_jobs_list += '</ul>';
-                }
-
-                run_jobs_list += '</ul>';
-                */
+                let status;
 
                 /*
                 let package_list = '<ul>';
@@ -335,6 +290,14 @@ const jobsModule = (function () {
                 package_list += '</ul>';
                 */
 
+                if (records.data[i].result.is_complete === 1) {
+                    status = 'SUCCESSFUL';
+                } else if (records.data[i].result.is_complete === 0) {
+                    status = 'PENDING';
+                } else if (records.data[i].result.is_complete === 2) {
+                    status = 'FAILED';
+                }
+
                 html += '<tr>';
 
                 // job uuid
@@ -342,8 +305,14 @@ const jobsModule = (function () {
                 html += '<small>' + records.data[i].result.job_uuid + '</small>';
                 html += '</td>';
 
+                // job type
                 html += '<td style="vertical-align: middle;">';
                 html += '<small>' + records.data[i].result.job_type + '</small>';
+                html += '</td>';
+
+                // is complete
+                html += '<td style="vertical-align: middle;">';
+                html += '<small>' + status + '</small>';
                 html += '</td>';
 
                 // collection folder
@@ -362,47 +331,6 @@ const jobsModule = (function () {
                 html += '<td style="vertical-align: middle;">';
                 html += records.data[i].result.job_run_by;
                 html += '</td>';
-
-
-                /*
-                // make digital objects
-                html += '<td style="vertical-align: middle;text-align: center;">';
-
-                if (records.data[i].result.is_make_digital_objects_complete === 1) {
-                    html += '<small>Successful</small>';
-                } else {
-                    html += '<small>Not Run</small>';
-                }
-
-                html += '</td>';
-                */
-
-                /*
-                // metadata QA
-                html += '<td style="vertical-align: middle;text-align: center;">';
-
-                if ( records.data[i].result.is_metadata_checks_complete === 1) {
-                    html += '<small>Successful</small>';
-                } else {
-                    html += '<small>Not Run</small>';
-                }
-
-                html += '</td>';
-                */
-
-                /*
-                // packaging and ingest
-                html += '<td style="vertical-align: middle;text-align: center;">';
-
-                if (records.data[i].result.is_ingested === 1) {
-                    html += '<small>Successful</small>';
-                } else {
-                    html += '<small>Not Run</small>';
-                }
-
-                html += '</td>';
-
-                 */
                 html += '</tr>';
             }
 

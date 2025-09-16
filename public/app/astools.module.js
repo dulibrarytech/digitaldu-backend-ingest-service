@@ -369,13 +369,8 @@ const astoolsModule = (function () {
                     });
 
                     domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ${batch} <strong>successful</strong></div>`);
-                    console.log('TEST');
-
 
                     const batch_ = JSON.parse(window.localStorage.getItem(batch));
-                    console.log('BATCH ', batch_);
-
-                    // TODO create job record
                     const job_uuid_m = self.crypto.randomUUID();
                     window.localStorage.setItem('job_uuid', job_uuid_m);
 

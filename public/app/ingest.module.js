@@ -30,21 +30,11 @@ const ingestModule = (function () {
 
         try {
 
-            // TODO: check if ingest is in progress
             window.localStorage.clear();
             const api_key = helperModule.getParameterByName('api_key');
-            const job_uuid = helperModule.getParameterByName('job_uuid');
             const id = helperModule.getParameterByName('id');
             const name = helperModule.getParameterByName('name');
-            let records;
-
-            // gets single record by job uuid
-            if (job_uuid !== null && job_uuid.length > 0) {
-                window.localStorage.setItem('job_uuid', job_uuid);
-                records = await jobsModule.get_active_job(job_uuid);
-            } else { // gets all records in jobs that have been processed in MDO and metadata QA
-                records = await jobsModule.get_ingest_jobs();
-            }
+            let records = await jobsModule.get_ingest_jobs();
 
             if (records.data.length === 0) {
                 domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> No archival object folders are ready for <strong>Packaging and Ingesting</strong></div>');
@@ -139,9 +129,11 @@ const ingestModule = (function () {
 
             if (response.status === 200) {
 
+                let ingest_user = JSON.parse(window.sessionStorage.getItem('ingest_user'));
+
                 await jobsModule.update_job({
                     uuid: job_uuid,
-                    job_run_by: JSON.parse(window.sessionStorage.getItem('ingest_user'))
+                    job_run_by: ingest_user[0].name
                 });
 
                 await status_checks();
@@ -275,6 +267,7 @@ const ingestModule = (function () {
         }
     }
 
+    /*
     obj.update_job_run_by = async function () {
 
         const user_id = helperModule.getParameterByName('id');
@@ -310,10 +303,11 @@ const ingestModule = (function () {
             }
         }
     };
+    */
 
     obj.init = async function () {
         // TODO: move to helper
-        await ingestModule.update_job_run_by();
+        // await ingestModule.update_job_run_by();
         await display_packages();
     };
 

@@ -34,7 +34,7 @@ const metadataModule = (function () {
                 domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> No archival object folders are ready for <strong>ArchivesSpace Descriptive QA</strong></div>');
                 return false;
             }
-            console.log('RECORDS ', records);
+
             let html = '';
 
             for (let i = 0; i < records.data.length; i++) {
@@ -70,7 +70,6 @@ const metadataModule = (function () {
 
             domModule.html('#packages', html);
             document.querySelector('#message').innerHTML = '';
-            // document.querySelector('.x_panel').style.visibility = 'visible';
             document.querySelector('#digital-object-workspace-table').style.visibility = 'visible';
 
         } catch (error) {
@@ -88,7 +87,6 @@ const metadataModule = (function () {
             }
 
             const batch_ = JSON.parse(window.localStorage.getItem(batch + '_'));
-            console.log('BATCH ', batch_);
 
             if (batch_ !== null) {
 
@@ -128,23 +126,12 @@ const metadataModule = (function () {
 
                     clearInterval(timer);
 
-                    /*
-                    let job_uuid = window.localStorage.getItem('job_uuid');
-
-                    if (job_uuid === null) {
-                        domModule.html('#message', `<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> Unable to update QA job</div>`);
-                        return false;
-                    }
-
-                     */
-
                     let errors = window.localStorage.getItem(batch + '_m_errors');
 
                     if (errors !== null) {
 
                         await jobsModule.update_job({
                             uuid: job_uuid,
-                            is_metadata_checks_complete: 0,
                             is_complete: 0,
                             error: errors
                         });
@@ -155,36 +142,48 @@ const metadataModule = (function () {
 
                     await jobsModule.update_job({
                         uuid: job_uuid,
-                        is_complete: 1,
-                        is_metadata_checks_complete: 1
+                        is_complete: 1
                     });
+
+                    const api_key = helperModule.getParameterByName('api_key');
+                    let job = {};
+                    let job_data = await jobsModule.get_active_job(job_uuid);
+                    const job_uuid_i = self.crypto.randomUUID();
+                    let ingest_user = JSON.parse(window.sessionStorage.getItem('ingest_user'));
+                    window.localStorage.setItem('job_uuid', job_uuid_i);
+
+                    job.uuid = job_uuid_i;
+                    job.job_type = 'packaging_and_ingesting'
+                    job.log = '---';
+                    job.error = '---';
+                    job.job_run_by = ingest_user[0].name;
+
+                    for (let j = 0; j < job_data.data.length; j++) {
+                        job.batch_name = job_data.data[j].result.batch;
+                        job.packages = job_data.data[j].result.packages;
+                        job.is_kaltura = job_data.data[j].result.is_kaltura;
+                    }
+
+                    const response = await httpModule.req({
+                        method: 'POST',
+                        url: nginx_path + '/api/v1/astools/jobs?api_key=' + api_key,
+                        data: job,
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        timeout: 600000
+                    });
+
+                    if (response.status === 200) {
+                        console.log('RESPONSE ', response);
+                    }
 
                     setTimeout(async () => {
 
                         domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ArchivesSpace Description QA checks complete</div>`);
 
                         setTimeout(async () => {
-
-                            const api_key = helperModule.getParameterByName('api_key');
-                            let uid = helperModule.getParameterByName('id');
-                            let name = helperModule.getParameterByName('name');
-                            let user;
-
-                            /*
-                            let redirect;
-
-                            if (uid === 'null' || name === 'null') {
-                                user = JSON.parse(window.sessionStorage.getItem('ingest_user'));
-                                redirect = nginx_path + '/dashboard/ingest?job_uuid=' + job_uuid + '&api_key=' + api_key + '&id=' + user[0].uid + '&name=' + user[0].name
-                            } else {
-                                redirect = nginx_path + '/dashboard/ingest?job_uuid=' + job_uuid + '&api_key=' + api_key + '&id=' + uid + '&name=' + name
-                            }
-
-                             */
-
                             window.location.reload();
-                            // window.location.href = redirect;
-
                         }, 5000);
 
                     }, 2000);
@@ -206,7 +205,6 @@ const metadataModule = (function () {
 
         try {
 
-            // const job_uuid = window.localStorage.getItem('job_uuid');
             const api_key = helperModule.getParameterByName('api_key');
             const data = {
                 'uuid': job_uuid,

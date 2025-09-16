@@ -66,14 +66,6 @@ exports.get_ks_metadata = async function (identifier, session) { // , callback
 
         return await kaltura.services.eSearch.searchEntry(searchParams, pager)
             .execute(client);
-            /*
-            .then(result => {
-                callback(result);
-            }).catch(error => {
-            callback(error);
-        });
-
-             */
 
     } catch (error) {
         console.log(error);
@@ -214,11 +206,11 @@ async function process_video_search_data(entry_id, data) {
     }
 
     // TODO
-    // console.log('categories: ', data.objects[0].object.categories);
     let category = data.objects[0].object.categories;
-    let user_id = data.objects[0].object.user_id;
-    let creator_id = data.objects[0].object.creator_id;
-    console.log('category ', category);
+    let user_id = data.objects[0].object.userId;
+    let creator_id = data.objects[0].object.creatorId;
+    console.log('CREATOR ID ', creator_id);
+    console.log('CATEGORY ', category);
     let description = data.objects[0].object.description;
     let tags = data.objects[0].object.tags;
     let obj = {};
@@ -230,7 +222,7 @@ async function process_video_search_data(entry_id, data) {
     }
 
     if (creator_id !== undefined || creator_id !== null) {
-        obj.creator_id = user_id;
+        obj.creator_id = creator_id;
     } else {
         obj.creator_id = 'N/A';
     }
@@ -253,7 +245,6 @@ async function process_video_search_data(entry_id, data) {
         obj.tags = 'N/A';
     }
 
-    // console.log('search ', obj);
     await update_record(entry_id, obj);
 }
 
@@ -350,7 +341,7 @@ exports.export_data = function (session) {
 
                 await flag_record(identifier);
 
-            }, 550);
+            }, 750);
 
         })();
 
