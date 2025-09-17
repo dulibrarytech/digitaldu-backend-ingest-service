@@ -27,11 +27,6 @@ module.exports = async function (app) {
     app.route(`${APP_CONFIG.app_path}/api/v1/astools/workspace`)
         .get(TOKEN.verify, CONTROLLER.workspace);
 
-    /*
-    app.route(`${APP_CONFIG.app_path}/api/v1/astools/processed`)
-        .get(TOKEN.verify, CONTROLLER.processed);
-    */
-
     app.route(`${APP_CONFIG.app_path}/api/v1/astools/make-digital-objects`)
         .post(TOKEN.verify, CONTROLLER.make_digital_objects);
 
