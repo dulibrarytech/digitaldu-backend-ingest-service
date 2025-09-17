@@ -243,8 +243,7 @@ const ingestModule = (function () {
                         });
 
                         let clear_queue = `<a href="#" onclick="ingestModule.clear_ingest_queue();">Clear Ingest Queue</a>`;
-                        let message = '<div class="alert alert-info"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; ' + clear_queue + '</strong></div>';
-                        document.querySelector('#message').innerHTML += message;
+                        document.querySelector('#message').innerHTML = '<div class="alert alert-info"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; ' + clear_queue + '</strong></div>';
                         return false;
 
                     })();
