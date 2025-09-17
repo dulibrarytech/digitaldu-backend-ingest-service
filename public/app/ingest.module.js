@@ -138,7 +138,7 @@ const ingestModule = (function () {
                 await status_checks();
             }
 
-        } catch(error) {
+        } catch (error) {
             let message = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; ' + error.message + '</strong></div>';
             domModule.html('#message', message);
         }
@@ -147,7 +147,7 @@ const ingestModule = (function () {
     /**
      * Checks queue to determine ingest status
      */
-    async function status_checks () {
+    async function status_checks() {
 
         let message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; Checking ingest status...</strong></div>';
         domModule.html('#message', message);
@@ -160,7 +160,7 @@ const ingestModule = (function () {
 
             if (data.length > 0) {
 
-                for (let i=0;i<data.length;i++) {
+                for (let i = 0; i < data.length; i++) {
                     if (data[i].error !== null && data[i].is_complete === 0) {
                         clearInterval(status_timer);
                         message = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; An ingest error occurred.</strong></div>';
@@ -189,7 +189,7 @@ const ingestModule = (function () {
     /**
      * Gets ingest status
      */
-    async function get_ingest_status () {
+    async function get_ingest_status() {
 
         try {
 
@@ -208,7 +208,7 @@ const ingestModule = (function () {
                 return response.data;
             }
 
-        } catch(error) {
+        } catch (error) {
             let message = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; ' + error.message + '</strong></div>';
             domModule.html('#message', message);
         }
@@ -225,14 +225,12 @@ const ingestModule = (function () {
             document.querySelector('#ingest-status-table').style.visibility = 'visible';
             let html = '';
 
-            for (let i=0;i<data.length;i++) {
+            for (let i = 0; i < data.length; i++) {
 
                 console.log('STATUS ', data[i].status);
 
                 if (data[i].status === 'INGEST HALTED') {
-                    const api_key = helperModule.getParameterByName('api_key');
-                    let clear_queue_url = nginx_path + '/api/v1/ingest/queue/clear?api_key=' + api_key;
-                    let clear_queue = `<a href="${clear_queue_url}">Clear Ingest Queue</a>`;
+                    let clear_queue = `<a href="#" onclick="ingestModule.clear_ingest_queue();">Clear Ingest Queue</a>`;
                     let message = '<div class="alert alert-info"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; ' + clear_queue + '</strong></div>';
                     document.querySelector('#message').innerHTML += message;
                     return false;
@@ -269,11 +267,43 @@ const ingestModule = (function () {
 
             domModule.html('#batch', html);
 
-        } catch(error) {
+        } catch (error) {
             let message = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; ' + error.message + '</strong></div>';
             domModule.html('#message', message);
         }
     }
+
+    obj.clear_ingest_queue = function () {
+
+        (async function () {
+
+            try {
+
+                const api_key = helperModule.getParameterByName('api_key');
+                let clear_queue_url = nginx_path + '/api/v1/ingest/queue/clear?api_key=' + api_key;
+                const response = await httpModule.req({
+                    method: 'POST',
+                    url: clear_queue_url,
+                    // data: data,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 600000
+                });
+
+                if (response.status === 200) {
+                    console.log(response);
+                    let message = '<div class="alert alert-info"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; Ingest Queue Cleared</strong></div>';
+                    domModule.html('#message', message);
+                }
+
+            } catch (error) {
+                let message = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; ' + error.message + '</strong></div>';
+                domModule.html('#message', message);
+            }
+
+        })();
+    };
 
     /*
     obj.update_job_run_by = async function () {
