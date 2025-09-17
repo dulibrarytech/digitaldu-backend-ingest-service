@@ -85,8 +85,7 @@ const ingestModule = (function () {
 
             domModule.html('#packages', html);
             document.querySelector('#message').innerHTML = '';
-            document.querySelector('.x_panel').style.visibility = 'visible';
-            // document.querySelector('#digital-object-workspace-table').style.visibility = 'visible';
+            document.querySelector('#import-table').style.visibility = 'visible';
 
         } catch (error) {
             domModule.html('#message', '<div class="alert alert-info"><i class=""></i> ' + error.message + '</div>');

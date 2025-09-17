@@ -27,8 +27,6 @@ const metadataModule = (function () {
 
         try {
 
-            // TODO: clear by id
-            // window.localStorage.clear();
             let records = await jobsModule.get_metadata_jobs();
 
             if (records.data.length === 0) {
@@ -43,6 +41,7 @@ const metadataModule = (function () {
                 let batch = records.data[i].result.batch;
                 let key = batch + '_';
 
+                window.localStorage.removeItem(key);
                 window.localStorage.setItem(key, JSON.stringify(records.data[i].result));
 
                 let package_list = '<ul>';

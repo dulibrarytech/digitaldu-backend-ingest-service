@@ -268,13 +268,11 @@ const jobsModule = (function () {
             let records = await jobsModule.get_jobs_history();
 
             if (records.data.length === 0) {
-                document.querySelector('.x_panel').style.display = 'none';
                 domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> No jobs found</div>');
                 return false;
             }
 
             let html = '';
-            console.log(records);
 
             for (let i = 0; i < records.data.length; i++) {
 
@@ -335,6 +333,7 @@ const jobsModule = (function () {
             }
 
             domModule.html('#jobs-history', html);
+            document.querySelector('#jobs-history-table').style.visibility = 'visible';
 
         } catch (error) {
             domModule.html('#message', '<div class="alert alert-info"><i class=""></i> ' + error.message + '</div>');
