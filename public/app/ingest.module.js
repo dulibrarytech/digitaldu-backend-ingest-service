@@ -46,6 +46,7 @@ const ingestModule = (function () {
             for (let i = 0; i < records.data.length; i++) {
 
                 let batch = records.data[i].result.batch;
+                let job_uuid = records.data[i].result.job_uuid;
                 let key = batch + '_';
 
                 if (batch.indexOf('new_') === -1 || batch.indexOf('-resources_') === -1) {
@@ -78,7 +79,7 @@ const ingestModule = (function () {
                 html += '</td>';
                 // actions
                 html += '<td style="text-align: center;vertical-align: middle; width: 20%">';
-                html += '<a href="' + nginx_path + '/dashboard/ingest/status?batch=' + batch + '&api_key=' + api_key + '&id=' + id + '&name=' + name + '" type="button" class="btn btn-sm btn-default run-qa"><i class="fa fa-cogs"></i> <span>Start</span></a>';
+                html += '<a href="' + nginx_path + '/dashboard/ingest/status?batch=' + batch + '&api_key=' + api_key + '&id=' + id + '&name=' + name + '&job_uuid=' + job_uuid + '" type="button" class="btn btn-sm btn-default run-qa"><i class="fa fa-cogs"></i> <span>Start</span></a>';
                 html += '</td>';
                 html += '</tr>';
             }
@@ -103,11 +104,14 @@ const ingestModule = (function () {
             let batch = helperModule.getParameterByName('batch');
             let batch_ = batch + '_';
             let batch_i = JSON.parse(window.localStorage.getItem(batch_));
-            let job_uuid = '000-000'
+            let job_uuid = helperModule.getParameterByName('job_uuid');
+            window.localStorage.setItem('job_uuid', job_uuid);
 
+            /*
             if (batch_i !== null) {
                 job_uuid = batch_i.job_uuid;
             }
+             */
 
             if (batch === null) {
                 await status_checks();
@@ -230,18 +234,36 @@ const ingestModule = (function () {
                 console.log('STATUS ', data[i].status);
 
                 if (data[i].status === 'INGEST HALTED') {
-                    let clear_queue = `<a href="#" onclick="ingestModule.clear_ingest_queue();">Clear Ingest Queue</a>`;
-                    let message = '<div class="alert alert-info"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; ' + clear_queue + '</strong></div>';
-                    document.querySelector('#message').innerHTML += message;
-                    return false;
+
+                    (async function () {
+
+                        await jobsModule.update_job({
+                            uuid: helperModule.getParameterByName('job_uuid'),
+                            is_complete: 0
+                        });
+
+                        let clear_queue = `<a href="#" onclick="ingestModule.clear_ingest_queue();">Clear Ingest Queue</a>`;
+                        let message = '<div class="alert alert-info"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; ' + clear_queue + '</strong></div>';
+                        document.querySelector('#message').innerHTML += message;
+                        return false;
+
+                    })();
                 }
 
                 if (data[i].status === 'COMPLETE' && data.length === 1) {
-                    setTimeout(() => {
+
+                    setTimeout(async () => {
                         const api_key = helperModule.getParameterByName('api_key');
                         const id = helperModule.getParameterByName('id');
                         const name = helperModule.getParameterByName('name');
-                        window.location.href = nginx_path + '/dashboard/ingest?api_key=' + api_key + '&id=' + id + '&name=' + name;
+
+                        await jobsModule.update_job({
+                            uuid: helperModule.getParameterByName('job_uuid'),
+                            is_complete: 1
+                        });
+
+                        window.location.reload();
+                        // window.location.href = nginx_path + '/dashboard/ingest?api_key=' + api_key + '&id=' + id + '&name=' + name;
                     }, 7000)
                     return false;
                 }
