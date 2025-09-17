@@ -112,9 +112,13 @@ const Job_tasks = class {
                     job_type: 'packaging_and_ingesting',
                     is_complete: 0
                 })
+                /*
                 .orWhere({
+                    job_type: 'packaging_and_ingesting',
                     is_complete: 2
                 });
+
+                 */
 
         } catch (error) {
             LOGGER.module().error('ERROR: [/astools/tasks (get_jobs)] unable to get job record ' + error.message);
