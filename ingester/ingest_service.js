@@ -124,7 +124,7 @@ const Ingest_service = class {
             for (let i = 0; i < item_package_names.packages.length; i++) {
                 let obj = {}
                 obj.batch = batch;
-                obj.package = item_package_names.packages[i].toLowerCase();
+                obj.package = item_package_names.packages[i]; // .toLowerCase()
                 obj.job_uuid = job_uuid;
                 packages.push(obj);
             }
@@ -427,9 +427,11 @@ const Ingest_service = class {
             return false;
         }
 
+        /*
         if (await this.check_package_names(batch) === false) {
             return false;
         }
+        */
 
         /* TODO: moved to astools
         if (await this.check_uri_txt(batch) === false) {
