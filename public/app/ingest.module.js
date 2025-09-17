@@ -233,7 +233,7 @@ const ingestModule = (function () {
                     const api_key = helperModule.getParameterByName('api_key');
                     let clear_queue_url = nginx_path + '/api/v1/ingest/queue/clear?api_key=' + api_key;
                     let clear_queue = `<a href="${clear_queue_url}">Clear Ingest Queue</a>`;
-                    let message = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; ' + clear_queue + '</strong></div>';
+                    let message = '<div class="alert alert-info"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; ' + clear_queue + '</strong></div>';
                     document.querySelector('#message').innerHTML += message;
                     return false;
                 }
