@@ -392,6 +392,8 @@ const astoolsModule = (function () {
             if (response.status === 200) {
 
                 if (response.data.data.errors.length > 0) {
+
+                    // TODO: display specific package missing uri.txt file
                     domModule.html('#message', `<div class="alert alert-danger"><i class=""></i> "${response.data.data.errors.toString()}"</div>`);
 
                     await jobsModule.update_job({

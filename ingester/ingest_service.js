@@ -1280,7 +1280,22 @@ const Ingest_service = class {
             let parts = JSON.parse(data[0].object_parts);
             delete metadata.parts;
             metadata.parts = parts;
+
+            if (metadata.parts !== undefined && metadata.parts.length > 0) {
+                for (let i=0;i<metadata.parts.length;i++) {
+                    if (metadata.parts[i].kaltura_id !== undefined) {
+                        record.entry_id = metadata.parts[i].kaltura_id;
+                    }
+                }
+            }
+
+            console.log('RECORD ', record);
+
             let updated_metadata = metadata;
+
+            /*
+            index_record.kaltura_id = metadata.parts[i].kaltura_id;
+             */
 
             await INGEST_TASKS.update_ingest_queue({
                 sip_uuid: sip_uuid,
@@ -1354,6 +1369,7 @@ const Ingest_service = class {
             console.log('Completing ', this.job_uuid);
             await JOBS_TASK.update_job({
                 uuid: this.job_uuid,
+                is_complete: 1,
                 is_ingested: 1
             });
 
