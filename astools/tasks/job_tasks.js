@@ -123,7 +123,8 @@ const Job_tasks = class {
         try {
 
             return await this.DB(this.TABLES.repo_jobs)
-                .select('*');
+                .select('*')
+                .orderBy('id', 'desc');
 
                 /* TODO: by 30 days? or dataTables with paging
                 .where({

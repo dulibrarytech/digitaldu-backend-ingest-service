@@ -197,39 +197,18 @@ const jobsModule = (function () {
                     };
                 }
 
-                let record = [];
-                let is_kaltura = false;
-
                 if (response.data.data.length > 0) {
 
                     for (let i = 0; i < response.data.data.length; i++) {
 
                         if (response.data.data[i].is_kaltura === 1) {
-                            is_kaltura = true;
+                            response.data.data[i].is_kaltura = true;
+                        } else {
+                            response.data.data[i].is_kaltura = false;
                         }
-
-                        record.push({
-                            result: {
-                                job_uuid: response.data.data[i].uuid,
-                                job_type: response.data.data[i].job_type,
-                                batch: response.data.data[i].batch_name,
-                                packages: JSON.parse(response.data.data[i].packages),
-                                error: response.data.data[i].error,
-                                log: response.data.data[i].log,
-                                job_run_by: response.data.data[i].job_run_by,
-                                job_date: response.data.data[i].job_date,
-                                is_make_digital_objects_complete: response.data.data[i].is_make_digital_objects_complete,
-                                is_metadata_checks_complete: response.data.data[i].is_metadata_checks_complete,
-                                is_ingested: response.data.data[i].is_ingested,
-                                is_complete: response.data.data[i].is_complete,
-                                is_kaltura: is_kaltura
-                            }
-                        });
                     }
 
-                    return {
-                        data: record
-                    };
+                    return response.data;
                 }
             }
 
@@ -288,11 +267,13 @@ const jobsModule = (function () {
                 package_list += '</ul>';
                 */
 
-                if (records.data[i].result.is_complete === 1) {
+                console.log('RECORD ', records.data);
+
+                if (records.data[i].is_complete === 1) {
                     status = 'SUCCESSFUL';
-                } else if (records.data[i].result.is_complete === 0) {
+                } else if (records.data[i].is_complete === 0) {
                     status = 'PENDING';
-                } else if (records.data[i].result.is_complete === 2) {
+                } else if (records.data[i].is_complete === 2) {
                     status = 'FAILED';
                 }
 
@@ -300,12 +281,12 @@ const jobsModule = (function () {
 
                 // job uuid
                 html += '<td style="vertical-align: middle;">';
-                html += '<small>' + records.data[i].result.job_uuid + '</small>';
+                html += '<small>' + records.data[i].uuid + '</small>';
                 html += '</td>';
 
                 // job type
                 html += '<td style="vertical-align: middle;">';
-                html += '<small>' + records.data[i].result.job_type + '</small>';
+                html += '<small>' + records.data[i].job_type + '</small>';
                 html += '</td>';
 
                 // is complete
@@ -315,7 +296,7 @@ const jobsModule = (function () {
 
                 // collection folder
                 html += '<td style="vertical-align: middle;">';
-                html += '<small>' + records.data[i].result.batch + '</small>';
+                html += '<small>' + records.data[i].batch_name + '</small>';
                 html += '</td>';
 
                 // packages
@@ -327,7 +308,7 @@ const jobsModule = (function () {
 
                 // jobs run by
                 html += '<td style="vertical-align: middle;">';
-                html += records.data[i].result.job_run_by;
+                html += records.data[i].job_run_by;
                 html += '</td>';
                 html += '</tr>';
             }
