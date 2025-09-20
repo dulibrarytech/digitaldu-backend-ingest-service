@@ -267,8 +267,6 @@ const jobsModule = (function () {
                 package_list += '</ul>';
                 */
 
-                console.log('RECORD ', records.data);
-
                 if (records.data[i].is_complete === 1) {
                     status = 'SUCCESSFUL';
                 } else if (records.data[i].is_complete === 0) {
