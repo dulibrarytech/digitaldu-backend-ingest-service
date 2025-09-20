@@ -314,6 +314,12 @@ const jobsModule = (function () {
             }
 
             domModule.html('#jobs-history', html);
+
+            const JOB_HISTORY = new DataTable('#jobs-history-table', {
+                paging: true,
+                rowReorder: true
+            });
+
             document.querySelector('#jobs-history-table').style.visibility = 'visible';
 
         } catch (error) {
