@@ -99,19 +99,11 @@ const ingestModule = (function () {
     obj.start_ingest = async function () {
 
         try {
-            // TODO: confirm that archival objects are there?
+
             const key = helperModule.getParameterByName('api_key');
             let batch = helperModule.getParameterByName('batch');
-            let batch_ = batch + '_';
-            let batch_i = JSON.parse(window.localStorage.getItem(batch_));
             let job_uuid = helperModule.getParameterByName('job_uuid');
             window.localStorage.setItem('job_uuid', job_uuid);
-
-            /*
-            if (batch_i !== null) {
-                job_uuid = batch_i.job_uuid;
-            }
-             */
 
             if (batch === null) {
                 await status_checks();

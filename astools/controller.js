@@ -55,31 +55,6 @@ exports.make_digital_objects = function (req, res) {
             is_kaltura: req.body.is_kaltura
         }
 
-        /*
-        let is_kaltura = 0;
-
-        if (req.body.is_kaltura === 'true') {
-            is_kaltura = 1;
-        }
-
-        // data used to create job record
-        const job = {
-            uuid: req.body.uuid,
-            job_type: 'make_digital_objects',
-            batch_name: req.body.batch,
-            packages: JSON.stringify(req.body.packages),
-            is_kaltura: is_kaltura,
-            log: '---',
-            error: '---',
-            job_run_by: req.body.job_run_by
-        };
-
-        (async function() {
-            await MODEL.create_job(job);
-        })();
-
-         */
-
         SERVICE.make_digital_objects(args, (response) => {
             res.status(200).send({
                 data: response
@@ -238,12 +213,6 @@ exports.create_job = async function (req, res) {
         const job_run_by = req.body.job_run_by;
         let is_make_digital_objects_complete = 0;
 
-        /*
-        if (job_type === 'archivesspace_description_qa') {
-            is_make_digital_objects_complete = 1
-        }
-         */
-
         const job = {
             uuid: job_uuid,
             job_type: job_type,
@@ -336,8 +305,6 @@ exports.update_job = async function (req, res) {
     try {
 
         const job = req.body;
-        job.job_run_by = JSON.stringify(job.job_run_by);
-
         const response = await MODEL.update_job(job);
 
         res.status(200).send({
@@ -349,20 +316,3 @@ exports.update_job = async function (req, res) {
         res.status(500).send({message: `${error.message}`});
     }
 };
-
-/*
-exports.processed = function (req, res) {
-
-    try {
-
-        SERVICE.get_processed_packages((response) => {
-            res.status(200).send({
-                data: response
-            });
-        });
-
-    } catch (error) {
-        res.status(500).send({message: `${error.message}`});
-    }
-};
-*/
