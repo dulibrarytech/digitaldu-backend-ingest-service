@@ -1280,22 +1280,18 @@ const Ingest_service = class {
             let parts = JSON.parse(data[0].object_parts);
             delete metadata.parts;
             metadata.parts = parts;
+            let entry_id = '';
 
             if (metadata.parts !== undefined && metadata.parts.length > 0) {
+
                 for (let i=0;i<metadata.parts.length;i++) {
                     if (metadata.parts[i].kaltura_id !== undefined) {
-                        record.entry_id = metadata.parts[i].kaltura_id;
+                        entry_id = metadata.parts[i].kaltura_id;
                     }
                 }
             }
 
-            console.log('RECORD ', record);
-
             let updated_metadata = metadata;
-
-            /*
-            index_record.kaltura_id = metadata.parts[i].kaltura_id;
-             */
 
             await INGEST_TASKS.update_ingest_queue({
                 sip_uuid: sip_uuid,
@@ -1323,10 +1319,12 @@ const Ingest_service = class {
             record.mime_type = master_data.mime_type;
             record.checksum = master_data.checksum;
             record.file_size = master_data.file_size;
-            record.sip_uuid = data[0].sip_uuid; // TODO remove
+            record.sip_uuid = data[0].sip_uuid;
             record.is_published = 0;
+            record.entry_id = entry_id;
 
             let index_record = INDEX_LIB.create_index_record(record);
+            delete record.entry_id;
             record.display_record = JSON.stringify(index_record);
             record.mods_id = aspace_id;
 

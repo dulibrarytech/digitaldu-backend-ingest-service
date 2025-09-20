@@ -115,6 +115,11 @@ const Index_record_lib = class {
             if (data.transcript_search !== null && data.transcript_search.length > 0) {
                 index_record.transcript_search = data.transcript_search;
             }
+
+            if (data.entry_id !== undefined && data.entry_id.length > 0) {
+                index_record.entry_id = data.entry_id;
+            }
+
             // TODO: processed in ingest_service create repo record function
             /*
             if (metadata.parts !== undefined && metadata.parts.length > 0) {
