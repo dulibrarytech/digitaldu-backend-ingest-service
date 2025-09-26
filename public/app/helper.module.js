@@ -92,6 +92,11 @@ const helperModule = (function () {
         // document.querySelector('#add-collections').href = nginx_path + '/dashboard/collections?api_key=' + key;
     }
 
+    obj.alert_user = function (event) {
+        event.preventDefault();
+        return false;
+    };
+
     /**
      * Makes content visible only after it is fully rendered on page
      * @param selector

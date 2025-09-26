@@ -81,6 +81,8 @@ const metadataModule = (function () {
 
         try {
 
+            window.addEventListener('beforeunload', helperModule.alert_user);
+
             if (batch === null || batch === undefined) {
                 domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> Unable to get packages</div>');
                 return false;
@@ -126,6 +128,7 @@ const metadataModule = (function () {
 
                     clearInterval(timer);
 
+                    window.removeEventListener('beforeunload', helperModule.alert_user);
                     let errors = window.localStorage.getItem(batch + '_m_errors');
 
                     if (errors !== null) {
@@ -180,10 +183,11 @@ const metadataModule = (function () {
 
                     setTimeout(async () => {
 
-                        domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ArchivesSpace Description QA checks complete</div>`);
+                        domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ArchivesSpace Description QA <strong>Job complete</strong></div>`);
+                        window.removeEventListener('beforeunload', helperModule.alert_user);
 
                         setTimeout(async () => {
-                            window.location.reload();
+                            // window.location.reload();
                         }, 5000);
 
                     }, 2000);

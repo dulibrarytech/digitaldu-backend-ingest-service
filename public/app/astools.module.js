@@ -181,7 +181,7 @@ const astoolsModule = (function () {
 
         try {
 
-            // TODO: display message about not leaving page while process is running
+            window.addEventListener('beforeunload', helperModule.alert_user);
             document.querySelector('#digital-object-workspace-table').style.visibility = 'hidden';
             const batch_data = window.localStorage.getItem(batch);
 
@@ -411,8 +411,6 @@ const astoolsModule = (function () {
                         is_complete: 1
                     });
 
-                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ${batch} <strong>successful</strong></div>`);
-
                     const batch_ = JSON.parse(window.localStorage.getItem(batch));
                     const job_uuid_m = self.crypto.randomUUID();
                     window.localStorage.setItem('job_uuid', job_uuid_m);
@@ -423,7 +421,7 @@ const astoolsModule = (function () {
                         packages.push(batch_.packages[i].package);
                     }
 
-                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Packages retrieved for "${batch}" batch</div>`);
+                    // domModule.html('#message', `<div class="alert alert-info"><i class=""></i> Packages retrieved for "${batch}" batch</div>`);
 
                     let ingest_user = JSON.parse(window.sessionStorage.getItem('ingest_user'));
 
@@ -452,8 +450,12 @@ const astoolsModule = (function () {
                         console.log('RESPONSE ', response);
                     }
 
+                    domModule.html('#message', `<div class="alert alert-info"><i class=""></i> ${batch} <strong>Job Successful</strong></div>`);
+                    window.removeEventListener('beforeunload', helperModule.alert_user);
+
                     setTimeout(() => {
-                        window.location.reload();
+                        console.log('Job complete');
+                        // window.location.reload();
                     }, 5000);
                 }
             }
