@@ -21,6 +21,7 @@ const ingestModule = (function () {
     'use strict';
 
     let obj = {};
+    let ingest_in_progress = 0;
     const nginx_path = '/ingester';
 
     /**
@@ -30,6 +31,7 @@ const ingestModule = (function () {
 
         try {
 
+            await status_checks();
             window.localStorage.clear();
             const api_key = helperModule.getParameterByName('api_key');
             const id = helperModule.getParameterByName('id');
@@ -39,6 +41,8 @@ const ingestModule = (function () {
             if (records.data.length === 0) {
                 domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> No archival object folders are ready for <strong>Packaging and Ingesting</strong></div>');
                 return false;
+            } else {
+                domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> Checking for active ingests...</div>');
             }
 
             let html = '';
@@ -79,13 +83,19 @@ const ingestModule = (function () {
                 html += '</td>';
                 // actions
                 html += '<td style="text-align: center;vertical-align: middle; width: 20%">';
-                html += '<a href="' + nginx_path + '/dashboard/ingest/status?batch=' + batch + '&api_key=' + api_key + '&id=' + id + '&name=' + name + '&job_uuid=' + job_uuid + '" type="button" class="btn btn-sm btn-default run-qa"><i class="fa fa-cogs"></i> <span>Start</span></a>';
+
+                if (ingest_in_progress === 0) {
+                    html += '<a href="' + nginx_path + '/dashboard/ingest/status?batch=' + batch + '&api_key=' + api_key + '&id=' + id + '&name=' + name + '&job_uuid=' + job_uuid + '" type="button" class="btn btn-sm btn-default run-qa"><i class="fa fa-cogs"></i> <span>Start</span></a>';
+                } else if (ingest_in_progress === 1) {
+                    html += '<i class="fa fa-ban"></i>';
+                }
+
                 html += '</td>';
                 html += '</tr>';
             }
 
             domModule.html('#packages', html);
-            document.querySelector('#message').innerHTML = '';
+            //document.querySelector('#message').innerHTML = '';
             document.querySelector('#import-table').style.visibility = 'visible';
 
         } catch (error) {
@@ -162,17 +172,27 @@ const ingestModule = (function () {
                         message = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; An ingest error occurred.</strong></div>';
                         break;
                     } else if (data[i].error === null && data[i].is_complete === 0) {
+                        ingest_in_progress = 1;
                         message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; An ingest is in progress.</strong></div>';
                     }
                 }
 
                 domModule.html('#message', message);
-                display_status_records(data);
+
+                if (document.querySelector('#ingest-status-table') !== null) {
+                    display_status_records(data);
+                }
+
                 return false;
 
             } else if (data.length === 0) {
+
                 clearInterval(status_timer);
-                document.querySelector('#ingest-status-table').style.visibility = 'hidden';
+
+                if (document.querySelector('#ingest-status-table') !== null) {
+                    document.querySelector('#ingest-status-table').style.visibility = 'hidden';
+                }
+
                 let message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; No Ingests are currently in progress.</strong></div>';
                 domModule.html('#message', message);
                 domModule.html('#batch', '');
@@ -318,7 +338,16 @@ const ingestModule = (function () {
         })();
     };
 
-    /*
+    obj.init = async function () {
+        await display_packages();
+    };
+
+    return obj;
+
+}());
+
+
+/*
     obj.update_job_run_by = async function () {
 
         const user_id = helperModule.getParameterByName('id');
@@ -355,17 +384,6 @@ const ingestModule = (function () {
         }
     };
     */
-
-    obj.init = async function () {
-        // TODO: move to helper
-        // await ingestModule.update_job_run_by();
-        await display_packages();
-    };
-
-    return obj;
-
-}());
-
 /**
  * Gets ingest packages
  */

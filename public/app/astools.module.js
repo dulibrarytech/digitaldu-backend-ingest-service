@@ -181,6 +181,7 @@ const astoolsModule = (function () {
 
         try {
 
+            // TODO: display message about not leaving page while process is running
             document.querySelector('#digital-object-workspace-table').style.visibility = 'hidden';
             const batch_data = window.localStorage.getItem(batch);
 
