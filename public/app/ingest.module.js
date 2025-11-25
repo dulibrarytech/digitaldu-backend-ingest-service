@@ -17,114 +17,237 @@
  */
 
 const ingestModule = (function () {
-
     'use strict';
 
-    let obj = {};
+    const obj = {};
     let ingest_in_progress = 0;
-    const nginx_path = '/ingester';
+    let status_timer = null;
+    const NGINX_PATH = '/repo/ingester';
+    const STATUS_CHECK_INTERVAL = 5000;
+    const RELOAD_DELAY = 7000;
 
     /**
-     * Displays collection packages
+     * Sanitizes HTML string to prevent XSS attacks
+     * @param {string} html - HTML string to sanitize
+     * @returns {string} Sanitized HTML
+     */
+    function sanitize_html(html) {
+        const temp_div = document.createElement('div');
+        temp_div.textContent = html;
+        return temp_div.innerHTML;
+    }
+
+    /**
+     * Validates batch name format
+     * @param {string} batch - Batch name to validate
+     * @returns {boolean} True if valid
+     */
+    function is_valid_batch(batch) {
+        if (!batch || typeof batch !== 'string') {
+            return false;
+        }
+        return batch.includes('new_') && batch.includes('-resources_');
+    }
+
+    /**
+     * Safely gets element by selector
+     * @param {string} selector - CSS selector
+     * @returns {Element|null} DOM element or null
+     */
+    function get_element(selector) {
+        try {
+            return document.querySelector(selector);
+        } catch (error) {
+            console.error(`Invalid selector: ${selector}`, error);
+            return null;
+        }
+    }
+
+    /**
+     * Creates package list HTML
+     * @param {Array} packages - Array of package objects
+     * @returns {string} HTML string for package list
+     */
+    function create_package_list_html(packages) {
+        if (!Array.isArray(packages) || packages.length === 0) {
+            return '<ul><li><small>No packages</small></li></ul>';
+        }
+
+        const items = packages
+            .map(pkg => `<li><small>${sanitize_html(pkg.package)}</small></li>`)
+            .join('');
+
+        return `<ul>${items}</ul>`;
+    }
+
+    /**
+     * Creates button HTML for ingest action
+     * @param {string} batch - Batch identifier
+     * @param {string} job_uuid - Job UUID
+     * @param {number} ingest_status - Current ingest status (0 or 1)
+     * @returns {string} HTML string for button
+     */
+    function create_action_button_html(batch, job_uuid, ingest_status) {
+        if (ingest_status === 1) {
+            return '<i class="fa fa-ban"></i>';
+        }
+
+        return `<button type="button" 
+                        class="btn btn-sm btn-default run-qa" 
+                        data-batch="${sanitize_html(batch)}" 
+                        data-job-uuid="${sanitize_html(job_uuid)}"
+                        aria-label="Start ingest for ${sanitize_html(batch)}">
+                    <i class="fa fa-cogs"></i> 
+                    <span>Start</span>
+                </button>`;
+    }
+
+    /**
+     * Displays collection packages for ingest
      */
     async function display_packages() {
-
         try {
-
             await status_checks();
-            window.localStorage.clear();
-            const api_key = helperModule.getParameterByName('api_key');
-            const id = helperModule.getParameterByName('id');
-            const name = helperModule.getParameterByName('name');
-            let records = await jobsModule.get_ingest_jobs();
 
-            if (records.data.length === 0) {
-                domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> No archival object folders are ready for <strong>Packaging and Ingesting</strong></div>');
-                return false;
-            } else {
-                domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> Checking for active ingests...</div>');
+            // Clear localStorage safely
+            if (typeof window.localStorage !== 'undefined') {
+                window.localStorage.clear();
             }
 
-            let html = '';
+            const records = await jobsModule.get_ingest_jobs();
 
-            for (let i = 0; i < records.data.length; i++) {
+            if (!records || !Array.isArray(records.data) || records.data.length === 0) {
+                domModule.html('#message',
+                    '<div class="alert alert-info">' +
+                    '<i class="fa fa-exclamation-circle"></i> ' +
+                    'No archival object folders are ready for <strong>Packaging and Ingesting</strong>' +
+                    '</div>'
+                );
+                return false;
+            }
 
-                let batch = records.data[i].result.batch;
-                let job_uuid = records.data[i].result.job_uuid;
-                let key = batch + '_';
+            domModule.html('#message',
+                '<div class="alert alert-info">' +
+                '<i class="fa fa-exclamation-circle"></i> ' +
+                'Checking for active ingests...' +
+                '</div>'
+            );
 
-                if (batch.indexOf('new_') === -1 || batch.indexOf('-resources_') === -1) {
-                    console.log('Removing ', batch);
+            const rows = [];
+
+            for (const record of records.data) {
+                const batch = record.result?.batch;
+                const job_uuid = record.result?.job_uuid;
+                const packages = record.result?.packages || [];
+
+                if (!batch || !job_uuid) {
+                    console.warn('Missing batch or job_uuid in record', record);
                     continue;
                 }
 
-                window.localStorage.setItem(key, JSON.stringify(records.data[i].result));
-
-                let package_list = '<ul>';
-
-                for (let j = 0; j < records.data[i].result.packages.length; j++) {
-                    package_list += '<li><small>' + records.data[i].result.packages[j].package + '</small></li>';
+                if (!is_valid_batch(batch)) {
+                    console.log('Skipping invalid batch:', batch);
+                    continue;
                 }
 
-                package_list += '</ul>';
-
-                html += '<tr>';
-                // workspace folder name
-                html += '<td style="text-align: left;vertical-align: middle; width: 40%">';
-                html += '<small>' + batch + '</small>';
-                html += '</td>';
-                // packages
-                html += '<td style="text-align: left;vertical-align: middle; width: 25%">';
-                html += package_list;
-                html += '</td>';
-                // package count
-                html += '<td style="text-align: left;vertical-align: middle; width: 5%">';
-                html += '<small>' + records.data[i].result.packages.length + '</small>';
-                html += '</td>';
-                // actions
-                html += '<td style="text-align: center;vertical-align: middle; width: 20%">';
-
-                if (ingest_in_progress === 0) {
-                    html += '<a href="' + nginx_path + '/dashboard/ingest/status?batch=' + batch + '&api_key=' + api_key + '&id=' + id + '&name=' + name + '&job_uuid=' + job_uuid + '" type="button" class="btn btn-sm btn-default run-qa"><i class="fa fa-cogs"></i> <span>Start</span></a>';
-                } else if (ingest_in_progress === 1) {
-                    html += '<i class="fa fa-ban"></i>';
+                // Store in localStorage if available
+                if (typeof window.localStorage !== 'undefined') {
+                    const key = `${batch}_`;
+                    try {
+                        window.localStorage.setItem(key, JSON.stringify(record.result));
+                    } catch (error) {
+                        console.warn('Failed to store in localStorage:', error);
+                    }
                 }
 
-                html += '</td>';
-                html += '</tr>';
+                const package_list_html = create_package_list_html(packages);
+                const action_button_html = create_action_button_html(batch, job_uuid, ingest_in_progress);
+
+                rows.push(`
+                    <tr>
+                        <td style="text-align: left; vertical-align: middle; width: 40%">
+                            <small>${sanitize_html(batch)}</small>
+                        </td>
+                        <td style="text-align: left; vertical-align: middle; width: 25%">
+                            ${package_list_html}
+                        </td>
+                        <td style="text-align: left; vertical-align: middle; width: 5%">
+                            <small>${packages.length}</small>
+                        </td>
+                        <td style="text-align: center; vertical-align: middle; width: 20%">
+                            ${action_button_html}
+                        </td>
+                    </tr>
+                `);
             }
 
-            domModule.html('#packages', html);
-            //document.querySelector('#message').innerHTML = '';
-            document.querySelector('#import-table').style.visibility = 'visible';
+            domModule.html('#packages', rows.join(''));
+
+            const import_table = get_element('#import-table');
+            if (import_table) {
+                import_table.style.visibility = 'visible';
+            }
 
         } catch (error) {
-            domModule.html('#message', '<div class="alert alert-info"><i class=""></i> ' + error.message + '</div>');
+            console.error('Error in display_packages:', error);
+            const error_message = sanitize_html(error.message || 'An unexpected error occurred');
+            domModule.html('#message',
+                `<div class="alert alert-danger">` +
+                `<i class="fa fa-exclamation-circle"></i> ${error_message}` +
+                `</div>`
+            );
         }
     }
 
     /**
      * Starts ingest process
+     * @param {string} batch - Batch identifier
+     * @param {string} job_uuid - Job UUID
      */
-    obj.start_ingest = async function () {
+    obj.start_ingest = async function (batch, job_uuid) {
 
         try {
-
-            const key = helperModule.getParameterByName('api_key');
-            let batch = helperModule.getParameterByName('batch');
-            let job_uuid = helperModule.getParameterByName('job_uuid');
-            window.localStorage.setItem('job_uuid', job_uuid);
-
-            if (batch === null) {
-                await status_checks();
-                return false;
+            // Validate inputs
+            if (!batch || typeof batch !== 'string') {
+                throw new Error('Invalid batch parameter');
             }
 
-            let message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; Starting Ingest...</strong></div>';
-            domModule.html('#message', message);
+            if (!job_uuid || typeof job_uuid !== 'string') {
+                throw new Error('Invalid job_uuid parameter');
+            }
 
-            let url = nginx_path + '/api/v1/ingest?batch=' + batch + '&job_uuid=' + job_uuid + '&api_key=' + key;
-            let response = await httpModule.req({
+            console.log('Starting ingest for batch:', batch);
+            console.log('job_uuid ', job_uuid);
+
+            // Store job UUID safely
+            if (typeof window.localStorage !== 'undefined') {
+                try {
+                    window.localStorage.setItem('job_uuid', job_uuid);
+                } catch (error) {
+                    console.warn('Failed to store job_uuid:', error);
+                }
+            }
+
+            domModule.html('#message',
+                '<div class="alert alert-info">' +
+                '<strong><i class="fa fa-info-circle"></i>&nbsp; Starting Ingest...</strong>' +
+                '</div>'
+            );
+
+            // Get API key
+            const api_key = helperModule.getParameterByName('api_key');
+            if (!api_key) {
+                throw new Error('API key is required');
+            }
+
+            // Sanitize parameters for URL
+            const encoded_batch = encodeURIComponent(batch);
+            const encoded_job_uuid = encodeURIComponent(job_uuid);
+            const encoded_api_key = encodeURIComponent(api_key);
+
+            const url = `${NGINX_PATH}/api/v1/ingest?batch=${encoded_batch}&job_uuid=${encoded_job_uuid}&api_key=${encoded_api_key}`;
+
+            const response = await httpModule.req({
                 method: 'POST',
                 url: url,
                 headers: {
@@ -133,86 +256,153 @@ const ingestModule = (function () {
             });
 
             if (response.status === 200) {
+                const ingest_user = JSON.parse(window.sessionStorage.getItem('repo_user'));
 
-                let ingest_user = JSON.parse(window.sessionStorage.getItem('ingest_user'));
-
-                await jobsModule.update_job({
-                    uuid: job_uuid,
-                    job_run_by: ingest_user[0].name
-                });
+                if (ingest_user && ingest_user.name) {
+                    await jobsModule.update_job({
+                        uuid: job_uuid,
+                        job_run_by: ingest_user.name
+                    });
+                }
 
                 await status_checks();
+            } else {
+                throw new Error(`Server responded with status: ${response.status}`);
             }
 
         } catch (error) {
-            let message = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; ' + error.message + '</strong></div>';
-            domModule.html('#message', message);
+            console.error('Error in start_ingest:', error);
+            const error_message = sanitize_html(error.message || 'An unexpected error occurred');
+            domModule.html('#message',
+                `<div class="alert alert-danger">` +
+                `<strong><i class="fa fa-exclamation-circle"></i>&nbsp; ${error_message}</strong>` +
+                `</div>`
+            );
         }
     };
+
+    /**
+     * Clears the status check interval
+     */
+    function clear_status_timer() {
+        if (status_timer !== null) {
+            clearInterval(status_timer);
+            status_timer = null;
+        }
+    }
 
     /**
      * Checks queue to determine ingest status
      */
     async function status_checks() {
 
-        let message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; Checking ingest status...</strong></div>';
-        domModule.html('#message', message);
+        // Clear any existing timer first
+        clear_status_timer();
 
-        let status_timer = setInterval(async () => {
+        domModule.html('#message',
+            '<div class="alert alert-info">' +
+            '<strong><i class="fa fa-info-circle"></i>&nbsp; Checking ingest status...</strong>' +
+            '</div>'
+        );
 
-            let data = await get_ingest_status();
-            let message = '';
-            domModule.html('#message', '');
+        status_timer = setInterval(async () => {
+            try {
+                const data = await get_ingest_status();
 
-            if (data.length > 0) {
+                if (!Array.isArray(data)) {
+                    console.error('Invalid data from get_ingest_status');
+                    return;
+                }
 
-                for (let i = 0; i < data.length; i++) {
-                    if (data[i].error !== null && data[i].is_complete === 0) {
-                        clearInterval(status_timer);
-                        message = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; An ingest error occurred.</strong></div>';
-                        break;
-                    } else if (data[i].error === null && data[i].is_complete === 0) {
-                        ingest_in_progress = 1;
-                        message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; An ingest is in progress.</strong></div>';
+                domModule.html('#message', '');
+
+                if (data.length > 0) {
+                    let message = '';
+
+                    for (const item of data) {
+                        if (item.error !== null && item.is_complete === 0) {
+                            clear_status_timer();
+                            message = '<div class="alert alert-danger">' +
+                                '<strong><i class="fa fa-exclamation-circle"></i>&nbsp; ' +
+                                'An ingest error occurred.</strong>' +
+                                '</div>';
+                            break;
+                        } else if (item.error === null && item.is_complete === 0) {
+                            ingest_in_progress = 1;
+                            document.querySelector('#import-table').style.visibility = 'hidden';
+                            message = '<div class="alert alert-info">' +
+                                '<strong><i class="fa fa-info-circle"></i>&nbsp;&nbsp; ' +
+                                'An ingest is in progress.</strong>' +
+                                '<button id="stop-ingest" class="btn btn-default" type="button">' +
+                                'Stop Ingest</button>' +
+                                '</div>';
+                        }
                     }
+
+                    if (message) {
+                        domModule.html('#message', message);
+
+                        // Add event listener to stop button if it exists
+                        const stop_button = get_element('#stop-ingest');
+
+                        if (stop_button) {
+                            // Remove existing listeners to prevent duplicates
+                            const new_stop_button = stop_button.cloneNode(true);
+                            stop_button.parentNode.replaceChild(new_stop_button, stop_button);
+
+                            new_stop_button.addEventListener('click', () => {
+                                ingestModule.clear_ingest_queue();
+                            });
+                        }
+                    }
+
+                    const status_table = get_element('#ingest-status-table');
+                    if (status_table) {
+                        display_status_records(data);
+                    }
+
+                } else {
+                    // No active ingests
+                    clear_status_timer();
+                    ingest_in_progress = 0;
+
+                    const status_table = get_element('#ingest-status-table');
+                    if (status_table) {
+                        status_table.style.visibility = 'hidden';
+                    }
+
+                    domModule.html('#message',
+                        '<div class="alert alert-info">' +
+                        '<strong><i class="fa fa-info-circle"></i>&nbsp; ' +
+                        'No Ingests are currently in progress.</strong>' +
+                        '</div>'
+                    );
+                    domModule.html('#batch', '');
                 }
 
-                domModule.html('#message', message);
-
-                if (document.querySelector('#ingest-status-table') !== null) {
-                    display_status_records(data);
-                }
-
-                return false;
-
-            } else if (data.length === 0) {
-
-                clearInterval(status_timer);
-
-                if (document.querySelector('#ingest-status-table') !== null) {
-                    document.querySelector('#ingest-status-table').style.visibility = 'hidden';
-                }
-
-                let message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; No Ingests are currently in progress.</strong></div>';
-                domModule.html('#message', message);
-                domModule.html('#batch', '');
-                return false;
+            } catch (error) {
+                console.error('Error in status_checks interval:', error);
             }
 
-        }, 5000);
+        }, STATUS_CHECK_INTERVAL);
     }
 
     /**
-     * Gets ingest status
+     * Gets ingest status from API
+     * @returns {Promise<Array>} Array of status records
      */
     async function get_ingest_status() {
-
         try {
+            const api_key = helperModule.getParameterByName('api_key');
 
-            const key = helperModule.getParameterByName('api_key');
-            let url = nginx_path + '/api/v1/ingest/status?api_key=' + key;
+            if (!api_key) {
+                throw new Error('API key is required');
+            }
 
-            let response = await httpModule.req({
+            const encoded_api_key = encodeURIComponent(api_key);
+            const url = `${NGINX_PATH}/api/v1/ingest/status?api_key=${encoded_api_key}`;
+
+            const response = await httpModule.req({
                 method: 'GET',
                 url: url,
                 headers: {
@@ -221,286 +411,244 @@ const ingestModule = (function () {
             });
 
             if (response.status === 200) {
-                return response.data;
+                return Array.isArray(response.data) ? response.data : [];
             }
 
+            throw new Error(`Server responded with status: ${response.status}`);
+
         } catch (error) {
-            let message = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; ' + error.message + '</strong></div>';
-            domModule.html('#message', message);
+            console.error('Error in get_ingest_status:', error);
+            const error_message = sanitize_html(error.message || 'Failed to get ingest status');
+            domModule.html('#message',
+                `<div class="alert alert-danger">` +
+                `<strong><i class="fa fa-exclamation-circle"></i>&nbsp; ${error_message}</strong>` +
+                `</div>`
+            );
+            return [];
         }
     }
 
     /**
-     * Displays status records
-     * @param data
+     * Displays status records in table
+     * @param {Array} data - Array of status records
      */
     function display_status_records(data) {
-
         try {
-
-            document.querySelector('#ingest-status-table').style.visibility = 'visible';
-            let html = '';
-
-            for (let i = 0; i < data.length; i++) {
-
-                console.log('STATUS ', data[i].status);
-
-                if (data[i].status === 'INGEST HALTED') {
-
-                    (async function () {
-
-                        await jobsModule.update_job({
-                            uuid: helperModule.getParameterByName('job_uuid'),
-                            is_complete: 0
-                        });
-
-                        let clear_queue = `<a href="#" onclick="ingestModule.clear_ingest_queue();">Clear Ingest Queue</a>`;
-                        document.querySelector('#message').innerHTML = '<div class="alert alert-info"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; ' + clear_queue + '</strong></div>';
-                        return false;
-
-                    })();
-                }
-
-                if (data[i].status === 'COMPLETE' && data.length === 1) {
-
-                    setTimeout(async () => {
-                        const api_key = helperModule.getParameterByName('api_key');
-                        const id = helperModule.getParameterByName('id');
-                        const name = helperModule.getParameterByName('name');
-
-                        await jobsModule.update_job({
-                            uuid: helperModule.getParameterByName('job_uuid'),
-                            is_complete: 1
-                        });
-
-                        window.location.reload();
-                        // window.location.href = nginx_path + '/dashboard/ingest?api_key=' + api_key + '&id=' + id + '&name=' + name;
-                    }, 7000)
-                    return false;
-                }
-
-                if (data[i].status !== 'PENDING') {
-                    html += '<tr>';
-                    html += '<td>' + data[i].batch + '</td>';
-                    html += '<td>' + data[i].package + '</td>';
-                    // html += '<td>' + data[i].batch_size + '</td>';
-                    html += '<td>' + data[i].status + '</td>';
-                    html += '<td>' + data[i].micro_service + '</td>';
-
-                    if (data[i].error !== null) {
-                        // TODO: loop through errors
-                        html += '<td>' + data[i].error + '</td>';
-                    } else {
-                        html += '<td>NONE</td>';
-                    }
-                }
-
-                html += '</tr>';
+            if (!Array.isArray(data) || data.length === 0) {
+                return;
             }
 
-            domModule.html('#batch', html);
+            const status_table = get_element('#ingest-status-table');
+            if (status_table) {
+                status_table.style.visibility = 'visible';
+            }
+
+            const rows = [];
+
+            for (const item of data) {
+                if (!item || typeof item !== 'object') {
+                    continue;
+                }
+
+                console.log('STATUS:', item.status);
+
+                // Handle halted status
+                if (item.status === 'INGEST HALTED') {
+                    handle_halted_ingest().catch(error => {
+                        console.error('Error handling halted ingest:', error);
+                    });
+                }
+
+                // Handle complete status
+                if (item.status === 'COMPLETE' && data.length === 1) {
+                    handle_complete_ingest().catch(error => {
+                        console.error('Error handling complete ingest:', error);
+                    });
+                    return;
+                }
+
+                // Build table row for non-pending items
+                if (item.status !== 'PENDING') {
+                    const error_text = item.error !== null ? sanitize_html(String(item.error)) : 'NONE';
+
+                    rows.push(`
+                        <tr>
+                            <td>${sanitize_html(item.batch || '')}</td>
+                            <td>${sanitize_html(item.package || '')}</td>
+                            <td>${sanitize_html(item.status || '')}</td>
+                            <td>${sanitize_html(item.micro_service || '')}</td>
+                            <td>${error_text}</td>
+                        </tr>
+                    `);
+                }
+            }
+
+            domModule.html('#batch', rows.join(''));
 
         } catch (error) {
-            let message = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; ' + error.message + '</strong></div>';
-            domModule.html('#message', message);
+            console.error('Error in display_status_records:', error);
+            const error_message = sanitize_html(error.message || 'Failed to display status records');
+            domModule.html('#message',
+                `<div class="alert alert-danger">` +
+                `<strong><i class="fa fa-exclamation-circle"></i>&nbsp; ${error_message}</strong>` +
+                `</div>`
+            );
         }
     }
 
-    obj.clear_ingest_queue = function () {
+    /**
+     * Handles halted ingest status
+     */
+    async function handle_halted_ingest() {
+        try {
+            const job_uuid = typeof window.localStorage !== 'undefined'
+                ? window.localStorage.getItem('job_uuid')
+                : null;
 
-        (async function () {
-
-            try {
-
-                const api_key = helperModule.getParameterByName('api_key');
-                let clear_queue_url = nginx_path + '/api/v1/ingest/queue/clear?api_key=' + api_key;
-                const response = await httpModule.req({
-                    method: 'POST',
-                    url: clear_queue_url,
-                    // data: data,
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    timeout: 600000
+            if (job_uuid) {
+                await jobsModule.update_job({
+                    uuid: job_uuid,
+                    is_complete: 0
                 });
-
-                if (response.status === 200) {
-                    console.log(response);
-                    let message = '<div class="alert alert-info"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; Ingest Queue Cleared</strong></div>';
-                    domModule.html('#message', message);
-                }
-
-            } catch (error) {
-                let message = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; ' + error.message + '</strong></div>';
-                domModule.html('#message', message);
             }
 
-        })();
+            const message_element = get_element('#message');
+            if (message_element) {
+                const clear_button = document.createElement('button');
+                clear_button.textContent = 'Clear Ingest Queue';
+                clear_button.className = 'btn btn-warning';
+                clear_button.addEventListener('click', () => {
+                    ingestModule.clear_ingest_queue();
+                });
+
+                message_element.innerHTML = '';
+                const alert_div = document.createElement('div');
+                alert_div.className = 'alert alert-info';
+                alert_div.innerHTML = '<strong><i class="fa fa-exclamation-circle"></i>&nbsp; </strong>';
+                alert_div.appendChild(clear_button);
+                message_element.appendChild(alert_div);
+            }
+
+        } catch (error) {
+            console.error('Error in handle_halted_ingest:', error);
+        }
+    }
+
+    /**
+     * Handles complete ingest status
+     */
+    async function handle_complete_ingest() {
+        try {
+            setTimeout(async () => {
+                const job_uuid = typeof window.localStorage !== 'undefined'
+                    ? window.localStorage.getItem('job_uuid')
+                    : null;
+
+                if (job_uuid) {
+                    await jobsModule.update_job({
+                        uuid: job_uuid,
+                        is_complete: 1
+                    });
+                }
+
+                window.location.reload();
+            }, RELOAD_DELAY);
+
+        } catch (error) {
+            console.error('Error in handle_complete_ingest:', error);
+        }
+    }
+
+    /**
+     * Clears the ingest queue
+     */
+    obj.clear_ingest_queue = async function () {
+        try {
+            const api_key = helperModule.getParameterByName('api_key');
+
+            if (!api_key) {
+                throw new Error('API key is required');
+            }
+
+            const encoded_api_key = encodeURIComponent(api_key);
+            const clear_queue_url = `${NGINX_PATH}/api/v1/ingest/queue/clear?api_key=${encoded_api_key}`;
+
+            const response = await httpModule.req({
+                method: 'POST',
+                url: clear_queue_url,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                timeout: 600000
+            });
+
+            if (response.status === 200) {
+                console.log('Queue cleared successfully:', response);
+                domModule.html('#message',
+                    '<div class="alert alert-info">' +
+                    '<strong><i class="fa fa-exclamation-circle"></i>&nbsp; ' +
+                    'Ingest Queue Cleared</strong>' +
+                    '</div>'
+                );
+
+                // Reset ingest status and refresh
+                ingest_in_progress = 0;
+                await display_packages();
+            } else {
+                throw new Error(`Server responded with status: ${response.status}`);
+            }
+
+        } catch (error) {
+            console.error('Error in clear_ingest_queue:', error);
+            const error_message = sanitize_html(error.message || 'Failed to clear ingest queue');
+            domModule.html('#message',
+                `<div class="alert alert-danger">` +
+                `<strong><i class="fa fa-exclamation-circle"></i>&nbsp; ${error_message}</strong>` +
+                `</div>`
+            );
+        }
     };
 
+    /**
+     * Initializes the ingest module
+     */
     obj.init = async function () {
-        await display_packages();
+        try {
+            console.log('Initializing ingest module');
+
+            await display_packages();
+
+            // Use event delegation for dynamically created buttons
+            const packages_container = get_element('#packages');
+            if (packages_container) {
+                packages_container.addEventListener('click', function(event) {
+                    const button = event.target.closest('.run-qa');
+                    if (button) {
+                        const batch = button.dataset.batch;
+                        const job_uuid = button.dataset.jobUuid;
+
+                        if (batch && job_uuid) {
+                            ingestModule.start_ingest(batch, job_uuid);
+                        } else {
+                            console.error('Missing batch or job_uuid data attributes');
+                        }
+                    }
+                });
+            }
+
+        } catch (error) {
+            console.error('Error in init:', error);
+        }
+    };
+
+    /**
+     * Cleanup function to be called when module is no longer needed
+     */
+    obj.cleanup = function () {
+        clear_status_timer();
+        console.log('Ingest module cleaned up');
     };
 
     return obj;
 
 }());
-
-
-/*
-    obj.update_job_run_by = async function () {
-
-        const user_id = helperModule.getParameterByName('id');
-        const name = helperModule.getParameterByName('name');
-
-        if (user_id !== undefined && name !== undefined) {
-
-            let user = JSON.parse(window.sessionStorage.getItem('ingest_user'));
-
-            if (user === null) {
-                domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> Unable to get Ingest user information</div>');
-                return false;
-            }
-
-            let profile = {
-                uid: user_id,
-                name: name,
-                job_type: 'packaging_and_ingesting',
-                run_date: new Date()
-            };
-
-            let exist = false;
-
-            for (let i=0;i<user.length;i++) {
-                if (user[i].job_type === 'packaging_and_ingesting') {
-                    exist = true;
-                }
-            }
-
-            if (exist === false) {
-                user.push(profile);
-                window.sessionStorage.setItem('ingest_user', JSON.stringify(user));
-            }
-        }
-    };
-    */
-/**
- * Gets ingest packages
- */
-/*
-async function get_packages () {
-
-    try {
-
-        let data = await get_ingest_status();
-        let ingest_status = false;
-
-        for (let i=0;i<data.length;i++) {
-            if (data[i].is_complete === 0) {
-                ingest_status = true;
-                break;
-            }
-        }
-
-        if (ingest_status === true) {
-            return false;
-        }
-
-        const key = helperModule.getParameterByName('api_key');
-        let url = nginx_path + '/api/v1/ingest/packages?api_key=' + key;
-        let response = await httpModule.req({
-            method: 'GET',
-            url: url,
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (response.status === 200) {
-            return response.data;
-        }
-
-    } catch(error) {
-        let message = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; ' + error.message + '</strong></div>';
-        domModule.html('#message', message);
-    }
-}
-*/
-
-
-/*
-if (packages === false) {
-    let message = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; An ingest is in progress. Please try again later.</strong></div>';
-    domModule.html('#message', message);
-    document.querySelector('#import-table').style.visibility = 'hidden';
-    return false;
-}
-*/
-
-/*
-if (packages === undefined) {
-    html = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; Ingest service is not available.</strong></div>';
-    domModule.html('#message', html);
-    document.querySelector('#import-table').style.visibility = 'hidden';
-    return false;
-}
-*/
-
-/*
-if (Object.keys(packages.result).length === 0) {
-    html = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; There are no ingest packages ready for ingest.</strong></div>';
-    domModule.html('#message', html);
-    document.querySelector('#import-table').style.visibility = 'hidden';
-    return false;
-}
-
-if (packages.errors.length > 0) {
-
-    html = '<div class="alert alert-danger"><strong><i class="fa fa-exclamation-circle"></i>&nbsp; The collection folder contains errors.</strong></div>';
-
-    // TODO
-    console.log(packages.errors);
-
-    for (let i=0;i<packages.errors.length;i++) {
-        console.log(packages.errors[i]);
-    }
-
-    domModule.html('#packages', html);
-    return false;
-}
-
-for (let prop in packages.result) {
-
-    if (prop.indexOf('new_') === -1 || prop.indexOf('-resources_') === -1) {
-
-        delete packages.result[prop];
-
-        if (Object.keys(packages.result).length === 0) {
-            html = '<div class="alert alert-info"><strong><i class="fa fa-info-circle"></i>&nbsp; There are no packages ready for ingest.</strong></div>';
-            domModule.html('#message', html);
-            document.querySelector('#import-table').style.visibility = 'hidden';
-            return false;
-        }
-
-        continue;
-    }
-
-    html += '<tr>';
-    // collection folder name
-    html += '<td style="text-align: left;vertical-align: middle; width: 55%">';
-    html += '<small>' + prop + '</small>';
-    html += '</td>';
-    // package count
-    html += '<td style="text-align: left;vertical-align: middle; width: 15%">';
-    html += '<small>' + packages.result[prop] + '</small>';
-    html += '</td>';
-    // Action button column
-    html += '<td style="text-align: center;vertical-align: middle; width: 15%"><a href="' + nginx_path + '/dashboard/ingest/status?batch=' + prop + '&api_key=' + key + '" type="button" class="btn btn-sm btn-default run-qa"><i class="fa fa-cogs"></i> <span>Start</span></a></td>';
-    html += '</tr>';
-}
-
-domModule.html('#packages', html);
-
-
-};
-*/

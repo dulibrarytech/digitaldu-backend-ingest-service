@@ -344,204 +344,15 @@ const metadataModule = (function () {
             console.error(`  ${index + 1}. ${err.error}`);
         });
 
-        // Display in UI - create or update error panel
-        display_errors_in_ui_panel(package_name, package_errors);
-    };
+        // Display consolidated error message in UI
+        const error_list = package_errors.map(err => err.error).join('; ');
+        const error_message = `${helpers.sanitize_text(package_name)}: ${helpers.sanitize_text(error_list)}`;
 
-    /**
-     * Displays errors in a dedicated UI panel
-     * @param {string} package_name - Package name
-     * @param {Array} package_errors - Array of error objects
-     */
-    const display_errors_in_ui_panel = function(package_name, package_errors) {
-        // Get or create error panel container
-        let error_panel = document.getElementById('metadata-errors-panel');
-
-        if (!error_panel) {
-            error_panel = create_error_panel();
-        }
-
-        // Get or create package error section
-        let package_section = document.getElementById(`error-section-${sanitize_id(package_name)}`);
-
-        if (!package_section) {
-            package_section = create_package_error_section(package_name, package_errors);
-            error_panel.appendChild(package_section);
-        } else {
-            // Update existing section
-            update_package_error_section(package_section, package_errors);
-        }
-
-        // Make sure panel is visible
-        error_panel.style.display = 'block';
-    };
-
-    /**
-     * Creates the main error panel
-     * @returns {HTMLElement} - Error panel element
-     */
-    const create_error_panel = function() {
-        const message_container = document.getElementById('message');
-
-        if (!message_container) {
-            return null;
-        }
-
-        const panel = document.createElement('div');
-        panel.id = 'metadata-errors-panel';
-        panel.className = 'metadata-errors-panel';
-        panel.style.display = 'none';
-        panel.style.marginTop = '20px';
-        panel.style.marginBottom = '20px';
-
-        const header = document.createElement('div');
-        header.className = 'panel-header';
-        header.style.backgroundColor = '#d9534f';
-        header.style.color = 'white';
-        header.style.padding = '15px';
-        header.style.borderRadius = '4px 4px 0 0';
-        header.style.fontWeight = 'bold';
-
-        const icon = document.createElement('i');
-        icon.className = 'fa fa-exclamation-triangle';
-        icon.setAttribute('aria-hidden', 'true');
-        icon.style.marginRight = '10px';
-
-        const header_text = document.createElement('span');
-        header_text.textContent = 'Metadata Validation Errors Detected';
-
-        header.appendChild(icon);
-        header.appendChild(header_text);
-
-        const content = document.createElement('div');
-        content.className = 'panel-content';
-        content.style.border = '1px solid #d9534f';
-        content.style.borderTop = 'none';
-        content.style.borderRadius = '0 0 4px 4px';
-        content.style.maxHeight = '600px';
-        content.style.overflowY = 'auto';
-
-        panel.appendChild(header);
-        panel.appendChild(content);
-
-        // Insert after message container
-        message_container.parentNode.insertBefore(panel, message_container.nextSibling);
-
-        return panel;
-    };
-
-    /**
-     * Creates a package error section
-     * @param {string} package_name - Package name
-     * @param {Array} package_errors - Array of error objects
-     * @returns {HTMLElement} - Package section element
-     */
-    const create_package_error_section = function(package_name, package_errors) {
-        const section = document.createElement('div');
-        section.id = `error-section-${sanitize_id(package_name)}`;
-        section.className = 'package-error-section';
-        section.style.padding = '15px';
-        section.style.borderBottom = '1px solid #ddd';
-        section.style.backgroundColor = '#f9f9f9';
-
-        // Package header
-        const pkg_header = document.createElement('div');
-        pkg_header.className = 'package-header';
-        pkg_header.style.marginBottom = '10px';
-
-        const pkg_icon = document.createElement('i');
-        pkg_icon.className = 'fa fa-folder-open';
-        pkg_icon.style.marginRight = '8px';
-        pkg_icon.style.color = '#d9534f';
-
-        const pkg_name = document.createElement('strong');
-        pkg_name.textContent = helpers.sanitize_text(package_name);
-        pkg_name.style.fontSize = '16px';
-
-        const error_count = document.createElement('span');
-        error_count.className = 'badge badge-danger';
-        error_count.style.marginLeft = '10px';
-        error_count.textContent = `${package_errors.length} error${package_errors.length !== 1 ? 's' : ''}`;
-
-        pkg_header.appendChild(pkg_icon);
-        pkg_header.appendChild(pkg_name);
-        pkg_header.appendChild(error_count);
-
-        // Error list
-        const error_list = document.createElement('ul');
-        error_list.className = 'error-list';
-        error_list.style.marginTop = '10px';
-        error_list.style.marginBottom = '0';
-        error_list.style.paddingLeft = '30px';
-
-        package_errors.forEach((err, index) => {
-            const error_item = document.createElement('li');
-            error_item.style.marginBottom = '8px';
-            error_item.style.color = '#333';
-            error_item.style.lineHeight = '1.5';
-
-            const error_text = document.createElement('span');
-            error_text.textContent = helpers.sanitize_text(err.error);
-
-            error_item.appendChild(error_text);
-            error_list.appendChild(error_item);
-        });
-
-        section.appendChild(pkg_header);
-        section.appendChild(error_list);
-
-        return section;
-    };
-
-    /**
-     * Updates an existing package error section
-     * @param {HTMLElement} section - Package section element
-     * @param {Array} package_errors - Array of error objects
-     */
-    const update_package_error_section = function(section, package_errors) {
-        // Update error count badge
-        const badge = section.querySelector('.badge');
-        if (badge) {
-            badge.textContent = `${package_errors.length} error${package_errors.length !== 1 ? 's' : ''}`;
-        }
-
-        // Update error list
-        const error_list = section.querySelector('.error-list');
-        if (error_list) {
-            helpers.clear_element(error_list);
-
-            package_errors.forEach((err) => {
-                const error_item = document.createElement('li');
-                error_item.style.marginBottom = '8px';
-                error_item.style.color = '#333';
-                error_item.style.lineHeight = '1.5';
-
-                const error_text = document.createElement('span');
-                error_text.textContent = helpers.sanitize_text(err.error);
-
-                error_item.appendChild(error_text);
-                error_list.appendChild(error_item);
-            });
-        }
-    };
-
-    /**
-     * Sanitizes a string for use as an HTML ID
-     * @param {string} str - String to sanitize
-     * @returns {string} - Sanitized string
-     */
-    const sanitize_id = function(str) {
-        if (!str || typeof str !== 'string') {
-            return 'unknown';
-        }
-        return str.replace(/[^a-zA-Z0-9_-]/g, '_');
+        helpers.display_error_message(error_message);
     };
 
     const process_packages = async function(batch, package_names, job_uuid) {
         try {
-            // Clear any existing error panel from previous run
-            clear_error_panel();
-
             helpers.display_info_message('Starting metadata checks...');
 
             const errors = [];
@@ -598,17 +409,6 @@ const metadataModule = (function () {
             helpers.display_error_message('Failed to process packages', error.message);
             await helpers.update_job_status(job_uuid, 2);
             return false;
-        }
-    };
-
-    /**
-     * Clears the error panel
-     */
-    const clear_error_panel = function() {
-        const error_panel = document.getElementById('metadata-errors-panel');
-
-        if (error_panel) {
-            error_panel.remove();
         }
     };
 
@@ -692,102 +492,15 @@ const metadataModule = (function () {
 
         console.error('='.repeat(80));
 
-        // Calculate statistics
+        // Create detailed error message for UI
         const package_count = Object.keys(errors_by_package).length;
         const error_count = errors.length;
 
-        // Add summary section to UI panel
-        add_summary_to_error_panel(error_count, package_count);
-
-        // Update message container with summary
         let summary_message = `ArchivesSpace description QA completed with ${error_count} error(s) `;
         summary_message += `across ${package_count} package(s). `;
-        summary_message += 'See detailed errors below.';
+        summary_message += 'Check console for details.';
 
         helpers.display_error_message(summary_message);
-    };
-
-    /**
-     * Adds summary section to error panel
-     * @param {number} error_count - Total error count
-     * @param {number} package_count - Affected package count
-     */
-    const add_summary_to_error_panel = function(error_count, package_count) {
-        const error_panel = document.getElementById('metadata-errors-panel');
-
-        if (!error_panel) {
-            return;
-        }
-
-        // Check if summary already exists
-        let summary = document.getElementById('error-panel-summary');
-
-        if (summary) {
-            helpers.clear_element(summary);
-        } else {
-            summary = document.createElement('div');
-            summary.id = 'error-panel-summary';
-            summary.className = 'error-panel-summary';
-            summary.style.padding = '15px';
-            summary.style.backgroundColor = '#fff3cd';
-            summary.style.borderTop = '2px solid #d9534f';
-            summary.style.borderBottom = '1px solid #ddd';
-
-            // Insert as first child of content area
-            const content = error_panel.querySelector('.panel-content');
-            if (content && content.firstChild) {
-                content.insertBefore(summary, content.firstChild);
-            } else if (content) {
-                content.appendChild(summary);
-            }
-        }
-
-        // Create summary content
-        const summary_header = document.createElement('div');
-        summary_header.style.marginBottom = '10px';
-        summary_header.style.fontWeight = 'bold';
-        summary_header.style.fontSize = '15px';
-        summary_header.style.color = '#856404';
-
-        const summary_icon = document.createElement('i');
-        summary_icon.className = 'fa fa-info-circle';
-        summary_icon.style.marginRight = '8px';
-
-        const summary_text = document.createElement('span');
-        summary_text.textContent = 'Validation Summary';
-
-        summary_header.appendChild(summary_icon);
-        summary_header.appendChild(summary_text);
-
-        // Create statistics
-        const stats = document.createElement('div');
-        stats.style.marginTop = '10px';
-        stats.style.color = '#333';
-
-        const stat1 = document.createElement('div');
-        stat1.style.marginBottom = '5px';
-        stat1.innerHTML = `<strong>Total Errors:</strong> <span class="badge badge-danger" style="font-size: 13px;">${error_count}</span>`;
-
-        const stat2 = document.createElement('div');
-        stat2.style.marginBottom = '5px';
-        stat2.innerHTML = `<strong>Affected Packages:</strong> <span class="badge badge-warning" style="font-size: 13px;">${package_count}</span>`;
-
-        const instruction = document.createElement('div');
-        instruction.style.marginTop = '15px';
-        instruction.style.fontSize = '13px';
-        instruction.style.color = '#856404';
-        instruction.style.fontStyle = 'italic';
-        instruction.innerHTML = '<i class="fa fa-arrow-down" style="margin-right: 5px;"></i>Review detailed errors by package below:';
-
-        stats.appendChild(stat1);
-        stats.appendChild(stat2);
-        stats.appendChild(instruction);
-
-        summary.appendChild(summary_header);
-        summary.appendChild(stats);
-
-        // Scroll to error panel
-        error_panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
 
     const handle_metadata_check_success = async function(batch, job_uuid) {

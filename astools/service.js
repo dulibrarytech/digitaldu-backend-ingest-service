@@ -24,206 +24,280 @@ const ARCHIVESSPACE_CONFIG = require('../config/archivesspace_config')();
 const ARCHIVESSPACE = require('../libs/archivesspace');
 const LOGGER = require('../libs/log4');
 
-// TODO: Deprecate?
-/*
-exports.get_processed_packages = function (callback) {
+// Constants for media file detection
+const KALTURA_MEDIA_EXTENSIONS = [
+    '.wav', '.mp3', '.mp4', '.mov',
+    '.mkv', '.avi', '.m4v', '.flac',
+    '.ogg', '.webm', '.wmv'
+];
 
-    (async function () {
+exports.get_workspace_packages = async function() {
 
-        try {
+    try {
 
-            const ASTOOLS_URL = CONFIG.astools_service + 'processed?api_key=' + CONFIG.astools_service_api_key;
-            const response = await HTTP.get(ASTOOLS_URL, {
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
+        LOGGER.module().info('INFO: [/astools/service (get_workspace_packages)] Retrieving workspace packages');
 
-            if (response.status === 200) {
-
-                let batches = [];
-                let package_files = [];
-
-                if (response.data.errors.length > 0) {
-                    callback(response.data);
-                } else {
-
-                    for (let i = 0; i < response.data.result.length; i++) {
-                        batches.push(response.data.result[i]);
-                    }
-
-                    let timer = setInterval(() => {
-
-                        if (batches.length === 0) {
-                            clearInterval(timer);
-                            console.log('complete');
-                            callback(package_files);
-                            return false;
-                        }
-
-                        const package_name = batches.pop();
-
-                        get_package_files(package_name, (response) => {
-
-                            if (response.errors.length > 0) {
-                                package_files.push(response);
-                                return false;
-                            }
-
-                            let is_kaltura = [];
-
-                            for (let i = 0; i < response.result.packages.length; i++) {
-
-                                let files = response.result.packages[i].files;
-
-                                if (files.toString().indexOf('.wav') !== -1) {
-                                    is_kaltura.push(true);
-                                }
-
-                                if (files.toString().indexOf('.mp3') !== -1) {
-                                    is_kaltura.push(true);
-                                }
-
-                                if (files.toString().indexOf('.mp4') !== -1) {
-                                    is_kaltura.push(true);
-                                }
-
-                                if (files.toString().indexOf('.mov') !== -1) {
-                                    is_kaltura.push(true);
-                                }
-
-                                if (files.toString().indexOf('.mkv') !== -1) {
-                                    is_kaltura.push(true);
-                                }
-
-                                if (files.toString().indexOf('.avi') !== -1) {
-                                    is_kaltura.push(true);
-                                }
-
-                                if (files.toString().indexOf('.m4v') !== -1) {
-                                    is_kaltura.push(true);
-                                }
-                            }
-
-                            if (is_kaltura.length > 0) {
-                                response.result.is_kaltura = true;
-                            } else {
-                                response.result.is_kaltura = false;
-                            }
-
-                            package_files.push(response);
-                        });
-
-                    }, 500);
-                }
-            }
-
-        } catch (error) {
-            console.error(error);
+        // Validate configuration
+        if (!CONFIG.astools_service || !CONFIG.astools_service_api_key) {
+            LOGGER.module().error('ERROR: [/astools/service (get_workspace_packages)] Missing service configuration');
+            return [];
         }
 
-    })();
-};
-*/
+        // Construct API URL with proper encoding
+        const api_key = encodeURIComponent(CONFIG.astools_service_api_key);
+        const astools_url = `${CONFIG.astools_service}workspace?api_key=${api_key}`;
 
-exports.get_workspace_packages = function (callback) {
+        // Make HTTP request
+        const response = await HTTP.get(astools_url, {
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            timeout: 30000 // 30 second timeout
+        });
 
-    (async function () {
-
-        try {
-
-            const ASTOOLS_URL = CONFIG.astools_service + 'workspace?api_key=' + CONFIG.astools_service_api_key;
-            const response = await HTTP.get(ASTOOLS_URL, {
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+        // Validate response
+        if (!response || response.status !== 200) {
+            LOGGER.module().error('ERROR: [/astools/service (get_workspace_packages)] Invalid response from workspace API', {
+                status: response?.status
             });
-
-            if (response.status === 200) {
-
-                let batches = [];
-                let package_files = [];
-
-                if (response.data.errors.length > 0) {
-                    callback(response.data);
-                } else {
-
-                    for (let i = 0; i < response.data.result.length; i++) {
-                        batches.push(response.data.result[i]);
-                    }
-
-                    let timer = setInterval(() => {
-
-                        if (batches.length === 0) {
-                            clearInterval(timer);
-                            console.log('complete');
-                            callback(package_files);
-                            return false;
-                        }
-
-                        const package_name = batches.pop();
-
-                        get_package_files(package_name, (response) => {
-
-                            if (response.errors.length > 0) {
-                                package_files.push(response);
-                                return false;
-                            }
-
-                            let is_kaltura = [];
-
-                            for (let i = 0; i < response.result.packages.length; i++) {
-
-                                let files = response.result.packages[i].files;
-
-                                if (files.toString().indexOf('.wav') !== -1) {
-                                    is_kaltura.push(true);
-                                }
-
-                                if (files.toString().indexOf('.mp3') !== -1) {
-                                    is_kaltura.push(true);
-                                }
-
-                                if (files.toString().indexOf('.mp4') !== -1) {
-                                    is_kaltura.push(true);
-                                }
-
-                                if (files.toString().indexOf('.mov') !== -1) {
-                                    is_kaltura.push(true);
-                                }
-
-                                if (files.toString().indexOf('.mkv') !== -1) {
-                                    is_kaltura.push(true);
-                                }
-
-                                if (files.toString().indexOf('.avi') !== -1) {
-                                    is_kaltura.push(true);
-                                }
-
-                                if (files.toString().indexOf('.m4v') !== -1) {
-                                    is_kaltura.push(true);
-                                }
-                            }
-
-                            if (is_kaltura.length > 0) {
-                                response.result.is_kaltura = true;
-                            } else {
-                                response.result.is_kaltura = false;
-                            }
-
-                            package_files.push(response);
-                        });
-
-                    }, 500);
-                }
-            }
-
-        } catch (error) {
-            console.error(error);
+            return [];
         }
 
-    })();
+        // Validate response data structure
+        if (!response.data || typeof response.data !== 'object') {
+            LOGGER.module().error('ERROR: [/astools/service (get_workspace_packages)] Invalid response data structure');
+            return [];
+        }
+
+        // Check for API errors
+        if (response.data.errors && Array.isArray(response.data.errors) && response.data.errors.length > 0) {
+            LOGGER.module().warn('WARN: [/astools/service (get_workspace_packages)] Errors returned from workspace API', {
+                errors: response.data.errors
+            });
+            return [];
+        }
+
+        // Extract batches
+        const batches = response.data.result;
+
+        if (!Array.isArray(batches) || batches.length === 0) {
+            LOGGER.module().info('INFO: [/astools/service (get_workspace_packages)] No batches found in workspace');
+            return [];
+        }
+
+        LOGGER.module().info('INFO: [/astools/service (get_workspace_packages)] Processing batches', {
+            batch_count: batches.length
+        });
+
+        // Process all batches in parallel with error handling
+        const package_files = await process_batches_parallel(batches);
+
+        LOGGER.module().info('INFO: [/astools/service (get_workspace_packages)] Workspace packages retrieved successfully', {
+            total_packages: package_files.length,
+            successful: package_files.filter(p => !p.errors || p.errors.length === 0).length
+        });
+
+        return package_files;
+
+    } catch (error) {
+        LOGGER.module().error('ERROR: [/astools/service (get_workspace_packages)] Unable to retrieve workspace packages', {
+            error: error.message,
+            stack: error.stack
+        });
+
+        return [];
+    }
 };
+
+// Helper function to process batches in parallel
+const process_batches_parallel = async function(batches) {
+    const promises = batches.map(batch_name => process_single_batch(batch_name));
+
+    // Use Promise.allSettled to handle individual failures gracefully
+    const results = await Promise.allSettled(promises);
+
+    const package_files = [];
+
+    for (let i = 0; i < results.length; i++) {
+        const result = results[i];
+
+        if (result.status === 'fulfilled' && result.value) {
+            package_files.push(result.value);
+        } else if (result.status === 'rejected') {
+            LOGGER.module().error('ERROR: [/astools/service (process_batches_parallel)] Failed to process batch', {
+                batch_index: i,
+                error: result.reason?.message
+            });
+
+            // Add error entry for failed batch
+            package_files.push({
+                errors: [`Failed to process batch: ${result.reason?.message || 'Unknown error'}`],
+                result: null
+            });
+        }
+    }
+
+    return package_files;
+};
+
+// Helper function to process a single batch
+const process_single_batch = async function(batch_name) {
+
+    try {
+
+        // Validate batch name
+        if (!batch_name || typeof batch_name !== 'string' || batch_name.trim().length === 0) {
+            LOGGER.module().warn('WARN: [/astools/service (process_single_batch)] Invalid batch name');
+            return {
+                errors: ['Invalid batch name'],
+                result: null
+            };
+        }
+
+        // Get package files for this batch - FIXED: properly promisify
+        const response = await promisify_get_package_files(batch_name.trim());
+
+        // Validate response
+        if (!response || typeof response !== 'object') {
+            return {
+                errors: ['Invalid response from get_package_files'],
+                result: null
+            };
+        }
+
+        // Check for errors in response
+        if (response.errors && Array.isArray(response.errors) && response.errors.length > 0) {
+            LOGGER.module().warn('WARN: [/astools/service (process_single_batch)] Errors processing batch', {
+                batch_name: batch_name,
+                errors: response.errors
+            });
+            return response;
+        }
+
+        // Validate result structure
+        if (!response.result || typeof response.result !== 'object') {
+            return {
+                errors: ['Invalid result structure'],
+                result: null
+            };
+        }
+
+        // Check if batch contains Kaltura media files
+        const is_kaltura = detect_kaltura_media(response.result.packages);
+        response.result.is_kaltura = is_kaltura;
+
+        LOGGER.module().info('INFO: [/astools/service (process_single_batch)] Batch processed successfully', {
+            batch_name: batch_name,
+            is_kaltura: is_kaltura
+        });
+
+        return response;
+
+    } catch (error) {
+        LOGGER.module().error('ERROR: [/astools/service (process_single_batch)] Error processing batch', {
+            batch_name: batch_name,
+            error: error.message
+        });
+
+        return {
+            errors: [`Error processing batch: ${error.message}`],
+            result: null
+        };
+    }
+};
+
+const promisify_get_package_files = function(package_name) {
+    return new Promise((resolve, reject) => {
+        try {
+            // Check if get_package_files exists
+            if (typeof get_package_files !== 'function') {
+                reject(new Error('get_package_files function is not defined'));
+                return;
+            }
+
+            // Call with callback
+            get_package_files(package_name, (response) => {
+                if (response !== undefined && response !== null) {
+                    resolve(response);
+                } else {
+                    resolve({
+                        errors: ['Empty response from get_package_files'],
+                        result: null
+                    });
+                }
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
+};
+
+// Helper function to detect Kaltura media files
+const detect_kaltura_media = function(packages) {
+    if (!Array.isArray(packages) || packages.length === 0) {
+        return false;
+    }
+
+    const KALTURA_MEDIA_EXTENSIONS = [
+        '.wav', '.mp3', '.mp4', '.mov',
+        '.mkv', '.avi', '.m4v', '.flac',
+        '.ogg', '.webm', '.wmv'
+    ];
+
+    for (let i = 0; i < packages.length; i++) {
+        const pkg = packages[i];
+
+        if (!pkg || typeof pkg !== 'object') {
+            continue;
+        }
+
+        // Check files array
+        if (!Array.isArray(pkg.files) || pkg.files.length === 0) {
+            continue;
+        }
+
+        // Check if any file has a Kaltura media extension
+        for (let j = 0; j < pkg.files.length; j++) {
+            const file = pkg.files[j];
+
+            if (!file || typeof file !== 'string') {
+                continue;
+            }
+
+            const file_lower = file.toLowerCase();
+
+            // Check against known media extensions
+            for (let k = 0; k < KALTURA_MEDIA_EXTENSIONS.length; k++) {
+                if (file_lower.endsWith(KALTURA_MEDIA_EXTENSIONS[k])) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+};
+
+// Callback-based wrapper for backward compatibility
+exports.get_workspace_packages_callback = function(callback) {
+    exports.get_workspace_packages()
+        .then(result => {
+            if (typeof callback === 'function') {
+                callback(result);
+            }
+        })
+        .catch(error => {
+            LOGGER.module().error('ERROR: [/astools/service (get_workspace_packages_callback)] Callback wrapper error', {
+                error: error.message
+            });
+            if (typeof callback === 'function') {
+                callback([]);
+            }
+        });
+};
+
+// Create async version alias
+exports.get_workspace_packages_async = exports.get_workspace_packages;
 
 const get_package_files = function (package_name, callback) {
 
@@ -252,122 +326,741 @@ const get_package_files = function (package_name, callback) {
     })();
 }
 
-exports.make_digital_objects = function (args, callback) {
+exports.make_digital_objects = async function(args) {
 
-    (async function () {
+    try {
 
-        try {
+        // Validate args object
+        if (!args || typeof args !== 'object') {
+            LOGGER.module().error('ERROR: [/astools/service (make_digital_objects)] Invalid args parameter');
+            return {
+                success: false,
+                errors: ['Invalid arguments provided']
+            };
+        }
 
-            const ASTOOLS_URL = CONFIG.astools_service + 'make-digital-objects?api_key=' + CONFIG.astools_service_api_key;
-            const response = await HTTP.post(ASTOOLS_URL, {
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                data: args
+        // Validate required fields
+        if (!args.folder || typeof args.folder !== 'string' || args.folder.trim().length === 0) {
+            LOGGER.module().error('ERROR: [/astools/service (make_digital_objects)] Invalid folder parameter');
+            return {
+                success: false,
+                errors: ['Invalid folder parameter']
+            };
+        }
+
+        if (!Array.isArray(args.packages) || args.packages.length === 0) {
+            LOGGER.module().error('ERROR: [/astools/service (make_digital_objects)] Invalid packages parameter');
+            return {
+                success: false,
+                errors: ['Invalid packages parameter']
+            };
+        }
+
+        if (!Array.isArray(args.files) || args.files.length === 0) {
+            LOGGER.module().error('ERROR: [/astools/service (make_digital_objects)] Invalid files parameter');
+            return {
+                success: false,
+                errors: ['Invalid files parameter']
+            };
+        }
+
+        // Validate configuration
+        if (!CONFIG.astools_service || !CONFIG.astools_service_api_key) {
+            LOGGER.module().error('ERROR: [/astools/service (make_digital_objects)] Missing service configuration');
+            return {
+                success: false,
+                errors: ['Service configuration is missing']
+            };
+        }
+
+        LOGGER.module().info('INFO: [/astools/service (make_digital_objects)] Creating digital objects', {
+            folder: args.folder,
+            package_count: args.packages.length,
+            file_count: args.files.length,
+            is_kaltura: args.is_kaltura || false
+        });
+
+        // Construct API URL with proper encoding
+        const api_key = encodeURIComponent(CONFIG.astools_service_api_key);
+        const astools_url = `${CONFIG.astools_service}make-digital-objects?api_key=${api_key}`;
+
+        // Convert true/false to 1/0
+        let is_kaltura_value = 0;
+        if (args.is_kaltura === true || args.is_kaltura === 1) {
+            is_kaltura_value = 1;
+        }
+
+        // Prepare request payload
+        const payload = {
+            data: {
+                folder: args.folder.trim(),
+                packages: args.packages,
+                files: args.files,
+                is_kaltura: is_kaltura_value
+            }
+        };
+
+        // Make HTTP request
+        const response = await HTTP.post(astools_url, payload, {
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            timeout: 60000 // 60 second timeout for potentially long operation
+        });
+
+        // Validate response status
+        if (!response || response.status !== 200) {
+            LOGGER.module().error('ERROR: [/astools/service (make_digital_objects)] Invalid response from API', {
+                status: response?.status,
+                status_text: response?.statusText
             });
 
-            if (response.status === 200) {
-                callback(response.data);
-            }
-
-        } catch (error) {
-            LOGGER.module().error('ERROR: [/astools/service (make_digital_objects)] Unable to make digital objects - ' + error.message);
+            return {
+                success: false,
+                errors: [`API request failed with status ${response?.status || 'unknown'}`]
+            };
         }
 
-    })();
-};
-
-/** TODO: merge with check_uri_txts()
- * Checks uri txt files
- * @param batch
- * @param callback
- */
-exports.check_uri_txt = function (batch, callback) {
-
-    (async function () {
-
-        try {
-
-            let uri_txts_checked = await check_uri_txts(batch);
-
-            LOGGER.module().info('INFO: [/astools/service module (check_uri_txt)] ' + uri_txts_checked.uri_results.result);
-            callback(uri_txts_checked.uri_results);
-
-        } catch (error) {
-            LOGGER.module().error('ERROR: [/astools/service (check_uri_txt)] Unable to check uri txt - ' + error.message);
+        // Validate response data
+        if (!response.data || typeof response.data !== 'object') {
+            LOGGER.module().error('ERROR: [/astools/service (make_digital_objects)] Invalid response data structure');
+            return {
+                success: false,
+                errors: ['Invalid response data structure from API']
+            };
         }
 
-    })();
-};
+        // Check for errors in response
+        if (response.data.errors && Array.isArray(response.data.errors) && response.data.errors.length > 0) {
+            LOGGER.module().warn('WARN: [/astools/service (make_digital_objects)] Errors returned from API', {
+                errors: response.data.errors,
+                folder: args.folder
+            });
 
-/**
- * Checks uri.txt in QA service
- * @param folder_name
- */
-async function check_uri_txts(folder_name) {
+            return {
+                success: false,
+                errors: response.data.errors,
+                data: response.data
+            };
+        }
 
-    try {
+        // Check if response indicates success
+        const is_successful = response.data.success !== false;
 
-        const ASTOOLS_URL = CONFIG.astools_service + 'check-uri-txt?folder=' + folder_name + '&api_key=' + CONFIG.astools_service_api_key;
-        const response = await HTTP.get(ASTOOLS_URL, {
-            headers: {
-                'Content-Type': 'application/json'
-            }
+        if (!is_successful) {
+            LOGGER.module().warn('WARN: [/astools/service (make_digital_objects)] Operation reported as unsuccessful', {
+                folder: args.folder
+            });
+        } else {
+            LOGGER.module().info('INFO: [/astools/service (make_digital_objects)] Digital objects created successfully', {
+                folder: args.folder,
+                successful: response.data.successful,
+                failed: response.data.failed
+            });
+        }
+
+        return response.data;
+
+    } catch (error) {
+        LOGGER.module().error('ERROR: [/astools/service (make_digital_objects)] Unable to make digital objects', {
+            error: error.message,
+            stack: error.stack,
+            folder: args?.folder
         });
 
-        if (response.status === 200) {
-            return response.data;
+        // Check for specific error types
+        let error_message = 'An error occurred while creating digital objects';
+
+        if (error.code === 'ECONNREFUSED') {
+            error_message = 'Unable to connect to ASTools service';
+        } else if (error.code === 'ETIMEDOUT') {
+            error_message = 'Request to ASTools service timed out';
+        } else if (error.response) {
+            error_message = `API error: ${error.response.status} - ${error.response.statusText}`;
         }
 
-    } catch (error) {
-        LOGGER.module().error('ERROR: [/astools/service (check_uri_txts)] Unable to check uri.txt - ' + error.message);
-        return false;
+        return {
+            success: false,
+            errors: [error_message + ': ' + sanitize_error_message(error.message)]
+        };
     }
-}
+};
 
-/**
- * gets list of packages
- * @param batch
- */
-exports.get_packages = async function (batch, callback) {
-
-    try {
-
-        const ASTOOLS_URL = CONFIG.astools_service + 'workspace/packages?batch=' + batch + '&api_key=' + CONFIG.astools_service_api_key;
-        const response = await HTTP.get(ASTOOLS_URL, {
-            headers: {
-                'Content-Type': 'application/json'
+// Callback-based wrapper for backward compatibility
+exports.make_digital_objects_callback = function(args, callback) {
+    exports.make_digital_objects(args)
+        .then(result => {
+            if (typeof callback === 'function') {
+                callback(result);
+            }
+        })
+        .catch(error => {
+            LOGGER.module().error('ERROR: [/astools/service (make_digital_objects_callback)] Callback wrapper error', {
+                error: error.message
+            });
+            if (typeof callback === 'function') {
+                callback({
+                    success: false,
+                    errors: ['An error occurred: ' + error.message]
+                });
             }
         });
+};
 
-        if (response.status === 200) {
-            callback(response.data);
-        }
+// Create async version alias for the controller
+exports.make_digital_objects_async = exports.make_digital_objects;
 
-    } catch (error) {
-        LOGGER.module().error('ERROR: [/astools/service (get_packages)] Unable to get packages - ' + error.message);
-    }
-}
-
-exports.check_metadata = async function(batch, archival_package, callback){
+/**
+ * Checks URI text files via ASTools service
+ * @param {string} batch - The batch/folder name to check
+ * @returns {Promise<Object>} - Structured response with URI check results
+ */
+exports.check_uri_txt = async function(batch) {
 
     try {
 
-        let data = await get_metadata_uri(batch, archival_package);
-
-        if (data.errors.length > 0) {
-            console.log(data.errors);
-            callback(data.result);
-            return false;
+        // Validate batch parameter
+        if (!batch || typeof batch !== 'string' || batch.trim().length === 0) {
+            LOGGER.module().error('ERROR: [/astools/service (check_uri_txt)] Invalid batch parameter');
+            return {
+                success: false,
+                exists: false,
+                errors: ['Invalid batch parameter']
+            };
         }
 
-        const metadata = await process_metadata(data.result.toString());
-        callback(metadata);
-        return false;
+        const batch_name = batch.trim();
+
+        // Validate configuration
+        if (!CONFIG.astools_service || !CONFIG.astools_service_api_key) {
+            LOGGER.module().error('ERROR: [/astools/service (check_uri_txt)] Missing service configuration');
+            return {
+                success: false,
+                exists: false,
+                errors: ['Service configuration is missing']
+            };
+        }
+
+        LOGGER.module().info('INFO: [/astools/service (check_uri_txt)] Checking URI text file', {
+            batch: batch_name
+        });
+
+        // Construct API URL with proper encoding
+        const encoded_folder = encodeURIComponent(batch_name);
+        const encoded_api_key = encodeURIComponent(CONFIG.astools_service_api_key);
+        const astools_url = `${CONFIG.astools_service}check-uri-txt?folder=${encoded_folder}&api_key=${encoded_api_key}`;
+
+        // Make HTTP request
+        const response = await HTTP.get(astools_url, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            timeout: 30000 // 30 second timeout
+        });
+
+        // Validate response status
+        if (!response || response.status !== 200) {
+            LOGGER.module().error('ERROR: [/astools/service (check_uri_txt)] Invalid response from API', {
+                status: response?.status,
+                status_text: response?.statusText,
+                batch: batch_name
+            });
+
+            return {
+                success: false,
+                exists: false,
+                errors: [`API request failed with status ${response?.status || 'unknown'}`]
+            };
+        }
+
+        // Validate response data
+        if (!response.data || typeof response.data !== 'object') {
+            LOGGER.module().error('ERROR: [/astools/service (check_uri_txt)] Invalid response data structure', {
+                batch: batch_name
+            });
+            return {
+                success: false,
+                exists: false,
+                errors: ['Invalid response data structure from API']
+            };
+        }
+
+        // Extract results from response
+        const result_data = response.data.data || response.data;
+
+        // Check for errors in response
+        if (result_data.errors && Array.isArray(result_data.errors) && result_data.errors.length > 0) {
+            LOGGER.module().warn('WARN: [/astools/service (check_uri_txt)] Errors returned from API', {
+                errors: result_data.errors,
+                batch: batch_name
+            });
+
+            return {
+                success: false,
+                exists: result_data.exists !== false,
+                errors: result_data.errors,
+                result: result_data.result || 'URI text check failed'
+            };
+        }
+
+        // Check success status
+        const is_successful = result_data.success !== false;
+
+        if (!is_successful) {
+            LOGGER.module().warn('WARN: [/astools/service (check_uri_txt)] URI text check unsuccessful', {
+                batch: batch_name,
+                result: result_data.result
+            });
+
+            return {
+                success: false,
+                exists: result_data.exists || false,
+                errors: result_data.errors || ['URI text check failed'],
+                result: result_data.result || 'Check failed'
+            };
+        }
+
+        // Log success with details
+        const result_message = result_data.result || 'URI text check completed';
+        LOGGER.module().info('INFO: [/astools/service (check_uri_txt)] URI text check successful', {
+            batch: batch_name,
+            result: result_message,
+            uri_count: result_data.uri_count
+        });
+
+        // Return successful result
+        return {
+            success: true,
+            exists: result_data.exists !== false,
+            uri_count: result_data.uri_count || 0,
+            uris: result_data.uris || [],
+            file_path: result_data.file_path,
+            result: result_message
+        };
 
     } catch (error) {
-        LOGGER.module().error('ERROR: [/astools/service (get_packages)] Unable to get packages - ' + error.message);
+        // Enhanced error handling
+        let error_details = {
+            error: error.message,
+            batch: batch
+        };
+
+        let error_message = 'An error occurred while checking URI text file';
+
+        if (error.response) {
+
+            error_details.status = error.response.status;
+            error_details.status_text = error.response.statusText;
+            error_details.response_data = error.response.data;
+
+            error_message = `API error: ${error.response.status} - ${error.response.statusText}`;
+
+            LOGGER.module().error('ERROR: [/astools/service (check_uri_txt)] API response error', error_details);
+        } else if (error.request) {
+            // The request was made but no response was received
+            error_details.request = 'No response received';
+
+            if (error.code === 'ECONNREFUSED') {
+                error_message = 'Unable to connect to ASTools service';
+            } else if (error.code === 'ETIMEDOUT') {
+                error_message = 'Request to ASTools service timed out';
+            } else {
+                error_message = 'No response received from ASTools service';
+            }
+
+            LOGGER.module().error('ERROR: [/astools/service (check_uri_txt)] No response from API', error_details);
+        } else {
+            // Something happened in setting up the request that triggered an Error
+            error_details.stack = error.stack;
+            LOGGER.module().error('ERROR: [/astools/service (check_uri_txt)] Request setup error', error_details);
+        }
+
+        return {
+            success: false,
+            exists: false,
+            errors: [error_message + ': ' + sanitize_error_message(error.message)]
+        };
     }
+};
+
+// Callback-based wrapper for backward compatibility
+exports.check_uri_txt_callback = function(batch, callback) {
+    exports.check_uri_txt(batch)
+        .then(result => {
+            if (typeof callback === 'function') {
+                // For backward compatibility, wrap in uri_results structure if needed
+                callback(result);
+            }
+        })
+        .catch(error => {
+            LOGGER.module().error('ERROR: [/astools/service (check_uri_txt_callback)] Callback wrapper error', {
+                error: error.message
+            });
+            if (typeof callback === 'function') {
+                callback({
+                    success: false,
+                    exists: false,
+                    errors: ['An error occurred: ' + error.message]
+                });
+            }
+        });
+};
+
+// Create async version alias for the controller
+exports.check_uri_txt_async = exports.check_uri_txt;
+
+exports.get_packages = async function(batch) {
+
+    try {
+
+        // Validate batch parameter
+        if (!batch || typeof batch !== 'string' || batch.trim().length === 0) {
+            LOGGER.module().error('ERROR: [/astools/service (get_packages)] Invalid batch parameter');
+            return [];
+        }
+
+        const batch_name = batch.trim();
+
+        // Validate configuration
+        if (!CONFIG.astools_service || !CONFIG.astools_service_api_key) {
+            LOGGER.module().error('ERROR: [/astools/service (get_packages)] Missing service configuration');
+            return [];
+        }
+
+        LOGGER.module().info('INFO: [/astools/service (get_packages)] Retrieving packages for batch', {
+            batch: batch_name
+        });
+
+        // Construct API URL with proper encoding
+        const encoded_batch = encodeURIComponent(batch_name);
+        const encoded_api_key = encodeURIComponent(CONFIG.astools_service_api_key);
+        const astools_url = `${CONFIG.astools_service}workspace/packages?batch=${encoded_batch}&api_key=${encoded_api_key}`;
+
+        // Make HTTP request
+        const response = await HTTP.get(astools_url, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            timeout: 30000 // 30 second timeout
+        });
+
+        // Validate response status
+        if (!response || response.status !== 200) {
+            LOGGER.module().error('ERROR: [/astools/service (get_packages)] Invalid response from API', {
+                status: response?.status,
+                status_text: response?.statusText,
+                batch: batch_name
+            });
+            return [];
+        }
+
+        // Validate response data
+        if (!response.data) {
+            LOGGER.module().warn('WARN: [/astools/service (get_packages)] Empty response data from API', {
+                batch: batch_name
+            });
+            return [];
+        }
+
+        // Handle different response structures
+        let packages_data = response.data;
+
+        // If response has nested data property
+        if (response.data.data) {
+            packages_data = response.data.data;
+        }
+
+        // Check for errors in response
+        if (packages_data.errors && Array.isArray(packages_data.errors) && packages_data.errors.length > 0) {
+            LOGGER.module().warn('WARN: [/astools/service (get_packages)] Errors returned from API', {
+                errors: packages_data.errors,
+                batch: batch_name
+            });
+            return [];
+        }
+
+        // Extract packages array
+        let packages = [];
+
+        if (Array.isArray(packages_data)) {
+            packages = packages_data;
+        } else if (packages_data.packages && Array.isArray(packages_data.packages)) {
+            packages = packages_data.packages;
+        } else if (packages_data.result && Array.isArray(packages_data.result)) {
+            packages = packages_data.result;
+        } else if (typeof packages_data === 'object') {
+            // Single package object
+            packages = [packages_data];
+        }
+
+        // Validate and sanitize packages
+        const validated_packages = [];
+
+        for (let i = 0; i < packages.length; i++) {
+            const package_item = packages[i];
+
+            if (!package_item || typeof package_item !== 'object') {
+                LOGGER.module().warn('WARN: [/astools/service (get_packages)] Invalid package at index', {
+                    index: i,
+                    batch: batch_name
+                });
+                continue;
+            }
+
+            // Add validated package to results
+            validated_packages.push(package_item);
+        }
+
+        LOGGER.module().info('INFO: [/astools/service (get_packages)] Packages retrieved successfully', {
+            batch: batch_name,
+            package_count: validated_packages.length
+        });
+
+        return validated_packages;
+
+    } catch (error) {
+        // Enhanced error handling
+        let error_details = {
+            error: error.message,
+            batch: batch
+        };
+
+        let error_message = 'An error occurred while retrieving packages';
+
+        if (error.response) {
+            // The request was made and the server responded with a status code
+            // that falls out of the range of 2xx
+            error_details.status = error.response.status;
+            error_details.status_text = error.response.statusText;
+
+            error_message = `API error: ${error.response.status} - ${error.response.statusText}`;
+
+            LOGGER.module().error('ERROR: [/astools/service (get_packages)] API response error', error_details);
+        } else if (error.request) {
+            // The request was made but no response was received
+            error_details.request = 'No response received';
+
+            if (error.code === 'ECONNREFUSED') {
+                error_message = 'Unable to connect to ASTools service';
+            } else if (error.code === 'ETIMEDOUT') {
+                error_message = 'Request to ASTools service timed out';
+            } else {
+                error_message = 'No response received from ASTools service';
+            }
+
+            LOGGER.module().error('ERROR: [/astools/service (get_packages)] No response from API', error_details);
+        } else {
+            // Something happened in setting up the request that triggered an Error
+            error_details.stack = error.stack;
+            LOGGER.module().error('ERROR: [/astools/service (get_packages)] Request setup error', error_details);
+        }
+
+        // Return empty array instead of throwing to prevent cascading failures
+        return [];
+    }
+};
+
+// Callback-based wrapper for backward compatibility
+exports.get_packages_callback = function(batch, callback) {
+    exports.get_packages(batch)
+        .then(result => {
+            if (typeof callback === 'function') {
+                callback(result);
+            }
+        })
+        .catch(error => {
+            LOGGER.module().error('ERROR: [/astools/service (get_packages_callback)] Callback wrapper error', {
+                error: error.message
+            });
+            if (typeof callback === 'function') {
+                callback([]);
+            }
+        });
+};
+
+// Create async version alias for the controller
+exports.get_packages_async = exports.get_packages;
+
+exports.check_metadata = async function(batch, archival_package) {
+
+    try {
+
+        // Input validation
+        if (!batch || typeof batch !== 'string' || batch.trim().length === 0) {
+            LOGGER.module().warn('WARN: [/astools/service (check_metadata)] Invalid batch parameter');
+            return {
+                errors: ['Invalid batch parameter'],
+                metadata: null
+            };
+        }
+
+        if (!archival_package || typeof archival_package !== 'string' || archival_package.trim().length === 0) {
+            LOGGER.module().warn('WARN: [/astools/service (check_metadata)] Invalid archival_package parameter');
+            return {
+                errors: ['Invalid archival_package parameter'],
+                metadata: null
+            };
+        }
+
+        LOGGER.module().info('INFO: [/astools/service (check_metadata)] Retrieving metadata URI', {
+            batch: batch,
+            archival_package: archival_package
+        });
+
+        // Get metadata URI
+        const data = await get_metadata_uri(batch, archival_package);
+
+        // Validate response structure
+        if (!data || typeof data !== 'object') {
+            LOGGER.module().error('ERROR: [/astools/service (check_metadata)] Invalid response from get_metadata_uri');
+            return {
+                errors: ['Failed to retrieve metadata URI'],
+                metadata: null
+            };
+        }
+
+        // Check for errors in the response
+        if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+            LOGGER.module().warn('WARN: [/astools/service (check_metadata)] Errors returned from get_metadata_uri', {
+                errors: data.errors,
+                batch: batch,
+                archival_package: archival_package
+            });
+            return {
+                errors: data.errors,
+                metadata: data.result || null
+            };
+        }
+
+        // Validate URI result
+        if (!data.result) {
+            LOGGER.module().error('ERROR: [/astools/service (check_metadata)] No URI result returned');
+            return {
+                errors: ['No metadata URI found'],
+                metadata: null
+            };
+        }
+
+        // Convert URI to string safely
+        const uri = String(data.result).trim();
+
+        if (uri.length === 0) {
+            LOGGER.module().error('ERROR: [/astools/service (check_metadata)] Empty URI returned');
+            return {
+                errors: ['Empty metadata URI'],
+                metadata: null
+            };
+        }
+
+        LOGGER.module().info('INFO: [/astools/service (check_metadata)] Processing metadata for URI', {
+            uri: uri
+        });
+
+        // Process metadata
+        const metadata = await process_metadata(uri);
+
+        // Validate metadata response
+        if (!metadata || typeof metadata !== 'object') {
+            LOGGER.module().error('ERROR: [/astools/service (check_metadata)] Invalid metadata returned from process_metadata', {
+                uri: uri
+            });
+            return {
+                errors: ['Failed to process metadata'],
+                metadata: null
+            };
+        }
+
+        // Check if metadata contains errors
+        if (metadata.errors) {
+            let parsed_errors = [];
+
+            try {
+                // metadata.errors might be a JSON string or an array
+                if (typeof metadata.errors === 'string') {
+                    parsed_errors = JSON.parse(metadata.errors);
+                } else if (Array.isArray(metadata.errors)) {
+                    parsed_errors = metadata.errors;
+                }
+            } catch (parse_error) {
+                LOGGER.module().error('ERROR: [/astools/service (check_metadata)] Failed to parse metadata errors', {
+                    error: parse_error.message,
+                    uri: uri
+                });
+                parsed_errors = ['Failed to parse metadata errors'];
+            }
+
+            LOGGER.module().warn('WARN: [/astools/service (check_metadata)] Metadata validation errors found', {
+                uri: uri,
+                error_count: parsed_errors.length
+            });
+
+            return {
+                errors: parsed_errors,
+                metadata: metadata
+            };
+        }
+
+        LOGGER.module().info('INFO: [/astools/service (check_metadata)] Metadata processed successfully', {
+            uri: uri
+        });
+
+        // Return successful result
+        return {
+            errors: [],
+            metadata: metadata
+        };
+
+    } catch (error) {
+        LOGGER.module().error('ERROR: [/astools/service (check_metadata)] Unable to check metadata', {
+            error: error.message,
+            stack: error.stack,
+            batch: batch,
+            archival_package: archival_package
+        });
+
+        return {
+            errors: ['An error occurred while checking metadata: ' + sanitize_error_message(error.message)],
+            metadata: null
+        };
+    }
+};
+
+// Callback-based wrapper for backward compatibility (if needed)
+exports.check_metadata_callback = function(batch, archival_package, callback) {
+    exports.check_metadata(batch, archival_package)
+        .then(result => {
+            if (typeof callback === 'function') {
+                callback(result.metadata);
+            }
+        })
+        .catch(error => {
+            LOGGER.module().error('ERROR: [/astools/service (check_metadata_callback)] Callback wrapper error', {
+                error: error.message
+            });
+            if (typeof callback === 'function') {
+                callback({
+                    errors: ['An error occurred: ' + error.message]
+                });
+            }
+        });
+};
+
+// Create async version alias for the controller
+exports.check_metadata_async = exports.check_metadata;
+
+// Helper function to sanitize error messages (if not already defined elsewhere)
+const sanitize_error_message = function(message) {
+    if (!message || typeof message !== 'string') {
+        return 'An unexpected error occurred';
+    }
+
+    // Remove sensitive information from error messages
+    return message
+        .replace(/\/[\w\/.-]+/g, '[PATH]')  // Remove file paths
+        .replace(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, '[IP]')  // Remove IP addresses
+        .substring(0, 200);  // Limit length
 };
 
 /**
@@ -378,166 +1071,470 @@ const process_metadata = async function(uri) {
 
     try {
 
+        if (!uri || typeof uri !== 'string' || uri.trim().length === 0) {
+            return {
+                errors: ['Invalid URI parameter']
+            };
+        }
+
         const ARCHIVESSPACE_LIB = new ARCHIVESSPACE(ARCHIVESSPACE_CONFIG);
-        let token = await ARCHIVESSPACE_LIB.get_session_token();
-        let errors = [];
-        let error = null;
+        const token = await ARCHIVESSPACE_LIB.get_session_token();
+        const errors = [];
 
-        LOGGER.module().info('INFO: [/astools/service (process_metadata)] Checking record ' + uri);
+        LOGGER.module().info('INFO: [/astools/service (process_metadata)] Checking record', { uri });
 
-        let record = await ARCHIVESSPACE_LIB.get_record(uri, token);
+        const record = await ARCHIVESSPACE_LIB.get_record(uri, token);
 
-        if (record === false) {
-            record = {
+        // Early return if record not found
+        if (!record || record === false) {
+            await cleanup_session(ARCHIVESSPACE_LIB, token);
+            return {
                 errors: ['Record not found.']
             };
-
-            return record;
         }
 
-        if (record.metadata.title === undefined || record.metadata.title.length === 0) {
-            errors.push('Title field is missing');
-        }
+        // Validate metadata exists
+        const metadata = record.metadata || {};
 
-        if (record.metadata.uri === undefined || record.metadata.uri.length === 0) {
-            errors.push('URI field is missing');
-        }
+        // Validate required fields
+        validate_required_field(errors, metadata.title, 'Title field is missing');
+        validate_required_field(errors, metadata.uri, 'URI field is missing');
+        validate_required_array(errors, metadata.identifiers, 'Identifier field is missing');
 
-        if (record.metadata.identifiers === undefined || record.metadata.identifiers.length === 0) {
-            errors.push('Identifier field is missing');
-        }
+        // Validate notes
+        validate_notes(errors, metadata.notes);
 
-        if (record.metadata.notes === undefined || record.metadata.notes.length === 0) {
-            errors.push('Notes field is missing - The notes field contains the abstract and rights statement');
-        } else {
+        // Validate dates
+        validate_dates(errors, metadata.dates);
 
-            for (let i = 0; i < record.metadata.notes.length; i++) {
+        // Validate parts
+        validate_parts(errors, metadata.parts, metadata.is_compound);
 
-                if (record.metadata.notes[i].type === 'abstract' && record.metadata.notes[i].content.length === 0) {
-                    errors.push('Abstract field is missing');
-                }
-
-                if (record.metadata.notes[i].type === 'userestrict' && record.metadata.notes[i].content.length === 0) {
-                    errors.push('Rights statement field is missing');
-                }
-            }
-        }
-
-        if (record.metadata.dates !== undefined) {
-
-            for (let i = 0; i < record.metadata.dates.length; i++) {
-
-                if (record.metadata.dates[i].expression === undefined || record.metadata.dates[i].expression.length === 0) {
-                    errors.push('Date expression is missing');
-                }
-            }
-        }
-
-        if (record.metadata.is_compound === true) {
-            if (record.metadata.parts === undefined || record.metadata.parts.length < 2) {
-                errors.push('Compound objects are missing');
-            }
-        }
-
-        if (record.metadata.parts === undefined || record.metadata.parts.length === 0) {
-            errors.push('Parts is missing');
-        } else {
-
-            for (let i = 0; i < record.metadata.parts.length; i++) {
-                if (record.metadata.parts[i].type === null || record.metadata.parts[i].type.length === 0) {
-                    errors.push('Mime-type is missing (' + record.metadata.parts[i].title + ')');
-                }
-            }
-        }
-
+        // Attach errors if any exist
         if (errors.length > 0) {
-            error = JSON.stringify(errors);
-            record.metadata.errors = error;
+            metadata.errors = JSON.stringify(errors);
         }
 
-        let result = await ARCHIVESSPACE_LIB.destroy_session_token(token);
+        // Clean up session
+        await cleanup_session(ARCHIVESSPACE_LIB, token);
 
-        if (result.data.status === 'session_logged_out') {
-            LOGGER.module().info('INFO: [/astools/service (process_metadata)] ArchivesSpace session terminated');
-        }
-
-        return record.metadata;
+        return metadata;
 
     } catch (error) {
-        LOGGER.module().error('ERROR: [/astools/service (process_metadata)] Unable to process metadata - ' + error.message);
+        LOGGER.module().error('ERROR: [/astools/service (process_metadata)] Unable to process metadata', {
+            error: error.message,
+            stack: error.stack
+        });
+        return {
+            errors: ['An error occurred while processing metadata: ' + error.message]
+        };
     }
-}
+};
+
+// Helper function to validate required string fields
+const validate_required_field = function(errors, field, error_message) {
+    if (!field || (typeof field === 'string' && field.trim().length === 0)) {
+        errors.push(error_message);
+    }
+};
+
+// Helper function to validate required array fields
+const validate_required_array = function(errors, field, error_message) {
+    if (!Array.isArray(field) || field.length === 0) {
+        errors.push(error_message);
+    }
+};
+
+const validate_notes = function(errors, notes) {
+    // Handle if notes is undefined, null, or not an array
+
+    if (!notes) {
+        errors.push('Notes field is missing - The notes field contains the abstract and rights statement');
+        return;
+    }
+
+    // Handle if notes is an object with a nested array
+    let notes_array = notes;
+    if (!Array.isArray(notes) && typeof notes === 'object' && Array.isArray(notes.notes)) {
+        notes_array = notes.notes;
+    }
+
+    // Handle if notes is a JSON string
+    if (typeof notes === 'string') {
+        try {
+            notes_array = JSON.parse(notes);
+        } catch (e) {
+            errors.push('Notes field is invalid - Unable to parse notes data');
+            return;
+        }
+    }
+
+    // Now check if it's a valid array
+    if (!Array.isArray(notes_array) || notes_array.length === 0) {
+        errors.push('Notes field is missing - The notes field contains the abstract and rights statement');
+        return;
+    }
+
+    let has_abstract = false;
+    let has_rights = false;
+    let abstract_is_empty = false;
+    let rights_is_empty = false;
+
+    for (let i = 0; i < notes_array.length; i++) {
+        const note = notes_array[i];
+
+        if (!note || typeof note !== 'object') {
+            continue;
+        }
+
+        if (note.type === 'abstract') {
+            has_abstract = true;
+            // Handle both string and array content
+            if (typeof note.content === 'string') {
+                if (note.content.trim().length === 0) {
+                    abstract_is_empty = true;
+                }
+            } else if (Array.isArray(note.content)) {
+                if (note.content.length === 0) {
+                    abstract_is_empty = true;
+                }
+            } else {
+                abstract_is_empty = true;
+            }
+        }
+
+        if (note.type === 'userestrict') {
+            has_rights = true;
+            // Handle both string and array content
+            if (typeof note.content === 'string') {
+                if (note.content.trim().length === 0) {
+                    rights_is_empty = true;
+                }
+            } else if (Array.isArray(note.content)) {
+                if (note.content.length === 0) {
+                    rights_is_empty = true;
+                }
+            } else {
+                rights_is_empty = true;
+            }
+        }
+    }
+
+    if (has_abstract && abstract_is_empty) {
+        errors.push('Abstract field is missing');
+    }
+
+    if (has_rights && rights_is_empty) {
+        errors.push('Rights statement field is missing');
+    }
+};
+
+// Helper function to validate notes
+const validate_notes__ = function(errors, notes) {
+    console.log(errors);
+    console.log('NOTES ', notes);
+
+    if (!Array.isArray(notes) || notes.length === 0) {
+        errors.push('Notes field is missing - The notes field contains the abstract and rights statement');
+        return;
+    }
+
+    let has_abstract = false;
+    let has_rights = false;
+    let abstract_is_empty = false;
+    let rights_is_empty = false;
+
+    for (let i = 0; i < notes.length; i++) {
+        const note = notes[i];
+
+        if (!note || typeof note !== 'object') {
+            continue;
+        }
+
+        if (note.type === 'abstract') {
+            has_abstract = true;
+            if (!Array.isArray(note.content) || note.content.length === 0) {
+                abstract_is_empty = true;
+            }
+        }
+
+        if (note.type === 'userestrict') {
+            has_rights = true;
+            if (!Array.isArray(note.content) || note.content.length === 0) {
+                rights_is_empty = true;
+            }
+        }
+    }
+
+    if (has_abstract && abstract_is_empty) {
+        errors.push('Abstract field is missing');
+    }
+
+    if (has_rights && rights_is_empty) {
+        errors.push('Rights statement field is missing');
+    }
+};
+
+// Helper function to validate dates
+const validate_dates = function(errors, dates) {
+    if (!Array.isArray(dates)) {
+        return;
+    }
+
+    for (let i = 0; i < dates.length; i++) {
+        const date = dates[i];
+
+        if (!date || typeof date !== 'object') {
+            continue;
+        }
+
+        if (!date.expression ||
+            (typeof date.expression === 'string' && date.expression.trim().length === 0)) {
+            errors.push('Date expression is missing');
+        }
+    }
+};
+
+// Helper function to validate parts
+const validate_parts = function(errors, parts, is_compound) {
+    // Check if compound object has sufficient parts
+    if (is_compound === true) {
+        if (!Array.isArray(parts) || parts.length < 2) {
+            errors.push('Compound objects must have at least 2 parts');
+        }
+    }
+
+    // Check if parts array exists and is valid
+    if (!Array.isArray(parts) || parts.length === 0) {
+        errors.push('Parts is missing');
+        return;
+    }
+
+    // Validate each part
+    for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+
+        if (!part || typeof part !== 'object') {
+            continue;
+        }
+
+        if (!part.type || (typeof part.type === 'string' && part.type.trim().length === 0)) {
+            const part_title = part.title || 'Unknown part';
+            errors.push(`Mime-type is missing (${part_title})`);
+        }
+    }
+};
+
+// Helper function to cleanup session
+const cleanup_session = async function(archivesspace_lib, token) {
+
+    try {
+
+        if (!token) {
+            return;
+        }
+
+        const result = await archivesspace_lib.destroy_session_token(token);
+
+        if (result && result.data && result.data.status === 'session_logged_out') {
+            LOGGER.module().info('INFO: [/astools/service (process_metadata)] ArchivesSpace session terminated');
+        }
+    } catch (error) {
+        LOGGER.module().error('ERROR: [/astools/service (process_metadata)] Failed to cleanup session', {
+            error: error.message
+        });
+    }
+};
 
 /**
- * Gets metadata uri
- * @param folder_name
- * @param archival_package
+ * Retrieves metadata URI for a specific package
+ * @param {string} folder_name - The folder/batch name
+ * @param {string} archival_package - The archival package name
+ * @returns {Promise<Object>} - Structured response with URI data
  */
 const get_metadata_uri = async function(folder_name, archival_package) {
 
     try {
 
-        const ASTOOLS_URL =  CONFIG.astools_service + 'workspace/uri?folder=' + folder_name + '&package=' + archival_package + '&api_key=' + CONFIG.qa_service_api_key;
-        const response = await HTTP.get(ASTOOLS_URL, {
-            headers: {
-                'Content-Type': 'application/json'
-            }
+        // Validate folder_name parameter
+        if (!folder_name || typeof folder_name !== 'string' || folder_name.trim().length === 0) {
+            LOGGER.module().error('ERROR: [/astools/service (get_metadata_uri)] Invalid folder_name parameter');
+            return {
+                errors: ['Invalid folder_name parameter'],
+                result: null
+            };
+        }
+
+        // Validate archival_package parameter
+        if (!archival_package || typeof archival_package !== 'string' || archival_package.trim().length === 0) {
+            LOGGER.module().error('ERROR: [/astools/service (get_metadata_uri)] Invalid archival_package parameter');
+            return {
+                errors: ['Invalid archival_package parameter'],
+                result: null
+            };
+        }
+
+        // Validate configuration
+        if (!CONFIG.astools_service || !CONFIG.astools_service_api_key) {
+            LOGGER.module().error('ERROR: [/astools/service (get_metadata_uri)] Missing service configuration');
+            return {
+                errors: ['Service configuration is missing'],
+                result: null
+            };
+        }
+
+        const safe_folder_name = folder_name.trim();
+        const safe_package_name = archival_package.trim();
+
+        LOGGER.module().info('INFO: [/astools/service (get_metadata_uri)] Retrieving metadata URI', {
+            folder: safe_folder_name,
+            package: safe_package_name
         });
 
-        if (response.status === 200) {
-            return response.data;
-        }
+        // Construct API URL with proper encoding
+        const encoded_folder = encodeURIComponent(safe_folder_name);
+        const encoded_package = encodeURIComponent(safe_package_name);
+        const encoded_api_key = encodeURIComponent(CONFIG.astools_service_api_key);
+        const astools_url = `${CONFIG.astools_service}workspace/uri?folder=${encoded_folder}&package=${encoded_package}&api_key=${encoded_api_key}`;
 
-    } catch (error) {
-        LOGGER.module().error('ERROR: [/astools/service (get_metadata_uri)] Unable to get uri.txt - ' + error.message);
-    }
-}
-
-/*
-async function move_to_ready_folder(folder_name) {
-
-    try {
-
-        const ASTOOLS_URL = CONFIG.astools_service + 'move-to-ready?folder=' + folder_name + '&api_key=' + CONFIG.astools_service_api_key;
-        const response = await HTTP.get(ASTOOLS_URL, {
+        // Make HTTP request
+        const response = await HTTP.get(astools_url, {
             headers: {
-                'Content-Type': 'application/json'
-            }
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            timeout: 30000 // 30 second timeout
         });
 
-        if (response.status === 200) {
-            return response.data;
+        // Validate response status
+        if (!response || response.status !== 200) {
+            LOGGER.module().error('ERROR: [/astools/service (get_metadata_uri)] Invalid response from API', {
+                status: response?.status,
+                status_text: response?.statusText,
+                folder: safe_folder_name,
+                package: safe_package_name
+            });
+
+            return {
+                errors: [`API request failed with status ${response?.status || 'unknown'}`],
+                result: null
+            };
         }
+
+        // Validate response data
+        if (!response.data || typeof response.data !== 'object') {
+            LOGGER.module().error('ERROR: [/astools/service (get_metadata_uri)] Invalid response data structure', {
+                folder: safe_folder_name,
+                package: safe_package_name
+            });
+
+            return {
+                errors: ['Invalid response data structure from API'],
+                result: null
+            };
+        }
+
+        // Handle different response structures
+        let result_data = response.data;
+
+        // If response has nested data property
+        if (response.data.data && typeof response.data.data === 'object') {
+            result_data = response.data.data;
+        }
+
+        // Check for errors in response
+        if (result_data.errors && Array.isArray(result_data.errors) && result_data.errors.length > 0) {
+            LOGGER.module().warn('WARN: [/astools/service (get_metadata_uri)] Errors returned from API', {
+                errors: result_data.errors,
+                folder: safe_folder_name,
+                package: safe_package_name
+            });
+
+            return {
+                errors: result_data.errors,
+                result: result_data.result || null
+            };
+        }
+
+        // Extract URI from response
+        let uri = null;
+
+        if (result_data.result) {
+            uri = result_data.result;
+        } else if (result_data.uri) {
+            uri = result_data.uri;
+        } else if (result_data.metadata_uri) {
+            uri = result_data.metadata_uri;
+        }
+
+        // Validate URI
+        if (!uri || (typeof uri === 'string' && uri.trim().length === 0)) {
+            LOGGER.module().warn('WARN: [/astools/service (get_metadata_uri)] Empty or missing URI in response', {
+                folder: safe_folder_name,
+                package: safe_package_name
+            });
+
+            return {
+                errors: ['Metadata URI not found or empty'],
+                result: null
+            };
+        }
+
+        // Sanitize URI
+        const sanitized_uri = typeof uri === 'string' ? uri.trim() : String(uri).trim();
+
+        LOGGER.module().info('INFO: [/astools/service (get_metadata_uri)] Metadata URI retrieved successfully', {
+            folder: safe_folder_name,
+            package: safe_package_name,
+            uri: sanitized_uri
+        });
+
+        return {
+            errors: [],
+            result: sanitized_uri
+        };
 
     } catch (error) {
-        LOGGER.module().error('ERROR: [/astools/service (move_to_ready_folder)] Unable to move batch to ready folder - ' + error.message);
-        return false;
-    }
-}
+        // Enhanced error handling
+        let error_details = {
+            error: error.message,
+            folder: folder_name,
+            package: archival_package
+        };
 
- */
+        let error_message = 'An error occurred while retrieving metadata URI';
 
-/**
- * Moves batch to ready folder
- * @param batch
- * @param callback
- */
-/*
-exports.move_to_ready = function (batch, callback) {
+        if (error.response) {
+            // The request was made and the server responded with a status code
+            // that falls out of the range of 2xx
+            error_details.status = error.response.status;
+            error_details.status_text = error.response.statusText;
 
-    (async function () {
+            error_message = `API error: ${error.response.status} - ${error.response.statusText}`;
 
-        try {
+            LOGGER.module().error('ERROR: [/astools/service (get_metadata_uri)] API response error', error_details);
+        } else if (error.request) {
+            // The request was made but no response was received
+            error_details.request = 'No response received';
 
-            let is_moved = await move_to_ready_folder(batch);
-            LOGGER.module().info('INFO: [/astools/service module (move_to_ready)] ');
-            callback(is_moved);
+            if (error.code === 'ECONNREFUSED') {
+                error_message = 'Unable to connect to ASTools service';
+            } else if (error.code === 'ETIMEDOUT') {
+                error_message = 'Request to ASTools service timed out';
+            } else {
+                error_message = 'No response received from ASTools service';
+            }
 
-        } catch (error) {
-            LOGGER.module().error('ERROR: [/astools/service (move_to_ready)] Unable to move batch to ready folder - ' + error.message);
+            LOGGER.module().error('ERROR: [/astools/service (get_metadata_uri)] No response from API', error_details);
+        } else {
+            // Something happened in setting up the request that triggered an Error
+            error_details.stack = error.stack;
+            LOGGER.module().error('ERROR: [/astools/service (get_metadata_uri)] Request setup error', error_details);
         }
 
-    })();
+        return {
+            errors: [error_message + ': ' + sanitize_error_message(error.message)],
+            result: null
+        };
+    }
 };
-
- */

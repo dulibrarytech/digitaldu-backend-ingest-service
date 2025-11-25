@@ -1,4 +1,231 @@
 <%- include('partials/header.ejs'); %>
+<style>
+    /**
+ * Metadata Error Panel Styles
+ * For displaying validation errors in the UI
+ */
+
+    /* Main error panel */
+    .metadata-errors-panel {
+        margin-top: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .metadata-errors-panel .panel-header {
+        background-color: #d9534f;
+        color: white;
+        padding: 15px;
+        border-radius: 4px 4px 0 0;
+        font-weight: bold;
+        font-size: 16px;
+    }
+
+    .metadata-errors-panel .panel-header i {
+        margin-right: 10px;
+    }
+
+    .metadata-errors-panel .panel-content {
+        border: 1px solid #d9534f;
+        border-top: none;
+        border-radius: 0 0 4px 4px;
+        max-height: 600px;
+        overflow-y: auto;
+        background-color: white;
+    }
+
+    /* Summary section */
+    .error-panel-summary {
+        padding: 15px;
+        background-color: #fff3cd;
+        border-top: 2px solid #d9534f;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .error-panel-summary strong {
+        color: #856404;
+    }
+
+    /* Package error sections */
+    .package-error-section {
+        padding: 15px;
+        border-bottom: 1px solid #ddd;
+        background-color: #f9f9f9;
+        transition: background-color 0.2s;
+    }
+
+    .package-error-section:hover {
+        background-color: #f5f5f5;
+    }
+
+    .package-error-section:last-child {
+        border-bottom: none;
+        border-radius: 0 0 4px 4px;
+    }
+
+    .package-error-section .package-header {
+        margin-bottom: 10px;
+    }
+
+    .package-error-section .package-header i {
+        margin-right: 8px;
+        color: #d9534f;
+    }
+
+    .package-error-section .package-header strong {
+        font-size: 16px;
+        color: #333;
+    }
+
+    .package-error-section .badge {
+        margin-left: 10px;
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+
+    /* Error list */
+    .error-list {
+        margin-top: 10px;
+        margin-bottom: 0;
+        padding-left: 30px;
+        list-style-type: disc;
+    }
+
+    .error-list li {
+        margin-bottom: 8px;
+        color: #333;
+        line-height: 1.5;
+    }
+
+    .error-list li span {
+        font-size: 14px;
+    }
+
+    /* Badges */
+    .badge-danger {
+        background-color: #d9534f;
+        color: white;
+    }
+
+    .badge-warning {
+        background-color: #f0ad4e;
+        color: white;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .metadata-errors-panel .panel-content {
+            max-height: 400px;
+        }
+
+        .package-error-section {
+            padding: 10px;
+        }
+
+        .error-list {
+            padding-left: 20px;
+        }
+    }
+
+    /* Print styles */
+    @media print {
+        .metadata-errors-panel .panel-content {
+            max-height: none;
+            overflow: visible;
+        }
+
+        .package-error-section {
+            page-break-inside: avoid;
+        }
+    }
+
+    /* Scrollbar styling for webkit browsers */
+    .metadata-errors-panel .panel-content::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .metadata-errors-panel .panel-content::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+
+    .metadata-errors-panel .panel-content::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+    }
+
+    .metadata-errors-panel .panel-content::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+    /* Animation for new error sections */
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .package-error-section {
+        animation: slideIn 0.3s ease-out;
+    }
+
+    /* Accessibility improvements */
+    .metadata-errors-panel [role="alert"] {
+        border: 2px solid #d9534f;
+    }
+
+    .error-list li:focus {
+        outline: 2px solid #5cb3fd;
+        outline-offset: 2px;
+    }
+
+    /* Status indicators */
+    .error-status-new {
+        background-color: #fff9e6;
+    }
+
+    .error-status-reviewed {
+        background-color: #f0f0f0;
+    }
+
+    /* Expand/collapse button (if implemented) */
+    .error-section-toggle {
+        background: none;
+        border: none;
+        color: #337ab7;
+        cursor: pointer;
+        font-size: 14px;
+        padding: 5px 10px;
+        margin-left: 10px;
+    }
+
+    .error-section-toggle:hover {
+        text-decoration: underline;
+    }
+
+    .error-section-toggle i {
+        margin-right: 5px;
+    }
+
+    /* Empty state */
+    .no-errors-message {
+        padding: 20px;
+        text-align: center;
+        color: #5cb85c;
+        font-size: 16px;
+    }
+
+    .no-errors-message i {
+        font-size: 48px;
+        display: block;
+        margin-bottom: 10px;
+    }
+</style>
 <body class="nav-md">
 <div class="container body">
     <div class="main_container">
@@ -48,6 +275,8 @@
                                     </thead>
                                     <tbody id="packages"></tbody>
                                 </table>
+                                <div id="metadata-results"></div>
+                                <!--
                                 <table id="metadata-workspace-table"
                                        class="table table-striped table-bordered bulk_action" style="visibility: hidden;">
                                     <thead>
@@ -67,7 +296,7 @@
                                         </tr>
                                     </tbody>
                                 </table>
-
+                                -->
                             </div>
                         </div>
                     </div>
@@ -82,10 +311,11 @@
     <script src="/repo/static/libs/axios-2.x/dist/axios.min.js"></script>
     <script src="/repo/static/assets/js/theme_sidebar.js"></script>
     <script src="/repo/static/app/dom.module.js"></script>
-    <script src="/ingester/static/app/helper.module.js"></script>
-    <script src="/ingester/static/app/http.module.js"></script>
-    <script src="/ingester/static/app/jobs.module.js"></script>
-    <script src="/ingester/static/app/metadata.module.js"></script>
+    <script src="/repo/ingester/static/app/helper.module.js"></script>
+    <script src="/repo/ingester/static/app/common.helpers.module.js"></script>
+    <script src="/repo/ingester/static/app/http.module.js"></script>
+    <script src="/repo/ingester/static/app/jobs.module.js"></script>
+    <script src="/repo/ingester/static/app/metadata.module.js"></script>
     <script>
         metadataModule.init();
     </script>

@@ -24,6 +24,7 @@ const I_SERVICE = require('../ingester/ingest_service');
 const C_SERVICE = require('../ingester/collection_service');
 const INGEST_SERVICE = new I_SERVICE();
 const COLLECTION_SERVICE = new C_SERVICE();
+const PROCESS_TIFF_SERVICE = require('../ingester/process_tiffs');
 
 /**
  *
@@ -289,6 +290,24 @@ const Ingest_controller = class {
             data: []
         });
     }
+
+    async process_tiffs(req, res) {
+
+        const sip_uuid = req.query.sip_uuid;
+        console.log('SIP uuid', sip_uuid);
+        // const sip_uuid = 'e841fed9-b1ec-4c91-acf0-15ad210e1e04';
+        // TODO: get from config
+        const api_url = 'https://libspec02-vlp.du.edu/convert/api/v1/convert/tiff?api_key=QLKcgNUOvFAe6Txk7UYuaDjkXOGDBI0Y';
+        // http://localhost:8082
+        try {
+            const results = await PROCESS_TIFF_SERVICE.process_and_post_objects(sip_uuid, api_url, 30000);
+            console.log('Final results:', results);
+        } catch (error) {
+            console.error('Processing failed:', error);
+            // process.exit(1);
+        }
+    }
 }
+
 
 module.exports = Ingest_controller;

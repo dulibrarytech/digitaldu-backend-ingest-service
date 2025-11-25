@@ -21,7 +21,7 @@ const jobsModule = (function () {
     'use strict';
 
     let obj = {};
-    const nginx_path = '/ingester';
+    const nginx_path = '/repo/ingester';
     const endpoint = '/api/v1/astools/jobs';
 
     obj.get_active_job = async function (job_uuid) {

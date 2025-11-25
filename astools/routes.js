@@ -19,41 +19,41 @@
 'use strict';
 
 const APP_CONFIG = require('../config/app_config')();
-const TOKEN = require('../libs/tokens');
+// const TOKEN = require('../libs/tokens');
 const CONTROLLER = require('../astools/controller');
 
 module.exports = async function (app) {
 
     app.route(`${APP_CONFIG.app_path}/api/v1/astools/workspace`)
-        .get(TOKEN.verify, CONTROLLER.workspace);
+        .get(CONTROLLER.workspace);  //TOKEN.verify,
 
-    app.route(`${APP_CONFIG.app_path}/api/v1/astools/make-digital-objects`)
-        .post(TOKEN.verify, CONTROLLER.make_digital_objects);
+        app.route(`${APP_CONFIG.app_path}/api/v1/astools/make-digital-objects`)
+        .post(CONTROLLER.make_digital_objects);  //TOKEN.verify,
 
     app.route(`${APP_CONFIG.app_path}/api/v1/astools/check-uri-txt`)
-        .post(TOKEN.verify, CONTROLLER.check_uri_txt);
+        .post(CONTROLLER.check_uri_txt);  //TOKEN.verify,
 
     app.route(`${APP_CONFIG.app_path}/api/v1/astools/packages`)
-        .post(TOKEN.verify, CONTROLLER.get_packages);
+        .post(CONTROLLER.get_packages); // TOKEN.verify,
 
     app.route(`${APP_CONFIG.app_path}/api/v1/astools/metadata`)
-        .post(TOKEN.verify, CONTROLLER.check_metadata);
+        .post(CONTROLLER.check_metadata); // TOKEN.verify,
 
     app.route(`${APP_CONFIG.app_path}/api/v1/astools/jobs`)
-        .get(TOKEN.verify, CONTROLLER.get_job);
+        .get(CONTROLLER.get_job); // TOKEN.verify,
 
     app.route(`${APP_CONFIG.app_path}/api/v1/astools/jobs/metadata`)
-        .get(TOKEN.verify, CONTROLLER.get_metadata_jobs);
+        .get(CONTROLLER.get_metadata_jobs); // TOKEN.verify,
 
     app.route(`${APP_CONFIG.app_path}/api/v1/astools/jobs/ingest`)
-        .get(TOKEN.verify, CONTROLLER.get_ingest_jobs);
+        .get(CONTROLLER.get_ingest_jobs); // TOKEN.verify,
 
     app.route(`${APP_CONFIG.app_path}/api/v1/astools/jobs/history`)
-        .get(TOKEN.verify, CONTROLLER.get_jobs_history);
+        .get(CONTROLLER.get_jobs_history); // TOKEN.verify,
 
     app.route(`${APP_CONFIG.app_path}/api/v1/astools/jobs`)
-        .put(TOKEN.verify, CONTROLLER.update_job);
+        .put(CONTROLLER.update_job); // TOKEN.verify,
 
     app.route(`${APP_CONFIG.app_path}/api/v1/astools/jobs`)
-        .post(TOKEN.verify, CONTROLLER.create_job);
+        .post(CONTROLLER.create_job); // TOKEN.verify,
 };

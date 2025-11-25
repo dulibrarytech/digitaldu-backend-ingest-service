@@ -73,6 +73,8 @@ exports.get_ks_metadata = async function (identifier, session) { // , callback
     }
 };
 
+////////////////////////////////
+
 exports.process_metadata = function (metadata, callback) {
     console.log(metadata);
     callback(metadata);
@@ -127,7 +129,7 @@ function get_file_format(identifier, session, callback) {
         .then(result => {
             callback(result);
         }).catch(error => {
-            callback(error);
+        callback(error);
     });
 }
 
@@ -185,7 +187,6 @@ async function process_public_video_data(entry_id, data) {
         }
 
         (async function () {
-            // console.log('public ', obj);
             await update_record(entry_id, obj);
         })();
 
@@ -205,12 +206,8 @@ async function process_video_search_data(entry_id, data) {
         return false;
     }
 
-    // TODO
-    let category = data.objects[0].object.categories;
     let user_id = data.objects[0].object.userId;
     let creator_id = data.objects[0].object.creatorId;
-    console.log('CREATOR ID ', creator_id);
-    console.log('CATEGORY ', category);
     let description = data.objects[0].object.description;
     let tags = data.objects[0].object.tags;
     let obj = {};
@@ -225,12 +222,6 @@ async function process_video_search_data(entry_id, data) {
         obj.creator_id = creator_id;
     } else {
         obj.creator_id = 'N/A';
-    }
-
-    if (category !== undefined || category !== null) {
-        obj.category = category;
-    } else {
-        obj.category = 'N/A';
     }
 
     if (description !== undefined || description !== null) {
@@ -270,6 +261,64 @@ async function process_file_format(entry_id, data) {
     } else {
         console.log('no format');
     }
+}
+
+function get_categories(category_id, session, callback) {
+
+    console.log('Processing category_id', category_id);
+
+    client.setKs(session);
+    kaltura.services.category.get(category_id)
+        .execute(client)
+        .then(result => {
+           callback(result);
+        }).catch(error => {
+        callback(error);
+    });
+}
+
+// TODO
+async function process_category_entries(identifier, data, session) {
+
+    try {
+
+        let category_ids = [];
+
+        if (data.objects.length > 0) {
+
+            console.log('multiple category_ids', data.objects.length);
+
+            for (let i = 0; i < data.objects.length; i++) {
+                category_ids.push(data.objects[0].categoryId);
+            }
+
+            return category_ids;
+
+        } else if (data.objects.length === 1) {
+            category_ids.push(data.objects[0].categoryId);
+        }
+
+        return category_ids;
+
+    } catch (error) {
+        LOGGER.module().error('ERROR: [/kaltura/service (update_record)] unable to process category entries ' + error.message);
+    }
+}
+
+function get_category_entries(entry_id, session, callback) {
+
+    client.setKs(session);
+    let filter = new kaltura.objects.CategoryEntryFilter();
+    filter.entryIdEqual = entry_id;
+    let pager = new kaltura.objects.FilterPager();
+
+    kaltura.services.categoryEntry.listAction(filter, pager)
+        .execute(client)
+        .then(result => {
+            callback(result);
+        }).catch(error => {
+        callback(error);
+    });
 }
 
 async function update_record(entry_id, data) {
@@ -336,12 +385,73 @@ exports.export_data = function (session) {
                 });
 
                 get_file_format(identifier, session, async (data) => {
-                    await process_file_format(identifier, data);
+                    await process_file_format(identifier, data, session);
+                });
+
+                get_category_entries(identifier, session, async (data) => {
+
+                    let category_ids = await process_category_entries(identifier, data, session);
+
+                    if (category_ids.length === 1) {
+
+                        let category_id = category_ids.pop();
+                        get_categories(category_id, session, async (data) => {
+                            console.log(`Processing ${identifier} ...`);
+                            console.log('SINGLE CATEGORY ', data.name);
+
+                            if (data.name !== 'InContext') {
+                                let obj = {
+                                    category: data.name,
+                                };
+
+                                await update_record(identifier, obj);
+                            }
+                        });
+
+                    } else if (category_ids.length > 1) {
+
+                        console.log('MULTIPLE CATEGORIES ', category_ids);
+
+                        let categories = [];
+                        let category_timer = setInterval(async () => {
+
+                            if (category_ids.length === 0) {
+
+                                clearInterval(category_timer);
+                                console.log('Category entries complete.');
+                                console.log(identifier);
+                                console.log(categories);
+
+                                if (categories.length > 0) {
+
+                                    let obj = {
+                                        category: categories.toString(),
+                                    };
+
+                                    await update_record(identifier, obj);
+                                }
+
+                                return false;
+                            }
+
+                            let category_id = category_ids.pop();
+
+                            get_categories(category_id, session, async (data) => {
+                                console.log(`Processing ${identifier} ...`);
+                                console.log('CATEGORY ', data.name);
+
+                                if (data.name !== 'InContext') {
+                                    categories.push(data.name);
+                                }
+                            });
+
+                        }, 500);
+                    }
                 });
 
                 await flag_record(identifier);
 
-            }, 750);
+            }, 1000);
 
         })();
 
