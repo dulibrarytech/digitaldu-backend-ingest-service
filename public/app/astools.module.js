@@ -30,7 +30,9 @@ const astoolsModule = (function () {
      * Retrieves workspace packages from the API
      */
     obj.get_workspace_packages = async function() {
+
         try {
+
             const api_key = helperModule.getParameterByName('api_key');
 
             if (!api_key || typeof api_key !== 'string' || api_key.trim().length === 0) {
@@ -47,6 +49,8 @@ const astoolsModule = (function () {
                 },
                 timeout: 30000
             });
+
+            console.log('WORKSPACE RESPONSE ', response);
 
             if (!response || response.status !== 200) {
                 throw new Error('Failed to retrieve workspace packages');

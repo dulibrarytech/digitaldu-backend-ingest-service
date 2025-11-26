@@ -294,10 +294,9 @@ const Ingest_controller = class {
     async process_tiffs(req, res) {
 
         const sip_uuid = req.query.sip_uuid;
-        console.log('SIP uuid', sip_uuid);
-        // const sip_uuid = 'e841fed9-b1ec-4c91-acf0-15ad210e1e04';
+
         // TODO: get from config
-        const api_url = 'https://libspec02-vlp.du.edu/convert/api/v1/convert/tiff?api_key=QLKcgNUOvFAe6Txk7UYuaDjkXOGDBI0Y';
+        const api_url = 'TODO';
         // http://localhost:8082
         try {
             const results = await PROCESS_TIFF_SERVICE.process_and_post_objects(sip_uuid, api_url, 30000);

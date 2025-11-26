@@ -48,7 +48,7 @@ exports.workspace = async function (req, res) {
         LOGGER.module().info('INFO: [/astools/controller (workspace)] Workspace packages retrieved successfully', {
             package_count: Array.isArray(response) ? response.length : 'unknown'
         });
-
+        console.log('WORKSPACE RESPONSE ', response);
         res.status(200).send({
             data: response
         });
