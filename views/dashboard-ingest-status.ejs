@@ -54,7 +54,9 @@
                                         <th style="width: 30%">Job Type</th>
                                         <th style="width: 30%">Status</th>
                                         <th style="width: 30%">Collection Folder</th>
+                                        <th style="width: 30%">Packages</th>
                                         <th style="width: 30%">Job Run By</th>
+                                        <th style="width: 30%">Date</th>
                                     </tr>
                                     </thead>
                                     <tbody id="jobs-history"></tbody>
@@ -74,13 +76,13 @@
     <script src="/repo/static/libs/dompurify/purify.min.js"></script>
     <script src="/repo/static/assets/js/theme_sidebar.js"></script>
     <script src="/repo/static/app/dom.module.js"></script>
-    <script src="/ingester/static/app/http.module.js"></script>
-    <script src="/ingester/static/app/helper.module.js"></script>
-    <script src="/ingester/static/app/jobs.module.js"></script>
-    <script src="/ingester/static/app/ingest.module.js"></script>
+    <script src="/repo/ingester/static/app/http.module.js"></script>
+    <script src="/repo/ingester/static/app/helper.module.js"></script>
+    <script src="/repo/ingester/static/app/jobs.module.js"></script>
+    <script src="/repo/ingester/static/app/ingest.module.js"></script>
     <script>
         jobsModule.display_jobs_history();
-        ingestModule.start_ingest();
+        // ingestModule.start_ingest();
     </script>
 </body>
 </html>
