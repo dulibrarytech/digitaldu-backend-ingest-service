@@ -20,6 +20,7 @@
 
 const VALIDATOR = require('validator');
 const CONFIG = require('../config/app_config')();
+const WEB_SERVICES_CONFIG = require('../config/webservices_config')();
 const I_SERVICE = require('../ingester/ingest_service');
 const C_SERVICE = require('../ingester/collection_service');
 const INGEST_SERVICE = new I_SERVICE();
@@ -294,10 +295,8 @@ const Ingest_controller = class {
     async process_tiffs(req, res) {
 
         const sip_uuid = req.query.sip_uuid;
+        const api_url = WEB_SERVICES_CONFIG.convert_service + '/api/v1/convert/tiff?api_key=' + WEB_SERVICES_CONFIG.convert_service_api_key;
 
-        // TODO: get from config
-        const api_url = 'TODO';
-        // http://localhost:8082
         try {
             const results = await PROCESS_TIFF_SERVICE.process_and_post_objects(sip_uuid, api_url, 30000);
             console.log('Final results:', results);
