@@ -24,6 +24,7 @@ const {Client} = require('@elastic/elasticsearch');
 const ES_CONFIG = require('../../config/elasticsearch_config')();
 const WEBSERVICES_CONFIG = require('../../config/webservices_config')();
 const LOGGER = require('../../libs/log4');
+const PROCESS_TIFF_SERVICE = require("../process_tiffs");
 const QA_ENDPOINT_PATH = '/api/v2/qa/';
 const TIMEOUT = 60000 * 25;
 const CLIENT = new Client({
@@ -652,6 +653,29 @@ const Ingest_service_tasks = class {
     }
 
     /**
+     * Converts TIFFs to JPGs
+     * @param sip_uuid
+     * @param api_url
+     * @param callback
+     */
+    convert(sip_uuid, api_url, callback) {
+
+        (async () => {
+
+            try {
+                const results = await PROCESS_TIFF_SERVICE.process_and_post_objects(sip_uuid, api_url, 30000);
+                console.log('Final results:', results);
+            } catch (error) {
+                callback(false);
+                console.error('Processing failed:', error);
+            }
+
+        })();
+
+        callback(true);
+    }
+
+    /** TODO: Deprecate
      * Creates .jpg derivatives from .tiff files
      * @param sip_uuid
      * @param mime_type
@@ -659,7 +683,7 @@ const Ingest_service_tasks = class {
      * @param duracloud
      * @param callback
      */
-    convert(sip_uuid, mime_type, compound_parts, duracloud, callback) {
+    convert__(sip_uuid, mime_type, compound_parts, duracloud, callback) {
 
         LOGGER.module().info('INFO: [/ingester/service module (create_repo_record)] Generating jpg derivatives');
 

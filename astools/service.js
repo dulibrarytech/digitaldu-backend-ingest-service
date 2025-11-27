@@ -45,7 +45,7 @@ exports.get_workspace_packages = async function() {
 
         // Construct API URL with proper encoding
         const api_key = encodeURIComponent(CONFIG.astools_service_api_key);
-        const astools_url = `${CONFIG.astools_service}workspace?api_key=${api_key}`;
+        const astools_url = `${CONFIG.astools_service}workspace/packages/files?package_name=001-ready&api_key=${api_key}`;
 
         // Make HTTP request
         const response = await HTTP.get(astools_url, {

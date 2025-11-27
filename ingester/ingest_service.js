@@ -1349,9 +1349,17 @@ const Ingest_service = class {
             });
 
             if (record.mime_type === 'image/tiff') {
+                const api_url = WEB_SERVICES_CONFIG.convert_service + '/api/v1/convert/tiff?api_key=' + WEB_SERVICES_CONFIG.convert_service_api_key;
+                INGEST_TASKS.convert(record.pid, api_url, () => {
+                    LOGGER.module().info('INFO: [/ingester/service module (create_repo_record)] jpg derivatives created');
+                });
+
+                /*
                 INGEST_TASKS.convert(record.pid, record.mime_type, record.compound_parts, DURACLOUD_LIB, () => {
                     LOGGER.module().info('INFO: [/ingester/service module (create_repo_record)] jpg derivatives created');
                 });
+
+                 */
             }
 
             LOGGER.module().info('INFO: [/ingester/service module (create_repo_record)] ingested');

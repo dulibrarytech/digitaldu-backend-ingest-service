@@ -212,7 +212,6 @@ function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Export functions for use in other modules
 module.exports = {
     extract_object_name,
     fetch_objects_by_sip_uuid,

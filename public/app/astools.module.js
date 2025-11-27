@@ -50,8 +50,6 @@ const astoolsModule = (function () {
                 timeout: 30000
             });
 
-            console.log('WORKSPACE RESPONSE ', response);
-
             if (!response || response.status !== 200) {
                 throw new Error('Failed to retrieve workspace packages');
             }
