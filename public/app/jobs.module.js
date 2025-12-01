@@ -858,11 +858,11 @@ const jobsModule = (function () {
             const package_list = build_package_list(record.packages);
 
             return '<tr>' +
-                '<td style="vertical-align: middle;"><small>' + sanitize_html(record.uuid) + '</small></td>' +
-                '<td style="vertical-align: middle;"><small>' + sanitize_html(record.job_type) + '</small></td>' +
-                '<td style="vertical-align: middle;"><small>' + sanitize_html(status) + '</small></td>' +
-                '<td style="vertical-align: middle;"><small>' + sanitize_html(record.batch_name) + '</small></td>' +
-                '<td style="text-align: left; vertical-align: middle; width: 20%;">' + package_list + '</td>' +
+                '<td style="vertical-align: middle; width: 15%"><small>' + sanitize_html(record.uuid) + '</small></td>' +
+                '<td style="vertical-align: middle; width: 15%"><small>' + sanitize_html(record.job_type) + '</small></td>' +
+                '<td style="vertical-align: middle; width: 10%"><small>' + sanitize_html(status) + '</small></td>' +
+                '<td style="vertical-align: middle; width: 30%"><small>' + sanitize_html(record.batch_name) + '</small></td>' +
+                '<td style="text-align: left; vertical-align: middle; width: 30%;">' + package_list + '</td>' +
                 '<td style="vertical-align: middle;">' + sanitize_html(record.job_run_by) + '</td>' +
                 '<td style="vertical-align: middle;">' + sanitize_html(record.job_date) + '</td>' +
                 '</tr>';
@@ -1320,20 +1320,6 @@ const jobsModule = (function () {
             throw error;
         }
     };
-
-    /*
-    obj.init__ = async function () {
-
-        try {
-
-            document.querySelector('#message').innerHTML = '<div class="alert alert-info"><i class=""></i> Loading...</div>';
-            await astoolsModule.display_workspace_packages();
-
-        } catch (error) {
-            domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
-        }
-    };
-    */
 
     return obj;
 
