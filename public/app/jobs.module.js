@@ -20,9 +20,182 @@ const jobsModule = (function () {
 
     'use strict';
 
-    let obj = {};
-    const nginx_path = '/repo/ingester';
-    const endpoint = '/api/v1/astools/jobs';
+    const obj = {};
+    const NGINX_PATH = '/repo/ingester';
+    const ENDPOINT = '/api/v1/astools/jobs';
+    const REQUEST_TIMEOUT_MS = 600000;
+
+    /**
+     * Status code to display text mapping
+     * @type {Object<number, string>}
+     */
+    const STATUS_MAP = Object.freeze({
+        0: 'PENDING',
+        1: 'SUCCESSFUL',
+        2: 'FAILED'
+    });
+
+    /**
+     * Status code to CSS class mapping
+     * @type {Object<number, string>}
+     */
+    const STATUS_CLASS_MAP = Object.freeze({
+        0: 'jobs-status-pending',
+        1: 'jobs-status-successful',
+        2: 'jobs-status-failed'
+    });
+
+    // =========================================================================
+    // Utility Functions (Centralized)
+    // =========================================================================
+
+    /**
+     * Sanitizes a string using DOMPurify if available, falls back to manual escaping
+     * @param {*} value - Value to sanitize
+     * @returns {string} Sanitized string
+     */
+    function sanitize_text(value) {
+        const string_value = value === null || value === undefined ? '' : String(value);
+
+        if (typeof DOMPurify !== 'undefined' && typeof DOMPurify.sanitize === 'function') {
+            return DOMPurify.sanitize(string_value, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+        }
+
+        return string_value
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    /**
+     * Creates a text node with sanitized content
+     * @param {*} value - Value to create text node from
+     * @returns {Text} Text node
+     */
+    function create_text_node(value) {
+        const sanitized = sanitize_text(value);
+        return document.createTextNode(sanitized);
+    }
+
+    /**
+     * Creates an element with optional attributes and children
+     * @param {string} tag_name - HTML tag name
+     * @param {Object} [attributes={}] - Element attributes
+     * @param {Array<Node|string>} [children=[]] - Child nodes or text content
+     * @returns {HTMLElement} Created element
+     */
+    function create_element(tag_name, attributes, children) {
+        attributes = attributes || {};
+        children = children || [];
+
+        const element = document.createElement(tag_name);
+
+        Object.keys(attributes).forEach(function(key) {
+            if (key === 'className') {
+                element.className = attributes[key];
+            } else if (key === 'dataset') {
+                Object.keys(attributes[key]).forEach(function(data_key) {
+                    element.dataset[data_key] = attributes[key][data_key];
+                });
+            } else {
+                element.setAttribute(key, attributes[key]);
+            }
+        });
+
+        children.forEach(function(child) {
+            if (typeof child === 'string') {
+                element.appendChild(create_text_node(child));
+            } else if (child instanceof Node) {
+                element.appendChild(child);
+            }
+        });
+
+        return element;
+    }
+
+    /**
+     * Safely clears an element's content
+     * @param {string} selector - CSS selector
+     * @returns {HTMLElement|null} The element if found
+     */
+    function clear_element(selector) {
+        const element = document.querySelector(selector);
+
+        if (!element) {
+            console.warn('Element not found: ' + selector);
+            return null;
+        }
+
+        while (element.firstChild) {
+            element.removeChild(element.firstChild);
+        }
+
+        return element;
+    }
+
+    /**
+     * Displays a message in the specified element using DOM methods
+     * @param {string} selector - CSS selector
+     * @param {string} type - Alert type (info, danger, success, warning)
+     * @param {string} message - Message text
+     * @param {string} [icon='fa-exclamation-circle'] - Font Awesome icon class
+     * @returns {boolean} True if displayed successfully
+     */
+    function display_message(selector, type, message, icon) {
+        icon = icon || 'fa-exclamation-circle';
+
+        const container = clear_element(selector);
+
+        if (!container) {
+            return false;
+        }
+
+        const icon_element = create_element('i', { className: 'fa ' + icon });
+        const text_node = document.createTextNode(' ' + sanitize_text(message));
+        const alert_div = create_element('div', { className: 'alert alert-' + type }, [icon_element, text_node]);
+
+        container.appendChild(alert_div);
+        return true;
+    }
+
+    /**
+     * Safely parses JSON string
+     * @param {string} json_string - JSON string to parse
+     * @returns {Array} Parsed array or empty array on failure
+     */
+    function safe_parse_json(json_string) {
+        if (!json_string || typeof json_string !== 'string') {
+            return [];
+        }
+
+        try {
+            const parsed = JSON.parse(json_string);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (error) {
+            return [];
+        }
+    }
+
+    /**
+     * Validates and encodes API key
+     * @returns {string} Encoded API key
+     * @throws {Error} If API key is missing or invalid
+     */
+    function get_encoded_api_key() {
+        const api_key = helperModule.getParameterByName('api_key');
+
+        if (!api_key || typeof api_key !== 'string' || api_key.trim() === '') {
+            throw new Error('API key is required');
+        }
+
+        return encodeURIComponent(api_key.trim());
+    }
+
+    // =========================================================================
+    // API Functions
+    // =========================================================================
 
     /**
      * Fetches an active job by UUID
@@ -31,127 +204,47 @@ const jobsModule = (function () {
      * @throws {Error} When job UUID or API key is missing, or request fails
      */
     obj.get_active_job = async function (job_uuid) {
-        const REQUEST_TIMEOUT_MS = 600000;
-
-        /**
-         * Safely parses JSON string
-         * @param {string} json_string - JSON string to parse
-         * @returns {Array} Parsed array or empty array on failure
-         */
-        function safe_parse_json(json_string) {
-            try {
-                const parsed = JSON.parse(json_string);
-                return Array.isArray(parsed) ? parsed : [];
-            } catch (error) {
-                return [];
-            }
-        }
-
         try {
-            // Validate job_uuid parameter
             if (!job_uuid || typeof job_uuid !== 'string' || job_uuid.trim() === '') {
                 throw new Error('Job UUID is required');
             }
 
-            const api_key = helperModule.getParameterByName('api_key');
-
-            // Validate API key exists and has expected format
-            if (!api_key || typeof api_key !== 'string' || api_key.trim() === '') {
-                throw new Error('API key is required');
-            }
-
-            // URL-encode parameters to prevent injection and handle special characters
             const encoded_uuid = encodeURIComponent(job_uuid.trim());
-            const encoded_api_key = encodeURIComponent(api_key.trim());
+            const encoded_api_key = get_encoded_api_key();
 
             const response = await httpModule.req({
                 method: 'GET',
-                url: nginx_path + endpoint + '?uuid=' + encoded_uuid + '&api_key=' + encoded_api_key,
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                url: NGINX_PATH + ENDPOINT + '?uuid=' + encoded_uuid + '&api_key=' + encoded_api_key,
+                headers: { 'Content-Type': 'application/json' },
                 timeout: REQUEST_TIMEOUT_MS
             });
 
-            // Handle non-success status codes
             if (response.status !== 200) {
                 throw new Error('Request failed with status ' + response.status);
             }
 
-            // Validate response structure
             if (!response.data || !Array.isArray(response.data.data) || response.data.data.length === 0) {
                 throw new Error('Job not found');
             }
 
             const job_record = response.data.data[0];
 
-            // Build response object
-            const data = {
-                result: {
-                    batch: job_record.batch_name || '',
-                    packages: safe_parse_json(job_record.packages),
-                    is_kaltura: Boolean(job_record.is_kaltura)
-                }
-            };
-
             return {
-                data: [data]
+                data: [{
+                    result: {
+                        batch: job_record.batch_name || '',
+                        packages: safe_parse_json(job_record.packages),
+                        is_kaltura: Boolean(job_record.is_kaltura)
+                    }
+                }]
             };
 
         } catch (error) {
             const error_message = error instanceof Error ? error.message : 'An unexpected error occurred';
             console.error('get_active_job error:', error_message);
-
-            // Re-throw for upstream error handling
             throw error;
         }
     };
-
-    /*
-    obj.get_active_job__ = async function (job_uuid) {
-
-        try {
-
-            const api_key = helperModule.getParameterByName('api_key');
-            const response = await httpModule.req({
-                method: 'GET',
-                url: nginx_path + endpoint + '?uuid=' + job_uuid + '&api_key=' + api_key,
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                timeout: 600000
-            });
-
-            if (response.status === 200) {
-                console.log(response.data.data);
-                let record = [];
-                let is_kalture = false;
-
-                if (response.data.data[0].is_kaltura === 1) {
-                    is_kalture = true;
-                }
-
-                let data = {
-                    result: {
-                        batch: response.data.data[0].batch_name,
-                        packages: JSON.parse(response.data.data[0].packages),
-                        is_kaltura: is_kalture
-                    }
-                };
-
-                record.push(data);
-
-                return {
-                    data: record
-                };
-            }
-
-        } catch (error) {
-            console.log(error);
-        }
-    };
-
-     */
 
     /**
      * Fetches metadata jobs from the API
@@ -159,55 +252,6 @@ const jobsModule = (function () {
      * @throws {Error} When API key is missing or request fails
      */
     obj.get_metadata_jobs = async function () {
-        const REQUEST_TIMEOUT_MS = 600000;
-
-        /**
-         * Sanitizes a string for safe HTML insertion
-         * @param {*} value - Value to sanitize
-         * @returns {string} Sanitized string
-         */
-        function sanitize_html(value) {
-            const string_value = value === null || value === undefined ? '' : String(value);
-            return string_value
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
-
-        /**
-         * Safely sets innerHTML of an element
-         * @param {string} selector - CSS selector
-         * @param {string} html - HTML content to set
-         * @returns {boolean} True if element found and updated, false otherwise
-         */
-        function set_element_html(selector, html) {
-            const element = document.querySelector(selector);
-
-            if (!element) {
-                console.warn('Element not found: ' + selector);
-                return false;
-            }
-
-            element.innerHTML = html;
-            return true;
-        }
-
-        /**
-         * Safely parses JSON string
-         * @param {string} json_string - JSON string to parse
-         * @returns {Array} Parsed array or empty array on failure
-         */
-        function safe_parse_json(json_string) {
-            try {
-                const parsed = JSON.parse(json_string);
-                return Array.isArray(parsed) ? parsed : [];
-            } catch (error) {
-                return [];
-            }
-        }
-
         /**
          * Transforms a job record into the expected format
          * @param {Object} job - Raw job record from API
@@ -225,119 +269,39 @@ const jobsModule = (function () {
         }
 
         try {
-            const api_key = helperModule.getParameterByName('api_key');
-
-            // Validate API key exists and has expected format
-            if (!api_key || typeof api_key !== 'string' || api_key.trim() === '') {
-                throw new Error('API key is required');
-            }
-
-            // URL-encode API key to prevent injection and handle special characters
-            const encoded_api_key = encodeURIComponent(api_key.trim());
+            const encoded_api_key = get_encoded_api_key();
 
             const response = await httpModule.req({
                 method: 'GET',
-                url: nginx_path + endpoint + '/metadata?api_key=' + encoded_api_key,
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                url: NGINX_PATH + ENDPOINT + '/metadata?api_key=' + encoded_api_key,
+                headers: { 'Content-Type': 'application/json' },
                 timeout: REQUEST_TIMEOUT_MS
             });
 
-            // Handle non-success status codes
             if (response.status !== 200) {
                 throw new Error('Request failed with status ' + response.status);
             }
 
-            // Validate response structure
             if (!response.data || !Array.isArray(response.data.data)) {
                 throw new Error('Invalid response format');
             }
 
             const jobs_data = response.data.data;
 
-            // Return early for empty results
             if (jobs_data.length === 0) {
                 return { data: [] };
             }
 
-            // Transform all job records
-            const transformed_data = jobs_data.map(transform_job_record);
-
             return {
-                data: transformed_data
+                data: jobs_data.map(transform_job_record)
             };
 
         } catch (error) {
             const error_message = error instanceof Error ? error.message : 'An unexpected error occurred';
-
-            set_element_html(
-                '#message',
-                '<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> ' +
-                sanitize_html(error_message) +
-                '</div>'
-            );
-
-            // Re-throw for upstream error handling
+            display_message('#message', 'danger', error_message);
             throw error;
         }
     };
-
-    /*
-    obj.get_metadata_jobs__ = async function () {
-
-        try {
-
-            const api_key = helperModule.getParameterByName('api_key');
-            const response = await httpModule.req({
-                method: 'GET',
-                url: nginx_path + endpoint + '/metadata?&api_key=' + api_key,
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                timeout: 600000
-            });
-
-            if (response.status === 200) {
-
-                if (response.data.data.length === 0) {
-                    return {
-                        data: []
-                    };
-                }
-
-                let record = [];
-                let is_kaltura = false;
-
-                if (response.data.data.length > 0) {
-
-                    for (let i = 0; i < response.data.data.length; i++) {
-
-                        if (response.data.data[i].is_kaltura === 1) {
-                            is_kaltura = true;
-                        }
-
-                        record.push({
-                            result: {
-                                job_uuid: response.data.data[i].uuid,
-                                batch: response.data.data[i].batch_name,
-                                packages: JSON.parse(response.data.data[i].packages),
-                                is_kaltura: is_kaltura
-                            }
-                        });
-                    }
-
-                    return {
-                        data: record
-                    };
-                }
-            }
-
-        } catch (error) {
-            domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
-        }
-    };
-    */
 
     /**
      * Fetches ingest jobs from the API
@@ -345,55 +309,6 @@ const jobsModule = (function () {
      * @throws {Error} When API key is missing or request fails
      */
     obj.get_ingest_jobs = async function () {
-        const REQUEST_TIMEOUT_MS = 600000;
-
-        /**
-         * Sanitizes a string for safe HTML insertion
-         * @param {*} value - Value to sanitize
-         * @returns {string} Sanitized string
-         */
-        function sanitize_html(value) {
-            const string_value = value === null || value === undefined ? '' : String(value);
-            return string_value
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
-
-        /**
-         * Safely sets innerHTML of an element
-         * @param {string} selector - CSS selector
-         * @param {string} html - HTML content to set
-         * @returns {boolean} True if element found and updated, false otherwise
-         */
-        function set_element_html(selector, html) {
-            const element = document.querySelector(selector);
-
-            if (!element) {
-                console.warn('Element not found: ' + selector);
-                return false;
-            }
-
-            element.innerHTML = html;
-            return true;
-        }
-
-        /**
-         * Safely parses JSON string
-         * @param {string} json_string - JSON string to parse
-         * @returns {Array} Parsed array or empty array on failure
-         */
-        function safe_parse_json(json_string) {
-            try {
-                const parsed = JSON.parse(json_string);
-                return Array.isArray(parsed) ? parsed : [];
-            } catch (error) {
-                return [];
-            }
-        }
-
         /**
          * Transforms a job record into the expected format
          * @param {Object} job - Raw job record from API
@@ -411,119 +326,39 @@ const jobsModule = (function () {
         }
 
         try {
-            const api_key = helperModule.getParameterByName('api_key');
-
-            // Validate API key exists and has expected format
-            if (!api_key || typeof api_key !== 'string' || api_key.trim() === '') {
-                throw new Error('API key is required');
-            }
-
-            // URL-encode API key to prevent injection and handle special characters
-            const encoded_api_key = encodeURIComponent(api_key.trim());
+            const encoded_api_key = get_encoded_api_key();
 
             const response = await httpModule.req({
                 method: 'GET',
-                url: nginx_path + endpoint + '/ingest?api_key=' + encoded_api_key,
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                url: NGINX_PATH + ENDPOINT + '/ingest?api_key=' + encoded_api_key,
+                headers: { 'Content-Type': 'application/json' },
                 timeout: REQUEST_TIMEOUT_MS
             });
 
-            // Handle non-success status codes
             if (response.status !== 200) {
                 throw new Error('Request failed with status ' + response.status);
             }
 
-            // Validate response structure
             if (!response.data || !Array.isArray(response.data.data)) {
                 throw new Error('Invalid response format');
             }
 
             const jobs_data = response.data.data;
 
-            // Return early for empty results
             if (jobs_data.length === 0) {
                 return { data: [] };
             }
 
-            // Transform all job records
-            const transformed_data = jobs_data.map(transform_job_record);
-
             return {
-                data: transformed_data
+                data: jobs_data.map(transform_job_record)
             };
 
         } catch (error) {
             const error_message = error instanceof Error ? error.message : 'An unexpected error occurred';
-
-            set_element_html(
-                '#message',
-                '<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> ' +
-                sanitize_html(error_message) +
-                '</div>'
-            );
-
-            // Re-throw for upstream error handling
+            display_message('#message', 'danger', error_message);
             throw error;
         }
     };
-
-    /*
-    obj.get_ingest_jobs__ = async function () {
-
-        try {
-
-            const api_key = helperModule.getParameterByName('api_key');
-            const response = await httpModule.req({
-                method: 'GET',
-                url: nginx_path + endpoint + '/ingest?&api_key=' + api_key,
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                timeout: 600000
-            });
-
-            if (response.status === 200) {
-
-                if (response.data.data.length === 0) {
-                    return {
-                        data: []
-                    };
-                }
-
-                let record = [];
-                let is_kaltura = false;
-
-                if (response.data.data.length > 0) {
-
-                    for (let i = 0; i < response.data.data.length; i++) {
-
-                        if (response.data.data[i].is_kaltura === 1) {
-                            is_kaltura = true;
-                        }
-
-                        record.push({
-                            result: {
-                                job_uuid: response.data.data[i].uuid,
-                                batch: response.data.data[i].batch_name,
-                                packages: JSON.parse(response.data.data[i].packages),
-                                is_kaltura: is_kaltura
-                            }
-                        });
-                    }
-
-                    return {
-                        data: record
-                    };
-                }
-            }
-
-        } catch (error) {
-            domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
-        }
-    };
-    */
 
     /**
      * Fetches job history from the API
@@ -531,122 +366,44 @@ const jobsModule = (function () {
      * @throws {Error} When API key is missing or request fails
      */
     obj.get_jobs_history = async function () {
-        const REQUEST_TIMEOUT_MS = 600000;
-
         try {
-            const api_key = helperModule.getParameterByName('api_key');
-
-            // Validate API key exists and has expected format
-            if (!api_key || typeof api_key !== 'string' || api_key.trim() === '') {
-                throw new Error('API key is required');
-            }
-
-            // URL-encode API key to prevent injection and handle special characters
-            const encoded_api_key = encodeURIComponent(api_key);
+            const encoded_api_key = get_encoded_api_key();
 
             const response = await httpModule.req({
                 method: 'GET',
-                url: nginx_path + endpoint + '/history?api_key=' + encoded_api_key,
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                url: NGINX_PATH + ENDPOINT + '/history?api_key=' + encoded_api_key,
+                headers: { 'Content-Type': 'application/json' },
                 timeout: REQUEST_TIMEOUT_MS
             });
 
-            // Handle non-success status codes
             if (response.status !== 200) {
                 throw new Error('Request failed with status ' + response.status);
             }
 
-            // Validate response structure
             if (!response.data || !Array.isArray(response.data.data)) {
                 throw new Error('Invalid response format');
             }
 
             const jobs_data = response.data.data;
 
-            // Return early for empty results
             if (jobs_data.length === 0) {
                 return { data: [] };
             }
 
-            // Transform is_kaltura to boolean values
             const transformed_data = jobs_data.map(function (job) {
                 return Object.assign({}, job, {
                     is_kaltura: Boolean(job.is_kaltura)
                 });
             });
 
-            return {
-                data: transformed_data
-            };
+            return { data: transformed_data };
 
         } catch (error) {
             const error_message = error instanceof Error ? error.message : 'An unexpected error occurred';
-
-            // Sanitize error message to prevent XSS
-            const sanitized_message = error_message
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-
-            domModule.html(
-                '#message',
-                '<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> ' +
-                sanitized_message +
-                '</div>'
-            );
-
-            // Re-throw for upstream error handling
+            display_message('#message', 'danger', error_message);
             throw error;
         }
     };
-
-    /*
-    obj.get_jobs_history__ = async function () {
-
-        try {
-
-            const api_key = helperModule.getParameterByName('api_key');
-            const response = await httpModule.req({
-                method: 'GET',
-                url: nginx_path + endpoint + '/history?&api_key=' + api_key,
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                timeout: 600000
-            });
-
-            if (response.status === 200) {
-
-                if (response.data.data.length === 0) {
-                    return {
-                        data: []
-                    };
-                }
-
-                if (response.data.data.length > 0) {
-
-                    for (let i = 0; i < response.data.data.length; i++) {
-
-                        if (response.data.data[i].is_kaltura === 1) {
-                            response.data.data[i].is_kaltura = true;
-                        } else {
-                            response.data.data[i].is_kaltura = false;
-                        }
-                    }
-
-                    return response.data;
-                }
-            }
-
-        } catch (error) {
-            domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
-        }
-    };
-    */
 
     /**
      * Updates a job via the API
@@ -655,73 +412,25 @@ const jobsModule = (function () {
      * @throws {Error} When job data or API key is missing, or request fails
      */
     obj.update_job = async function (job) {
-        const REQUEST_TIMEOUT_MS = 60000;
-
-        /**
-         * Sanitizes a string for safe HTML insertion
-         * @param {*} value - Value to sanitize
-         * @returns {string} Sanitized string
-         */
-        function sanitize_html(value) {
-            const string_value = value === null || value === undefined ? '' : String(value);
-            return string_value
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
-
-        /**
-         * Safely sets innerHTML of an element
-         * @param {string} selector - CSS selector
-         * @param {string} html - HTML content to set
-         * @returns {boolean} True if element found and updated, false otherwise
-         */
-        function set_element_html(selector, html) {
-            const element = document.querySelector(selector);
-
-            if (!element) {
-                console.warn('Element not found: ' + selector);
-                return false;
-            }
-
-            element.innerHTML = html;
-            return true;
-        }
-
         try {
-            // Validate job parameter
             if (!job || typeof job !== 'object' || Array.isArray(job)) {
                 throw new Error('Valid job data is required');
             }
 
-            // Validate job has required identifier
             if (!job.uuid && !job.id) {
                 throw new Error('Job must have a uuid or id');
             }
 
-            const api_key = helperModule.getParameterByName('api_key');
-
-            // Validate API key exists and has expected format
-            if (!api_key || typeof api_key !== 'string' || api_key.trim() === '') {
-                throw new Error('API key is required');
-            }
-
-            // URL-encode API key to prevent injection and handle special characters
-            const encoded_api_key = encodeURIComponent(api_key.trim());
+            const encoded_api_key = get_encoded_api_key();
 
             const response = await httpModule.req({
                 method: 'PUT',
-                url: nginx_path + '/api/v1/astools/jobs?api_key=' + encoded_api_key,
+                url: NGINX_PATH + '/api/v1/astools/jobs?api_key=' + encoded_api_key,
                 data: job,
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                timeout: REQUEST_TIMEOUT_MS
+                headers: { 'Content-Type': 'application/json' },
+                timeout: 60000
             });
 
-            // Handle non-success status codes
             if (response.status !== 200) {
                 throw new Error('Request failed with status ' + response.status);
             }
@@ -733,412 +442,38 @@ const jobsModule = (function () {
 
         } catch (error) {
             const error_message = error instanceof Error ? error.message : 'An unexpected error occurred';
-
-            set_element_html(
-                '#message',
-                '<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> ' +
-                sanitize_html(error_message) +
-                '</div>'
-            );
-
-            // Re-throw for upstream error handling
+            display_message('#message', 'danger', error_message);
             throw error;
         }
     };
 
-    /*
-    obj.update_job__ = async function (job) {
-
-        try {
-
-            const api_key = helperModule.getParameterByName('api_key');
-            const response = await httpModule.req({
-                method: 'PUT',
-                url: nginx_path + '/api/v1/astools/jobs?api_key=' + api_key,
-                data: job,
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (response.status === 200) {
-                console.log('job updated');
-            }
-
-        } catch (error) {
-            domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
-        }
-    }
-    */
-
     /**
-     * Displays job history in a DataTable
-     * @returns {Promise<boolean>} False if no records found, undefined otherwise
+     * Gets Kaltura entry IDs
+     * @returns {Promise<Object>} Kaltura entry IDs data
      */
-    obj.display_jobs_history = async function () {
-        const STATUS_MAP = {
-            0: 'PENDING',
-            1: 'SUCCESSFUL',
-            2: 'FAILED'
-        };
-
-        /**
-         * Sanitizes a string for safe HTML insertion
-         * @param {*} value - Value to sanitize
-         * @returns {string} Sanitized string
-         */
-        function sanitize_html(value) {
-            const string_value = value === null || value === undefined ? '' : String(value);
-            return string_value
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
-
-        /**
-         * Safely sets innerHTML of an element
-         * @param {string} selector - CSS selector
-         * @param {string} html - HTML content to set
-         * @returns {boolean} True if element found and updated, false otherwise
-         */
-        function set_element_html(selector, html) {
-            const element = document.querySelector(selector);
-
-            if (!element) {
-                console.warn('Element not found: ' + selector);
-                return false;
-            }
-
-            element.innerHTML = html;
-            return true;
-        }
-
-        /**
-         * Safely parses JSON string
-         * @param {string} json_string - JSON string to parse
-         * @returns {Array} Parsed array or empty array on failure
-         */
-        function safe_parse_json(json_string) {
-            try {
-                const parsed = JSON.parse(json_string);
-                return Array.isArray(parsed) ? parsed : [];
-            } catch (error) {
-                return [];
-            }
-        }
-
-        /**
-         * Builds HTML for package list
-         * @param {string} packages_json - JSON string of packages
-         * @returns {string} HTML string for package list
-         */
-        function build_package_list(packages_json) {
-            const packages = safe_parse_json(packages_json);
-
-            if (packages.length === 0) {
-                return '<ul><li><small>No packages</small></li></ul>';
-            }
-
-            const list_items = packages.map(function (pkg) {
-                return '<li><small>' + sanitize_html(pkg.package) + '</small></li>';
-            }).join('');
-
-            return '<ul>' + list_items + '</ul>';
-        }
-
-        /**
-         * Builds table row HTML for a single job record
-         * @param {Object} record - Job record object
-         * @returns {string} HTML string for table row
-         */
-        function build_table_row(record) {
-            const status = STATUS_MAP[record.is_complete] || 'UNKNOWN';
-            const package_list = build_package_list(record.packages);
-
-            return '<tr>' +
-                '<td style="vertical-align: middle; width: 10%"><small>' + sanitize_html(record.uuid) + '</small></td>' +
-                '<td style="vertical-align: middle; width: 10%"><small>' + sanitize_html(record.job_type) + '</small></td>' +
-                '<td style="vertical-align: middle; width: 10%"><small>' + sanitize_html(status) + '</small></td>' +
-                '<td style="vertical-align: middle; width: 30%"><small>' + sanitize_html(record.batch_name) + '</small></td>' +
-                '<td style="text-align: left; vertical-align: middle; width: 35%;">' + package_list + '</td>' +
-                '<td style="vertical-align: middle; width: 10%">' + sanitize_html(record.job_run_by) + '</td>' +
-                '<td style="vertical-align: middle; width: 10%">' + sanitize_html(record.job_date) + '</td>' +
-                '</tr>';
-        }
-
+    obj.get_ks_entry_ids = async function () {
         try {
-            const records = await jobsModule.get_jobs_history();
-
-            // Validate response structure
-            if (!records || !Array.isArray(records.data)) {
-                throw new Error('Invalid response format');
-            }
-
-            if (records.data.length === 0) {
-                set_element_html(
-                    '#message',
-                    '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> No jobs found</div>'
-                );
-                return false;
-            }
-
-            const table_html = records.data.map(build_table_row).join('');
-
-            set_element_html('#jobs-history', table_html);
-
-            // Initialize DataTable
-            new DataTable('#jobs-history-table', {
-                paging: true,
-                rowReorder: true
-            });
-
-            const table_element = document.querySelector('#jobs-history-table');
-
-            if (table_element) {
-                table_element.style.visibility = 'visible';
-            }
-
-        } catch (error) {
-            const error_message = error instanceof Error ? error.message : 'An unexpected error occurred';
-
-            set_element_html(
-                '#message',
-                '<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> ' +
-                sanitize_html(error_message) +
-                '</div>'
-            );
-        }
-    };
-
-    /*
-    obj.display_jobs_history__ = async function () {
-
-        try {
-
-            let records = await jobsModule.get_jobs_history();
-
-            if (records.data.length === 0) {
-                domModule.html('#message', '<div class="alert alert-info"><i class="fa fa-exclamation-circle"></i> No jobs found</div>');
-                return false;
-            }
-
-            let html = '';
-
-            for (let i = 0; i < records.data.length; i++) {
-
-                let status;
-                let package_list = '<ul>';
-
-                let packages = JSON.parse(records.data[i].packages);
-
-                for (let j = 0; j < packages.length; j++) {
-                    package_list += '<li><small>' + packages[j].package + '</small></li>';
-                }
-
-                package_list += '</ul>';
-
-
-                if (records.data[i].is_complete === 1) {
-                    status = 'SUCCESSFUL';
-                } else if (records.data[i].is_complete === 0) {
-                    status = 'PENDING';
-                } else if (records.data[i].is_complete === 2) {
-                    status = 'FAILED';
-                }
-
-                html += '<tr>';
-
-                // job uuid
-                html += '<td style="vertical-align: middle;">';
-                html += '<small>' + records.data[i].uuid + '</small>';
-                html += '</td>';
-
-                // job type
-                html += '<td style="vertical-align: middle;">';
-                html += '<small>' + records.data[i].job_type + '</small>';
-                html += '</td>';
-
-                // is complete
-                html += '<td style="vertical-align: middle;">';
-                html += '<small>' + status + '</small>';
-                html += '</td>';
-
-                // collection folder
-                html += '<td style="vertical-align: middle;">';
-                html += '<small>' + records.data[i].batch_name + '</small>';
-                html += '</td>';
-
-                // packages
-                html += '<td style="text-align: left;vertical-align: middle; width: 20%">';
-                html += package_list;
-                html += '</td>';
-
-                // jobs run by
-                html += '<td style="vertical-align: middle;">';
-                html += records.data[i].job_run_by;
-                html += '</td>';
-                // html += '</tr>';
-
-                // job date
-                html += '<td style="vertical-align: middle;">';
-                html += records.data[i].job_date;
-                html += '</td>';
-                html += '</tr>';
-            }
-
-            domModule.html('#jobs-history', html);
-
-            const JOB_HISTORY = new DataTable('#jobs-history-table', {
-                paging: true,
-                rowReorder: true
-            });
-
-            document.querySelector('#jobs-history-table').style.visibility = 'visible';
-
-        } catch (error) {
-            domModule.html('#message', '<div class="alert alert-info"><i class=""></i> ' + error.message + '</div>');
-        }
-    }
-    */
-
-    /**
-     * Checks the Kaltura queue for digital objects
-     * @param {string} batch - Batch identifier (reserved for future use)
-     * @returns {Promise<Object>} Queue data response
-     * @throws {Error} When API key is missing or request fails
-     */
-    obj.check_make_digital_objects_ks_queue = async function () {
-        const REQUEST_TIMEOUT_MS = 600000;
-
-        /**
-         * Sanitizes a string for safe HTML insertion
-         * @param {*} value - Value to sanitize
-         * @returns {string} Sanitized string
-         */
-        function sanitize_html(value) {
-            const string_value = value === null || value === undefined ? '' : String(value);
-            return string_value
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
-
-        /**
-         * Safely sets innerHTML of an element
-         * @param {string} selector - CSS selector
-         * @param {string} html - HTML content to set
-         * @returns {boolean} True if element found and updated, false otherwise
-         */
-        function set_element_html(selector, html) {
-            const element = document.querySelector(selector);
-
-            if (!element) {
-                console.warn('Element not found: ' + selector);
-                return false;
-            }
-
-            element.innerHTML = html;
-            return true;
-        }
-
-        try {
-            const api_key = helperModule.getParameterByName('api_key');
-
-            // Validate API key exists and has expected format
-            if (!api_key || typeof api_key !== 'string' || api_key.trim() === '') {
-                throw new Error('API key is required');
-            }
-
-            // URL-encode API key to prevent injection and handle special characters
-            const encoded_api_key = encodeURIComponent(api_key.trim());
+            const encoded_api_key = get_encoded_api_key();
 
             const response = await httpModule.req({
                 method: 'GET',
-                url: nginx_path + '/api/v1/kaltura/queue?api_key=' + encoded_api_key,
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                url: NGINX_PATH + '/api/v1/kaltura/queue/entry_ids?api_key=' + encoded_api_key,
+                headers: { 'Content-Type': 'application/json' },
                 timeout: REQUEST_TIMEOUT_MS
             });
 
-            // Handle non-success status codes
-            if (response.status !== 200) {
-                throw new Error('Request failed with status ' + response.status);
+            if (response.status === 200) {
+                return response.data;
             }
 
-            // Validate response has data
-            if (!response.data) {
-                throw new Error('Invalid response format');
-            }
-
-            return response.data;
+            throw new Error('Request failed with status ' + response.status);
 
         } catch (error) {
             const error_message = error instanceof Error ? error.message : 'An unexpected error occurred';
-
-            set_element_html(
-                '#message',
-                '<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> ' +
-                sanitize_html(error_message) +
-                '</div>'
-            );
-
-            // Re-throw for upstream error handling
+            display_message('#message', 'danger', error_message);
             throw error;
         }
     };
-
-    /*
-    obj.check_make_digital_objects_ks_queue__ = async function (batch) {
-
-        try {
-
-            const api_key = helperModule.getParameterByName('api_key');
-            const response = await httpModule.req({
-                method: 'GET',
-                url: nginx_path + '/api/v1/kaltura/queue?&api_key=' + api_key,
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                timeout: 600000
-            });
-
-            if (response.status === 200) {
-                return response.data;
-            }
-
-        } catch (error) {
-            domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
-        }
-    }
-    */
-
-    obj.get_ks_entry_ids = async function (batch) {
-
-        try {
-
-            const api_key = helperModule.getParameterByName('api_key');
-            const response = await httpModule.req({
-                method: 'GET',
-                url: nginx_path + '/api/v1/kaltura/queue/entry_ids?&api_key=' + api_key,
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                timeout: 600000
-            });
-
-            if (response.status === 200) {
-                return response.data;
-            }
-
-        } catch (error) {
-            domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
-        }
-    }
 
     /**
      * Clears the Kaltura queue
@@ -1146,110 +481,209 @@ const jobsModule = (function () {
      * @throws {Error} When API key is missing or request fails
      */
     obj.clear_ks_queue = async function () {
-        const REQUEST_TIMEOUT_MS = 600000;
-
-        /**
-         * Sanitizes a string for safe HTML insertion
-         * @param {*} value - Value to sanitize
-         * @returns {string} Sanitized string
-         */
-        function sanitize_html(value) {
-            const string_value = value === null || value === undefined ? '' : String(value);
-            return string_value
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
-
-        /**
-         * Safely sets innerHTML of an element
-         * @param {string} selector - CSS selector
-         * @param {string} html - HTML content to set
-         * @returns {boolean} True if element found and updated, false otherwise
-         */
-        function set_element_html(selector, html) {
-            const element = document.querySelector(selector);
-
-            if (!element) {
-                console.warn('Element not found: ' + selector);
-                return false;
-            }
-
-            element.innerHTML = html;
-            return true;
-        }
-
         try {
-            const api_key = helperModule.getParameterByName('api_key');
-
-            // Validate API key exists and has expected format
-            if (!api_key || typeof api_key !== 'string' || api_key.trim() === '') {
-                throw new Error('API key is required');
-            }
-
-            // URL-encode API key to prevent injection and handle special characters
-            const encoded_api_key = encodeURIComponent(api_key.trim());
+            const encoded_api_key = get_encoded_api_key();
 
             const response = await httpModule.req({
                 method: 'POST',
-                url: nginx_path + '/api/v1/kaltura/queue/clear?api_key=' + encoded_api_key,
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                url: NGINX_PATH + '/api/v1/kaltura/queue/clear?api_key=' + encoded_api_key,
+                headers: { 'Content-Type': 'application/json' },
                 timeout: REQUEST_TIMEOUT_MS
             });
 
-            // Handle non-success status codes (204 No Content is expected for clear operations)
             if (response.status !== 204) {
                 throw new Error('Request failed with status ' + response.status);
             }
 
-            // 204 responses have no body, return success indicator
-            return {
-                success: true
-            };
+            return { success: true };
 
         } catch (error) {
             const error_message = error instanceof Error ? error.message : 'An unexpected error occurred';
-
-            set_element_html(
-                '#message',
-                '<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> ' +
-                sanitize_html(error_message) +
-                '</div>'
-            );
-
-            // Re-throw for upstream error handling
+            display_message('#message', 'danger', error_message);
             throw error;
         }
     };
 
-    /*
-    obj.clear_ks_queue__ = async function () {
+    // =========================================================================
+    // Display Functions
+    // =========================================================================
 
+    /**
+     * Builds a package list element using DOM methods
+     * @param {string} packages_json - JSON string of packages
+     * @returns {HTMLUListElement} Unordered list element containing packages
+     */
+    function build_package_list_element(packages_json) {
+        const packages = safe_parse_json(packages_json);
+        const ul = create_element('ul', { className: 'jobs-package-list' });
+
+        if (packages.length === 0) {
+            const li = create_element('li', {}, ['No packages']);
+            ul.appendChild(li);
+            return ul;
+        }
+
+        packages.forEach(function(pkg) {
+            const package_name = pkg && pkg.package ? pkg.package : '';
+            const li = create_element('li', { title: package_name }, [package_name]);
+            ul.appendChild(li);
+        });
+
+        return ul;
+    }
+
+    /**
+     * Creates a status badge element
+     * @param {number} status_code - Status code (0, 1, or 2)
+     * @returns {HTMLSpanElement} Status badge element
+     */
+    function create_status_badge(status_code) {
+        const status_text = STATUS_MAP[status_code] || 'UNKNOWN';
+        const status_class = STATUS_CLASS_MAP[status_code] || 'jobs-status-unknown';
+
+        return create_element('span', { className: 'jobs-status ' + status_class }, [status_text]);
+    }
+
+    /**
+     * Creates a table cell with text content
+     * @param {string} content - Cell text content
+     * @param {string} [additional_class] - Additional CSS class
+     * @returns {HTMLTableCellElement} Table cell element
+     */
+    function create_text_cell(content, additional_class) {
+        const span = create_element('span', {
+            className: 'jobs-cell-text',
+            title: content || ''
+        }, [content || '']);
+
+        const td = create_element('td');
+
+        if (additional_class) {
+            td.className = additional_class;
+        }
+
+        td.appendChild(span);
+        return td;
+    }
+
+    /**
+     * Builds table row element for a single job record using DOM methods
+     * @param {Object} record - Job record object
+     * @returns {HTMLTableRowElement} Table row element
+     */
+    function build_table_row_element(record) {
+        const tr = create_element('tr');
+
+        // Job ID
+        tr.appendChild(create_text_cell(record.uuid));
+
+        // Job Type
+        tr.appendChild(create_text_cell(record.job_type));
+
+        // Status (with badge)
+        const status_td = create_element('td');
+        status_td.appendChild(create_status_badge(record.is_complete));
+        tr.appendChild(status_td);
+
+        // Collection Folder
+        tr.appendChild(create_text_cell(record.batch_name));
+
+        // Packages
+        const packages_td = create_element('td', { className: 'jobs-packages-cell' });
+        packages_td.appendChild(build_package_list_element(record.packages));
+        tr.appendChild(packages_td);
+
+        // Job Run By
+        tr.appendChild(create_text_cell(record.job_run_by));
+
+        // Date
+        tr.appendChild(create_text_cell(record.job_date));
+
+        return tr;
+    }
+
+    /**
+     * Displays job history in a DataTable
+     * @returns {Promise<boolean>} False if no records found, true otherwise
+     */
+    obj.display_jobs_history = async function () {
         try {
+            const records = await jobsModule.get_jobs_history();
 
-            const api_key = helperModule.getParameterByName('api_key');
-            const response = await httpModule.req({
-                method: 'POST',
-                url: nginx_path + '/api/v1/kaltura/queue/clear?&api_key=' + api_key,
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                timeout: 600000
-            });
-
-            if (response.status === 204) {
-                return response.data;
+            if (!records || !Array.isArray(records.data)) {
+                throw new Error('Invalid response format');
             }
 
+            if (records.data.length === 0) {
+                display_message('#message', 'info', 'No jobs found');
+                return false;
+            }
+
+            // Get tbody element and clear existing content
+            const tbody = clear_element('#jobs-history');
+
+            if (!tbody) {
+                throw new Error('Table body element not found');
+            }
+
+            // Use DocumentFragment for efficient batch DOM insertion
+            const fragment = document.createDocumentFragment();
+
+            records.data.forEach(function(record) {
+                fragment.appendChild(build_table_row_element(record));
+            });
+
+            tbody.appendChild(fragment);
+
+            // Initialize DataTable with optimized configuration
+            new DataTable('#jobs-history-table', {
+                paging: true,
+                pageLength: 25,
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+                ordering: true,
+                order: [[6, 'desc']], // Sort by date descending
+                searching: true,
+                info: true,
+                autoWidth: false, // Respect CSS column widths
+                responsive: false,
+                language: {
+                    emptyTable: 'No jobs available',
+                    loadingRecords: 'Loading...',
+                    processing: 'Processing...',
+                    search: 'Filter:',
+                    zeroRecords: 'No matching jobs found'
+                },
+                columnDefs: [
+                    {
+                        targets: [0, 1, 2, 3, 5, 6],
+                        className: 'dt-head-left dt-body-left'
+                    },
+                    {
+                        targets: 4, // Packages column
+                        orderable: false,
+                        className: 'dt-head-left dt-body-left'
+                    }
+                ]
+            });
+
+            // Show table after DataTable initialization
+            const table_element = document.querySelector('#jobs-history-table');
+
+            if (table_element) {
+                table_element.style.visibility = 'visible';
+            }
+
+            // Clear any loading messages
+            clear_element('#message');
+
+            return true;
+
         } catch (error) {
-            domModule.html('#message', '<div class="alert alert-danger"><i class=""></i> ' + error.message + '</div>');
+            const error_message = error instanceof Error ? error.message : 'An unexpected error occurred';
+            display_message('#message', 'danger', error_message);
+            throw error;
         }
-    }
-    */
+    };
 
     /**
      * Initializes the workspace packages display
@@ -1257,66 +691,16 @@ const jobsModule = (function () {
      * @throws {Error} When initialization fails
      */
     obj.init = async function () {
-        /**
-         * Sanitizes a string for safe HTML insertion
-         * @param {*} value - Value to sanitize
-         * @returns {string} Sanitized string
-         */
-        function sanitize_html(value) {
-            const string_value = value === null || value === undefined ? '' : String(value);
-            return string_value
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
-
-        /**
-         * Safely sets innerHTML of an element
-         * @param {string} selector - CSS selector
-         * @param {string} html - HTML content to set
-         * @returns {boolean} True if element found and updated, false otherwise
-         */
-        function set_element_html(selector, html) {
-            const element = document.querySelector(selector);
-
-            if (!element) {
-                console.warn('Element not found: ' + selector);
-                return false;
-            }
-
-            element.innerHTML = html;
-            return true;
-        }
-
         try {
-            // Display loading message
-            const loading_displayed = set_element_html(
-                '#message',
-                '<div class="alert alert-info"><i class="fa fa-spinner fa-spin"></i> Loading...</div>'
-            );
-
-            if (!loading_displayed) {
-                console.warn('Unable to display loading message');
-            }
+            display_message('#message', 'info', 'Loading...', 'fa-spinner fa-spin');
 
             await astoolsModule.display_workspace_packages();
 
-            // Clear loading message on success
-            set_element_html('#message', '');
+            clear_element('#message');
 
         } catch (error) {
             const error_message = error instanceof Error ? error.message : 'An unexpected error occurred';
-
-            set_element_html(
-                '#message',
-                '<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> ' +
-                sanitize_html(error_message) +
-                '</div>'
-            );
-
-            // Re-throw for upstream error handling
+            display_message('#message', 'danger', error_message);
             throw error;
         }
     };

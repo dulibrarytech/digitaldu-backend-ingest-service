@@ -32,31 +32,21 @@
                             </div>
                             <div id="ping"></div>
                             <div class="x_content">
-                                <div id="message"></div>
-                                <!--
-                                <table id="ingest-status-table" class="table table-striped table-bordered bulk_action" style="visibility: hidden">
+                                <div id="message" role="alert" aria-live="polite"></div>
+                                <table id="jobs-history-table"
+                                       class="table table-striped table-bordered bulk_action"
+                                       role="grid"
+                                       aria-label="Jobs History Table"
+                                       style="visibility: hidden;">
                                     <thead>
                                     <tr>
-                                        <th>Collection Folder</th>
-                                        <th>Archival Object Folder(s)</th>
-                                        <th>Ingest Status</th>
-                                        <th>Microservice</th>
-                                        <th>Error</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody id="batch"></tbody>
-                                </table>
-                                -->
-                                <table id="jobs-history-table" class="table table-striped table-bordered bulk_action" style="width: 100%;visibility: hidden">
-                                    <thead>
-                                    <tr>
-                                        <th style="width: 30%">Job ID</th>
-                                        <th style="width: 30%">Job Type</th>
-                                        <th style="width: 30%">Status</th>
-                                        <th style="width: 30%">Collection Folder</th>
-                                        <th style="width: 30%">Packages</th>
-                                        <th style="width: 30%">Job Run By</th>
-                                        <th style="width: 30%">Date</th>
+                                        <th scope="col">Job ID</th>
+                                        <th scope="col">Job Type</th>
+                                        <th scope="col">Status</th>
+                                        <th scope="col">Collection Folder</th>
+                                        <th scope="col">Packages</th>
+                                        <th scope="col">Job Run By</th>
+                                        <th scope="col">Date</th>
                                     </tr>
                                     </thead>
                                     <tbody id="jobs-history"></tbody>
@@ -82,7 +72,6 @@
     <script src="/repo/ingester/static/app/ingest.module.js"></script>
     <script>
         jobsModule.display_jobs_history();
-        // ingestModule.start_ingest();
     </script>
 </body>
 </html>
