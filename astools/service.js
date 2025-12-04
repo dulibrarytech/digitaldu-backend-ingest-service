@@ -34,7 +34,7 @@ const KALTURA_MEDIA_EXTENSIONS = [
 exports.get_workspace_packages = async function() {
 
     try {
-
+        console.log('INFO: [/astools/controller (workspace)] Get workspace packages');
         LOGGER.module().info('INFO: [/astools/service (get_workspace_packages)] Retrieving workspace packages');
 
         // Validate configuration
@@ -45,7 +45,7 @@ exports.get_workspace_packages = async function() {
 
         // Construct API URL with proper encoding
         const api_key = encodeURIComponent(CONFIG.astools_service_api_key);
-        const astools_url = `${CONFIG.astools_service}workspace/packages/files?package_name=001-ready&api_key=${api_key}`;
+        const astools_url = `${CONFIG.astools_service}workspace?api_key=${api_key}`;
 
         // Make HTTP request
         const response = await HTTP.get(astools_url, {
@@ -54,7 +54,7 @@ exports.get_workspace_packages = async function() {
             },
             timeout: 30000 // 30 second timeout
         });
-
+        console.log('RESPONSE ', response);
         // Validate response
         if (!response || response.status !== 200) {
             LOGGER.module().error('ERROR: [/astools/service (get_workspace_packages)] Invalid response from workspace API', {
