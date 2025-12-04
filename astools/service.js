@@ -34,7 +34,7 @@ const KALTURA_MEDIA_EXTENSIONS = [
 exports.get_workspace_packages = async function() {
 
     try {
-        console.log('INFO: [/astools/controller (workspace)] Get workspace packages');
+
         LOGGER.module().info('INFO: [/astools/service (get_workspace_packages)] Retrieving workspace packages');
 
         // Validate configuration
@@ -326,6 +326,7 @@ const get_package_files = function (package_name, callback) {
     })();
 }
 
+/*
 exports.make_digital_objects = async function(args) {
 
     try {
@@ -383,7 +384,7 @@ exports.make_digital_objects = async function(args) {
         // Construct API URL with proper encoding
         const api_key = encodeURIComponent(CONFIG.astools_service_api_key);
         const astools_url = `${CONFIG.astools_service}make-digital-objects?api_key=${api_key}`;
-
+        console.log('URL ', astools_url);
         // Convert true/false to 1/0
         let is_kaltura_value = 0;
         if (args.is_kaltura === true || args.is_kaltura === 1) {
@@ -485,6 +486,387 @@ exports.make_digital_objects = async function(args) {
         };
     }
 };
+*/
+
+///
+
+/**
+ * Creates digital objects in ArchivesSpace via the ASTools web service.
+ *
+ * Sends a POST request to the make-digital-objects endpoint which executes
+ * the make_digital_object.py CLI script for batch processing.
+ *
+ * @param {Object} args - Configuration object for digital object creation
+ * @param {string} args.folder - Batch folder name (relative to WORKSPACE, required)
+ * @param {Array} [args.packages=[]] - List of package names (optional)
+ * @param {Array} [args.files=[]] - List of file objects with Kaltura mappings (required if is_kaltura is true)
+ * @param {boolean|number} [args.is_kaltura=false] - Whether to process Kaltura IDs (0/1 or true/false)
+ * @param {boolean} [args.no_caption=true] - Skip caption processing
+ * @param {boolean} [args.no_publish=false] - Do not publish components
+ * @param {boolean} [args.test=false] - Use test ArchivesSpace server
+ * @param {boolean} [args.verbose=false] - Enable verbose logging
+ * @param {number} [args.timeout=3600000] - Request timeout in milliseconds (default: 1 hour)
+ * @returns {Promise<Object>} Response object with result and errors
+ *
+ * @example
+ * // Basic usage without Kaltura
+ * const result = await make_digital_objects({
+ *     folder: 'batch_2024_01',
+ *     packages: ['package1', 'package2']
+ * });
+ *
+ * @example
+ * // With Kaltura integration
+ * const result = await make_digital_objects({
+ *     folder: 'batch_2024_01',
+ *     packages: ['package1'],
+ *     files: [
+ *         { file: 'video1.mp4', entry_id: 'kaltura_id_123' },
+ *         { file: 'video2.mp4', entry_id: 'kaltura_id_456' }
+ *     ],
+ *     is_kaltura: true
+ * });
+ */
+exports.make_digital_objects = async function (args) {
+
+    try {
+
+        // Validate args object
+        if (!args || typeof args !== 'object') {
+            LOGGER.module().error('ERROR: [/astools/service (make_digital_objects)] Invalid args parameter');
+            return {
+                result: null,
+                errors: ['Invalid arguments provided']
+            };
+        }
+
+        // Validate required folder field
+        if (!args.folder || typeof args.folder !== 'string' || args.folder.trim().length === 0) {
+            LOGGER.module().error('ERROR: [/astools/service (make_digital_objects)] Invalid folder parameter');
+            return {
+                result: null,
+                errors: ['Invalid folder parameter: folder is required']
+            };
+        }
+
+        // Sanitize folder name - check for path traversal attempts
+        const folder = args.folder.trim();
+        if (folder.includes('..') || folder.startsWith('/') || folder.startsWith('\\')) {
+            LOGGER.module().error('ERROR: [/astools/service (make_digital_objects)] Invalid folder path detected', {
+                folder: folder
+            });
+            return {
+                result: null,
+                errors: ['Invalid folder parameter: path traversal not allowed']
+            };
+        }
+
+        // Normalize is_kaltura to integer (0 or 1)
+        let is_kaltura_value = 0;
+        if (args.is_kaltura === true || args.is_kaltura === 1 || args.is_kaltura === '1') {
+            is_kaltura_value = 1;
+        }
+
+        // Validate packages (optional, defaults to empty array)
+        const packages = Array.isArray(args.packages) ? args.packages : [];
+
+        // Validate files array
+        const files = Array.isArray(args.files) ? args.files : [];
+
+        // Files are required when is_kaltura is enabled
+        if (is_kaltura_value === 1 && files.length === 0) {
+            LOGGER.module().error('ERROR: [/astools/service (make_digital_objects)] Files required when is_kaltura is enabled');
+            return {
+                result: null,
+                errors: ['Invalid files parameter: files are required when is_kaltura is enabled']
+            };
+        }
+
+        // Normalize file entries to expected format
+        // Handles common field name variations (filename, name, fileName -> file)
+        const normalized_files = files.map((entry, index) => {
+            if (!entry || typeof entry !== 'object') {
+                return entry; // Let Python handle invalid entries
+            }
+
+            // If entry already has 'file' field, return as-is
+            if (entry.file && typeof entry.file === 'string') {
+                return entry;
+            }
+
+            // Try common alternative field names
+            const file_value = entry.filename || entry.fileName || entry.name || entry.file_name || null;
+
+            if (file_value && typeof file_value === 'string') {
+                return {
+                    ...entry,
+                    file: file_value
+                };
+            }
+
+            // Return original entry - Python will validate
+            return entry;
+        });
+
+        // Log file structure for debugging (first entry only)
+        if (normalized_files.length > 0) {
+            LOGGER.module().debug('DEBUG: [/astools/service (make_digital_objects)] File entry structure', {
+                original_keys: files[0] ? Object.keys(files[0]) : [],
+                normalized_keys: normalized_files[0] ? Object.keys(normalized_files[0]) : [],
+                total_files: normalized_files.length
+            });
+        }
+
+        // Validate configuration
+        if (!CONFIG.astools_service || !CONFIG.astools_service_api_key) {
+            LOGGER.module().error('ERROR: [/astools/service (make_digital_objects)] Missing service configuration');
+            return {
+                result: null,
+                errors: ['Service configuration is missing']
+            };
+        }
+
+        // Extract optional boolean flags with defaults matching Python endpoint
+        const no_caption = args.no_caption !== undefined ? Boolean(args.no_caption) : true;
+        const no_publish = args.no_publish !== undefined ? Boolean(args.no_publish) : false;
+        const use_test_server = args.test !== undefined ? Boolean(args.test) : false;
+        const verbose = args.verbose !== undefined ? Boolean(args.verbose) : false;
+
+        LOGGER.module().info('INFO: [/astools/service (make_digital_objects)] Creating digital objects', {
+            folder: folder,
+            package_count: packages.length,
+            file_count: files.length,
+            is_kaltura: is_kaltura_value === 1,
+            no_caption: no_caption,
+            no_publish: no_publish,
+            test: use_test_server,
+            verbose: verbose
+        });
+
+        // Construct API URL with proper encoding
+        const api_key = encodeURIComponent(CONFIG.astools_service_api_key);
+        const base_url = CONFIG.astools_service.endsWith('/')
+            ? CONFIG.astools_service
+            : CONFIG.astools_service + '/';
+        const astools_url = `${base_url}make-digital-objects?api_key=${api_key}`;
+
+        // Prepare request payload matching Python endpoint expectations
+        const payload = {
+            data: {
+                folder: folder,
+                packages: packages,
+                files: normalized_files,
+                is_kaltura: is_kaltura_value,
+                no_caption: no_caption,
+                no_publish: no_publish,
+                test: use_test_server,
+                verbose: verbose
+            }
+        };
+
+        // Configure timeout (default 1 hour to match Python endpoint)
+        const timeout_ms = typeof args.timeout === 'number' && args.timeout > 0
+            ? args.timeout
+            : 3600000; // 1 hour default
+
+        // Make HTTP request with validateStatus to handle all response codes
+        const response = await HTTP.post(astools_url, payload, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            timeout: timeout_ms,
+            validateStatus: function (status) {
+                // Accept all status codes so we can handle them ourselves
+                return status >= 200 && status < 600;
+            }
+        });
+
+        // Handle response based on status code
+        if (!response) {
+            LOGGER.module().error('ERROR: [/astools/service (make_digital_objects)] No response received from API');
+            return {
+                result: null,
+                errors: ['No response received from API']
+            };
+        }
+
+        const status = response.status;
+        const response_data = response.data;
+
+        // Log response details for debugging
+        LOGGER.module().debug('DEBUG: [/astools/service (make_digital_objects)] Response received', {
+            status: status,
+            has_data: !!response_data,
+            folder: folder
+        });
+
+        // Handle specific HTTP status codes
+        if (status === 401) {
+            LOGGER.module().error('ERROR: [/astools/service (make_digital_objects)] Authentication failed');
+            return {
+                result: null,
+                errors: response_data?.errors || ['Authentication failed: Invalid API key']
+            };
+        }
+
+        if (status === 403) {
+            LOGGER.module().error('ERROR: [/astools/service (make_digital_objects)] Access forbidden', {
+                folder: folder
+            });
+            return {
+                result: null,
+                errors: response_data?.errors || ['Access forbidden: Path traversal or permission denied']
+            };
+        }
+
+        if (status === 404) {
+            LOGGER.module().error('ERROR: [/astools/service (make_digital_objects)] Resource not found', {
+                folder: folder
+            });
+            return {
+                result: null,
+                errors: response_data?.errors || [`Folder not found: ${folder}`]
+            };
+        }
+
+        if (status === 400) {
+            LOGGER.module().error('ERROR: [/astools/service (make_digital_objects)] Bad request', {
+                folder: folder,
+                errors: response_data?.errors
+            });
+            return {
+                result: null,
+                errors: response_data?.errors || ['Bad request: Invalid parameters']
+            };
+        }
+
+        if (status === 504) {
+            LOGGER.module().error('ERROR: [/astools/service (make_digital_objects)] Request timed out', {
+                folder: folder
+            });
+            return {
+                result: null,
+                errors: response_data?.errors || ['Request timed out: Processing took too long']
+            };
+        }
+
+        if (status >= 500) {
+            LOGGER.module().error('ERROR: [/astools/service (make_digital_objects)] Server error', {
+                status: status,
+                folder: folder,
+                errors: response_data?.errors
+            });
+
+            // For 500 errors, the Python endpoint may still return result data
+            if (response_data?.result) {
+                return {
+                    result: response_data.result,
+                    errors: response_data.errors || [`Server error: ${status}`]
+                };
+            }
+
+            return {
+                result: null,
+                errors: response_data?.errors || [`Server error: ${status}`]
+            };
+        }
+
+        // Validate response data structure for successful responses
+        if (!response_data || typeof response_data !== 'object') {
+            LOGGER.module().error('ERROR: [/astools/service (make_digital_objects)] Invalid response data structure');
+            return {
+                result: null,
+                errors: ['Invalid response data structure from API']
+            };
+        }
+
+        // Extract result and errors from response (matching Python endpoint format)
+        const result = response_data.result || null;
+        const errors = Array.isArray(response_data.errors) ? response_data.errors : [];
+
+        // Check for errors in response
+        if (errors.length > 0) {
+            LOGGER.module().warn('WARN: [/astools/service (make_digital_objects)] Errors returned from API', {
+                errors: errors,
+                folder: folder
+            });
+
+            return {
+                result: result,
+                errors: errors
+            };
+        }
+
+        // Check if result indicates success
+        const is_successful = result && result.success === true;
+
+        if (!is_successful) {
+            LOGGER.module().warn('WARN: [/astools/service (make_digital_objects)] Operation reported as unsuccessful', {
+                folder: folder,
+                result: result
+            });
+        } else {
+            LOGGER.module().info('INFO: [/astools/service (make_digital_objects)] Digital objects created successfully', {
+                folder: folder,
+                log_file: result.log_file
+            });
+        }
+
+        // Return the standardized response format
+        return {
+            result: result,
+            errors: errors
+        };
+
+    } catch (error) {
+
+        LOGGER.module().error('ERROR: [/astools/service (make_digital_objects)] Unable to make digital objects', {
+            error: error.message,
+            stack: error.stack,
+            folder: args?.folder
+        });
+
+        // Determine specific error type for better error messages
+        let error_message = 'An error occurred while creating digital objects';
+
+        if (error.code === 'ECONNREFUSED') {
+            error_message = 'Unable to connect to ASTools service';
+        } else if (error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED') {
+            error_message = 'Request to ASTools service timed out';
+        } else if (error.code === 'ENOTFOUND') {
+            error_message = 'ASTools service host not found';
+        } else if (error.code === 'ECONNRESET') {
+            error_message = 'Connection to ASTools service was reset';
+        } else if (error.response) {
+            // Axios error with response
+            const status = error.response.status;
+            const response_errors = error.response.data?.errors;
+
+            if (response_errors && Array.isArray(response_errors) && response_errors.length > 0) {
+                return {
+                    result: error.response.data?.result || null,
+                    errors: response_errors
+                };
+            }
+
+            error_message = `API error: ${status} - ${error.response.statusText || 'Unknown error'}`;
+        } else if (error.request) {
+            // Request was made but no response received
+            error_message = 'No response received from ASTools service';
+        }
+
+        // Sanitize error message for safe logging/display
+        const sanitized_message = sanitize_error_message(error.message);
+
+        return {
+            result: null,
+            errors: [`${error_message}: ${sanitized_message}`]
+        };
+    }
+};
+
+///
 
 // Callback-based wrapper for backward compatibility
 exports.make_digital_objects_callback = function(args, callback) {

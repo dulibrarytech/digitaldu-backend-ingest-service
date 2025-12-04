@@ -477,7 +477,7 @@ const astoolsModule = (function () {
 
             if (response?.status === 200) {
                 const log = response.data.data;
-                const has_errors = log.output.includes('Error:');
+                const has_errors = log.result.output.includes('Error:');
 
                 await helpers.update_job_record({
                     uuid: job_uuid,
