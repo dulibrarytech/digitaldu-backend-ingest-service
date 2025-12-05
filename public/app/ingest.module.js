@@ -206,6 +206,8 @@ const ingestModule = (function () {
      */
     obj.start_ingest = async function (batch, job_uuid) {
 
+        console.log('START');
+
         try {
             // Validate inputs
             if (!batch || typeof batch !== 'string') {
@@ -246,7 +248,6 @@ const ingestModule = (function () {
             const encoded_api_key = encodeURIComponent(api_key);
 
             const url = `${NGINX_PATH}/api/v1/ingest?batch=${encoded_batch}&job_uuid=${encoded_job_uuid}&api_key=${encoded_api_key}`;
-
             const response = await httpModule.req({
                 method: 'POST',
                 url: url,

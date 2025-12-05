@@ -30,7 +30,9 @@ const metadataModule = (function () {
      * Displays metadata check batches
      */
     obj.display_metadata_check_batches = async function() {
+
         try {
+
             helpers.clear_message_area();
             helpers.show_loading_indicator('#packages-container');
 
@@ -70,7 +72,9 @@ const metadataModule = (function () {
      * Gets packages for metadata check
      */
     obj.get_packages = async function(batch) {
+
         try {
+
             if (!batch || typeof batch !== 'string' || batch.trim().length === 0) {
                 helpers.display_error_message('Invalid batch parameter');
                 return false;
@@ -846,7 +850,9 @@ const metadataModule = (function () {
     };
 
     const check_metadata = async function(batch, package_name, job_uuid) {
+
         try {
+
             const api_key = helperModule.getParameterByName('api_key');
             helpers.display_info_message(`Checking metadata for: ${helpers.sanitize_text(package_name)}`);
 
@@ -857,7 +863,7 @@ const metadataModule = (function () {
                 headers: { 'Content-Type': 'application/json', 'X-API-Key': api_key },
                 timeout: helpers.get_config('REQUEST_TIMEOUT')
             });
-
+            console.log('RESPONSE ', response);
             if (!response || response.status !== 200) {
                 return {
                     has_errors: true,

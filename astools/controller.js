@@ -402,7 +402,7 @@ exports.check_metadata = async function (req, res) {
 
         // Check metadata parts
         const parts_result = await check_metadata_parts(batch, ingest_package, job_uuid, response);
-
+        console.log('PARTS result ', parts_result);
         if (parts_result !== true) {
             response.errors = parts_result;
         } else {
@@ -497,7 +497,8 @@ const check_metadata_parts = async function(batch, ingest_package, job_uuid, res
 
         const errors = [];
         const part_files = [];
-
+        console.log('PARTS data ', response.metadata);
+        console.log('PARTS check ', response.metadata.parts);
         // Validate metadata parts
         if (!Array.isArray(response.metadata.parts) || response.metadata.parts.length === 0) {
             return ['Metadata parts array is missing or empty'];
