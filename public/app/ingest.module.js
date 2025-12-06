@@ -206,8 +206,6 @@ const ingestModule = (function () {
      */
     obj.start_ingest = async function (batch, job_uuid) {
 
-        console.log('START');
-
         try {
             // Validate inputs
             if (!batch || typeof batch !== 'string') {

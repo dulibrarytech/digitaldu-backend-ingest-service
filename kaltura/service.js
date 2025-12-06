@@ -26,54 +26,180 @@ const client = new kaltura.Client(config);
 const DB_QUEUE = require('../config/dbqueue_config')();
 const XML_PARSER = require('xml2js');
 
-exports.get_ks_session = function (callback) {
+/**
+ * Start Kaltura session
+ * @returns {Promise<string>} Session token
+ */
+exports.get_ks_session = async function() {
+
+    const secret = KALTURA_CONFIG.kaltura_secret_key;
+    const user_id = KALTURA_CONFIG.kaltura_user_id;
+    const type = kaltura.enums.SessionType.USER;
+    const partner_id = KALTURA_CONFIG.kaltura_partner_id;
+    const expiry = 86400;
+    const privileges = kaltura.enums.SessionType.ADMIN;
+
+    const timeout_ms = 10000;
+
+    const session_promise = kaltura.services.session
+        .start(secret, user_id, type, partner_id, expiry, privileges)
+        .execute(client);
+
+    const timeout_promise = new Promise((_, reject) => {
+        setTimeout(() => {
+            reject(new Error('Session request timed out.'));
+        }, timeout_ms);
+    });
+
+    const session = await Promise.race([session_promise, timeout_promise]);
+
+    return session;
+}
+
+/**
+ * Get Kaltura metadata by identifier
+ * @param {string} identifier - Search term/identifier
+ * @param {string} session - Kaltura session token
+ * @returns {Promise<Object|null>} Search results or null on failure
+ */
+async function get_ks_metadata(identifier, session) {
+
+    if (!is_valid_string(identifier)) {
+        throw new Error('Invalid identifier. Non-empty string required.');
+    }
+
+    if (!is_valid_string(session)) {
+        throw new Error('Invalid session. Non-empty string required.');
+    }
+
+    const sanitized_identifier = sanitize_search_term(identifier);
+
+    if (sanitized_identifier.length === 0) {
+        throw new Error('Invalid identifier. Contains no valid characters.');
+    }
+
+    client.setKs(session);
+
+    const search_params = build_search_params(sanitized_identifier);
+    const pager = new kaltura.objects.Pager();
+    const timeout_ms = 15000;
+
+    const search_promise = kaltura.services.eSearch
+        .searchEntry(search_params, pager)
+        .execute(client);
+
+    const timeout_promise = new Promise((_, reject) => {
+        setTimeout(() => {
+            reject(new Error('Metadata search request timed out.'));
+        }, timeout_ms);
+    });
+
+    const result = await Promise.race([search_promise, timeout_promise]);
+
+    if (!result || typeof result !== 'object') {
+        throw new Error('Invalid response from Kaltura search.');
+    }
+
+    return result;
+}
+
+/**
+ * Validate string input
+ * @param {*} value - Value to validate
+ * @returns {boolean} True if valid non-empty string
+ */
+function is_valid_string(value) {
+    return typeof value === 'string' && value.trim().length > 0;
+}
+
+/**
+ * Sanitize search term to prevent injection
+ * @param {string} term - Raw search term
+ * @returns {string} Sanitized search term
+ */
+function sanitize_search_term(term) {
+
+    const sanitized = term
+        .trim()
+        .replace(/[<>\"\'\\]/g, '')
+        .substring(0, 256);
+
+    return sanitized;
+}
+
+/**
+ * Build Kaltura eSearch parameters
+ * @param {string} search_term - Sanitized search term
+ * @returns {Object} Configured search parameters
+ */
+function build_search_params(search_term) {
+
+    const search_params = new kaltura.objects.ESearchEntryParams();
+    const search_operator = new kaltura.objects.ESearchEntryOperator();
+    const search_item = new kaltura.objects.ESearchUnifiedItem();
+
+    search_item.itemType = kaltura.enums.ESearchItemType.EXACT_MATCH;
+    search_item.searchTerm = search_term;
+
+    search_operator.searchItems = [search_item];
+
+    search_params.orderBy = new kaltura.objects.ESearchOrderBy();
+    search_params.searchOperator = search_operator;
+    search_params.aggregations = new kaltura.objects.ESearchAggregation();
+
+    return search_params;
+}
+
+/**
+ * Get Kaltura metadata - Express route handler
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+exports.get_ks_metadata = async function (req, res) {
 
     try {
 
-        const secret = KALTURA_CONFIG.kaltura_secret_key;
-        const userId = KALTURA_CONFIG.kaltura_user_id;
-        const type = kaltura.enums.SessionType.USER;
-        const partnerId = KALTURA_CONFIG.kaltura_partner_id;
-        const expiry = 86400;
-        const privileges = kaltura.enums.SessionType.ADMIN;
+        const identifier = typeof req.query.identifier === 'string'
+            ? req.query.identifier.trim()
+            : null;
 
-        kaltura.services.session.start(secret, userId, type, partnerId, expiry, privileges)
-            .execute(client)
-            .then(result => {
-                callback(result);
+        const session = typeof req.query.session === 'string'
+            ? req.query.session.trim()
+            : null;
+
+        if (!identifier) {
+            res.status(400).send({
+                error: true,
+                message: 'Bad request. Identifier is required.'
             });
+            return;
+        }
+
+        if (!session) {
+            res.status(400).send({
+                error: true,
+                message: 'Bad request. Session is required.'
+            });
+            return;
+        }
+
+        const result = await get_ks_metadata(identifier, session);
+
+        res.status(200).send({
+            error: false,
+            data: result
+        });
 
     } catch (error) {
-        callback(error);
+        console.error('get_ks_metadata error:', error.message);
+        res.status(500).send({
+            error: true,
+            message: 'Unable to retrieve metadata.'
+        });
     }
 };
 
-exports.get_ks_metadata = async function (identifier, session) { // , callback
-
-    try {
-
-        client.setKs(session);
-        const searchParams = new kaltura.objects.ESearchEntryParams();
-        searchParams.orderBy = new kaltura.objects.ESearchOrderBy();
-        searchParams.searchOperator = new kaltura.objects.ESearchEntryOperator();
-        searchParams.searchOperator.searchItems = [];
-        searchParams.searchOperator.searchItems[0] = new kaltura.objects.ESearchUnifiedItem();
-        searchParams.searchOperator.searchItems[0].itemType = kaltura.enums.ESearchItemType.EXACT_MATCH;
-        // searchParams.searchOperator.searchItems[0].fieldName = kaltura.enums.ESearchEntryFieldName.NAME;
-        searchParams.searchOperator.searchItems[0].searchTerm = identifier;
-        searchParams.aggregations = new kaltura.objects.ESearchAggregation();
-        const pager = new kaltura.objects.Pager();
-
-        return await kaltura.services.eSearch.searchEntry(searchParams, pager)
-            .execute(client);
-
-    } catch (error) {
-        console.log(error);
-        // callback(error);
-    }
-};
-
-////////////////////////////////
+//////////EXPORT//////////////////////
 
 exports.process_metadata = function (metadata, callback) {
     console.log(metadata);

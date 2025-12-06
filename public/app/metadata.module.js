@@ -863,7 +863,7 @@ const metadataModule = (function () {
                 headers: { 'Content-Type': 'application/json', 'X-API-Key': api_key },
                 timeout: helpers.get_config('REQUEST_TIMEOUT')
             });
-            console.log('RESPONSE ', response);
+
             if (!response || response.status !== 200) {
                 return {
                     has_errors: true,

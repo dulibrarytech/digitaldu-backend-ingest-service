@@ -1,19 +1,19 @@
 /**
- * ASTools Service Module
- *
- * Copyright 2025 University of Denver
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+
+ Copyright 2025 University of Denver
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+ http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
  */
 
 'use strict';
@@ -1133,11 +1133,6 @@ exports.get_packages = async function (batch) {
 
 /**
  * Checks and processes metadata for a batch package.
- *
- * Returns metadata structure compatible with controller's check_metadata_parts function.
- * The primary metadata (from first URI) is spread at the metadata level for backward
- * compatibility, with additional processing info in _meta property.
- *
  * @param {string} batch - The batch/folder name
  * @param {string} archival_package - The archival package name
  * @returns {Promise<Object>} - Response with errors array and metadata object

@@ -128,9 +128,9 @@ const Ingest_service = class {
                 obj.job_uuid = job_uuid;
                 packages.push(obj);
             }
-            console.log('PACKAGES ', packages);
+
             const result = await INGEST_TASKS.queue_packages(packages);
-            console.log('RESULT ', result);
+
             if (result === false) {
 
                 LOGGER.module().error('ERROR: [/ingester/service module (start_ingest)] Ingest halted');
