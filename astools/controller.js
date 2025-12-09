@@ -764,3 +764,20 @@ exports.update_job = async function (req, res) {
         res.status(500).send({message: `${error.message}`});
     }
 };
+
+exports.delete_job = async function (req, res) {
+
+    try {
+
+        const job_uuid = req.query.uuid;
+        const response = await MODEL.delete_job(job_uuid);
+
+        res.status(204).send({
+            data: response
+        });
+
+    } catch (error) {
+        LOGGER.module().error('ERROR: [/astools/controller (delete_job)] unable to delete job ' + error.message);
+        res.status(500).send({message: `${error.message}`});
+    }
+};

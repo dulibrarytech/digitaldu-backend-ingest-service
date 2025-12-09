@@ -95,3 +95,15 @@ exports.get_jobs_history = async function () {
         return false;
     }
 };
+
+exports.delete_job = async function (uuid) {
+
+    try {
+
+        return await TASKS.delete_job(uuid);
+
+    } catch (error) {
+        LOGGER.module().error('ERROR: [/astools/task (delete_job)] unable to delete job ' + error.message);
+        return false;
+    }
+};

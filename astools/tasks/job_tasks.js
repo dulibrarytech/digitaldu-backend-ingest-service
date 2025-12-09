@@ -138,6 +138,21 @@ const Job_tasks = class {
             LOGGER.module().error('ERROR: [/astools/tasks (get_jobs_history)] unable to get jobs history ' + error.message);
         }
     }
+
+    async delete_job(uuid) {
+
+        try {
+
+            await this.DB(this.TABLES.repo_jobs)
+                .where({
+                    uuid: uuid
+                })
+                .del();
+
+        } catch (error) {
+            LOGGER.module().error('ERROR: [/astools/tasks (update_job)] Unable to get job ' + error.message);
+        }
+    }
 }
 
 module.exports = Job_tasks;

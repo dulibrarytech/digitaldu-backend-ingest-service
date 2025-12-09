@@ -56,4 +56,7 @@ module.exports = async function (app) {
 
     app.route(`${APP_CONFIG.app_path}/api/v1/astools/jobs`)
         .post(CONTROLLER.create_job); // TOKEN.verify,
+
+    app.route(`${APP_CONFIG.app_path}/api/v1/astools/jobs`)
+        .delete(CONTROLLER.delete_job); // TOKEN.verify,
 };

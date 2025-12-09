@@ -412,7 +412,9 @@ const jobsModule = (function () {
      * @throws {Error} When job data or API key is missing, or request fails
      */
     obj.update_job = async function (job) {
+
         try {
+
             if (!job || typeof job !== 'object' || Array.isArray(job)) {
                 throw new Error('Valid job data is required');
             }
@@ -452,7 +454,9 @@ const jobsModule = (function () {
      * @returns {Promise<Object>} Kaltura entry IDs data
      */
     obj.get_ks_entry_ids = async function () {
+
         try {
+
             const encoded_api_key = get_encoded_api_key();
 
             const response = await httpModule.req({
@@ -481,7 +485,9 @@ const jobsModule = (function () {
      * @throws {Error} When API key is missing or request fails
      */
     obj.clear_ks_queue = async function () {
+
         try {
+
             const encoded_api_key = get_encoded_api_key();
 
             const response = await httpModule.req({
@@ -607,7 +613,9 @@ const jobsModule = (function () {
      * @returns {Promise<boolean>} False if no records found, true otherwise
      */
     obj.display_jobs_history = async function () {
+
         try {
+
             const records = await jobsModule.get_jobs_history();
 
             if (!records || !Array.isArray(records.data)) {
@@ -685,17 +693,48 @@ const jobsModule = (function () {
         }
     };
 
+    // delete job
+    obj.delete_job = async function (uuid) {
+
+        try {
+
+            if (!uuid) {
+                throw new Error('Job must have a uuid or id');
+            }
+
+            const encoded_api_key = get_encoded_api_key();
+
+            const response = await httpModule.req({
+                method: 'DELETE',
+                url: NGINX_PATH + '/api/v1/astools/jobs?uuid=' + uuid + '&api_key=' + encoded_api_key,
+                headers: { 'Content-Type': 'application/json' },
+                timeout: 60000
+            });
+
+            if (response.status !== 204) {
+                throw new Error('Request failed with status ' + response.status);
+            }
+
+            return { success: true };
+
+        } catch (error) {
+            const error_message = error instanceof Error ? error.message : 'An unexpected error occurred';
+            display_message('#message', 'danger', error_message);
+            throw error;
+        }
+    };
+
     /**
      * Initializes the workspace packages display
      * @returns {Promise<void>}
      * @throws {Error} When initialization fails
      */
     obj.init = async function () {
+
         try {
+
             display_message('#message', 'info', 'Loading...', 'fa-spinner fa-spin');
-
             await astoolsModule.display_workspace_packages();
-
             clear_element('#message');
 
         } catch (error) {

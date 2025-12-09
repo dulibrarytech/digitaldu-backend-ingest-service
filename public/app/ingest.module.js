@@ -99,14 +99,22 @@ const ingestModule = (function () {
                         aria-label="Start ingest for ${sanitize_html(batch)}">
                     <i class="fa fa-cogs"></i> 
                     <span>Start</span>
+                </button>&nbsp;<button type="button" 
+                        class="btn btn-sm btn-default delete-job" 
+                        data-job-uuid="${sanitize_html(job_uuid)}"
+                        aria-label="Delete job record ${sanitize_html(batch)}">
+                    <i class="fa fa-trash"></i> 
+                    <span>Delete</span>
                 </button>`;
-    }
+    } // // data-batch="${sanitize_html(batch)}"
 
     /**
      * Displays collection packages for ingest
      */
     async function display_packages() {
+
         try {
+
             await status_checks();
 
             // Clear localStorage safely
@@ -391,7 +399,9 @@ const ingestModule = (function () {
      * @returns {Promise<Array>} Array of status records
      */
     async function get_ingest_status() {
+
         try {
+
             const api_key = helperModule.getParameterByName('api_key');
 
             if (!api_key) {
@@ -432,7 +442,9 @@ const ingestModule = (function () {
      * @param {Array} data - Array of status records
      */
     function display_status_records(data) {
+
         try {
+
             if (!Array.isArray(data) || data.length === 0) {
                 return;
             }
@@ -537,7 +549,9 @@ const ingestModule = (function () {
      * Handles complete ingest status
      */
     async function handle_complete_ingest() {
+
         try {
+
             setTimeout(async () => {
                 const job_uuid = typeof window.localStorage !== 'undefined'
                     ? window.localStorage.getItem('job_uuid')
@@ -562,7 +576,9 @@ const ingestModule = (function () {
      * Clears the ingest queue
      */
     obj.clear_ingest_queue = async function () {
+
         try {
+
             const api_key = helperModule.getParameterByName('api_key');
 
             if (!api_key) {
@@ -609,10 +625,20 @@ const ingestModule = (function () {
     };
 
     /**
+     * Cleanup function to be called when module is no longer needed
+     */
+    obj.cleanup = function () {
+        clear_status_timer();
+        console.log('Ingest module cleaned up');
+    };
+
+    /**
      * Initializes the ingest module
      */
     obj.init = async function () {
+
         try {
+
             console.log('Initializing ingest module');
 
             await display_packages();
@@ -633,19 +659,34 @@ const ingestModule = (function () {
                         }
                     }
                 });
+
+                packages_container.addEventListener('click', async function(event) {
+                    const button = event.target.closest('.delete-job');
+                    if (button) {
+
+                        const job_uuid = button.dataset.jobUuid;
+
+                        if (job_uuid) {
+
+                            let is_deleted = await jobsModule.delete_job(job_uuid);
+
+                            if (is_deleted.success === true) {
+                                window.location.reload();
+                            } else {
+                                console.log('unable to delete job');
+                            }
+
+                        } else {
+                            console.error('Missing job_uuid data attributes');
+                        }
+                    }
+                });
+
             }
 
         } catch (error) {
             console.error('Error in init:', error);
         }
-    };
-
-    /**
-     * Cleanup function to be called when module is no longer needed
-     */
-    obj.cleanup = function () {
-        clear_status_timer();
-        console.log('Ingest module cleaned up');
     };
 
     return obj;
