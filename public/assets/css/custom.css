@@ -452,69 +452,326 @@ table.no-margin .progress {
 
 /* ============================================================
    Jobs History Table Styles
-   - Fixed layout for consistent column widths across browsers
-   - Equal column distribution (14.28% each for 7 columns)
+   - Mobile-first responsive design
+   - Card-based layout on small screens
+   - Fixed layout for consistent column widths on desktop
    ============================================================ */
 
-#jobs-history-table {
-    table-layout: fixed;
+/* Ensure x_panel and x_content clip overflow */
+.x_panel {
+    overflow: hidden;
+}
+
+.x_panel .x_content {
+    overflow: hidden;
+}
+
+/* Table container for horizontal scroll */
+.jobs-table-container {
     width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+/* Scroll indicator shadow on left/right edges */
+.jobs-table-container.has-scroll {
+    background:
+            linear-gradient(to right, #fff 30%, rgba(255,255,255,0)),
+            linear-gradient(to left, #fff 30%, rgba(255,255,255,0)),
+            linear-gradient(to right, rgba(0,0,0,0.1), rgba(0,0,0,0)),
+            linear-gradient(to left, rgba(0,0,0,0.1), rgba(0,0,0,0));
+    background-position: left center, right center, left center, right center;
+    background-repeat: no-repeat;
+    background-size: 40px 100%, 40px 100%, 15px 100%, 15px 100%;
+    background-attachment: local, local, scroll, scroll;
+}
+
+#jobs-history-table {
+    width: 100%;
+    min-width: 1100px; /* Minimum width before horizontal scroll kicks in */
     border-collapse: collapse;
 }
 
-#jobs-history-table thead th,
-#jobs-history-table tbody td {
-    vertical-align: middle;
+/* Ensure DataTables wrapper respects container */
+.jobs-table-container .dataTables_wrapper {
+    width: 100%;
+    max-width: 100%;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    padding: 8px 10px;
-    box-sizing: border-box;
 }
 
-/* Equal column widths - 7 columns at ~14.28% each */
-#jobs-history-table th:nth-child(1),
-#jobs-history-table td:nth-child(1) {
-    width: 14.28%;
+/* Scrollable area for table only */
+.jobs-table-container .dataTables_scroll,
+.jobs-table-container .dataTables_scrollBody {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
 }
 
-#jobs-history-table th:nth-child(2),
-#jobs-history-table td:nth-child(2) {
-    width: 14.28%;
+/* DataTables scrollX wrapper styles */
+.dataTables_scrollHead,
+.dataTables_scrollBody {
+    overflow: hidden !important;
 }
 
-#jobs-history-table th:nth-child(3),
-#jobs-history-table td:nth-child(3) {
-    width: 14.28%;
+.dataTables_scrollBody {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
 }
 
-#jobs-history-table th:nth-child(4),
-#jobs-history-table td:nth-child(4) {
-    width: 14.28%;
+/* Ensure scrollbar is visible */
+.dataTables_scrollBody::-webkit-scrollbar {
+    height: 8px;
 }
 
-#jobs-history-table th:nth-child(5),
-#jobs-history-table td:nth-child(5) {
-    width: 14.28%;
+.dataTables_scrollBody::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
 }
 
-#jobs-history-table th:nth-child(6),
-#jobs-history-table td:nth-child(6) {
-    width: 14.28%;
+.dataTables_scrollBody::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
 }
 
-#jobs-history-table th:nth-child(7),
-#jobs-history-table td:nth-child(7) {
-    width: 14.32%;
+.dataTables_scrollBody::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
 
-/* Package list cell - allow wrapping for list content */
-#jobs-history-table td.jobs-packages-cell {
-    white-space: normal;
-    overflow: visible;
+/* Keep DataTables controls outside scroll area */
+.jobs-table-container .dataTables_length,
+.jobs-table-container .dataTables_filter,
+.jobs-table-container .dataTables_info,
+.jobs-table-container .dataTables_paginate {
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
 }
 
-/* Package list styling */
+/* Desktop styles (default) */
+@media (min-width: 992px) {
+    #jobs-history-table {
+        table-layout: fixed;
+    }
+
+    #jobs-history-table thead th,
+    #jobs-history-table tbody td {
+        vertical-align: middle;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        padding: 10px 12px;
+        box-sizing: border-box;
+    }
+
+    /* Equal column widths - 7 columns at ~14.28% each */
+    #jobs-history-table th:nth-child(1),
+    #jobs-history-table td:nth-child(1) {
+        width: 14.28%;
+    }
+
+    #jobs-history-table th:nth-child(2),
+    #jobs-history-table td:nth-child(2) {
+        width: 14.28%;
+    }
+
+    #jobs-history-table th:nth-child(3),
+    #jobs-history-table td:nth-child(3) {
+        width: 14.28%;
+    }
+
+    #jobs-history-table th:nth-child(4),
+    #jobs-history-table td:nth-child(4) {
+        width: 14.28%;
+    }
+
+    #jobs-history-table th:nth-child(5),
+    #jobs-history-table td:nth-child(5) {
+        width: 14.28%;
+    }
+
+    #jobs-history-table th:nth-child(6),
+    #jobs-history-table td:nth-child(6) {
+        width: 14.28%;
+    }
+
+    #jobs-history-table th:nth-child(7),
+    #jobs-history-table td:nth-child(7) {
+        width: 14.32%;
+    }
+
+    /* Package list cell - allow wrapping for list content */
+    #jobs-history-table td.jobs-packages-cell {
+        white-space: normal;
+        overflow: visible;
+    }
+}
+
+/* Tablet styles */
+@media (min-width: 768px) and (max-width: 991px) {
+    #jobs-history-table {
+        table-layout: auto;
+        font-size: 12px;
+    }
+
+    #jobs-history-table thead th,
+    #jobs-history-table tbody td {
+        padding: 8px 6px;
+        vertical-align: middle;
+    }
+
+    #jobs-history-table thead th {
+        white-space: nowrap;
+    }
+
+    #jobs-history-table tbody td {
+        word-break: break-word;
+    }
+}
+
+/* Mobile styles - Card layout */
+@media (max-width: 767px) {
+    /* Remove min-width for card layout */
+    #jobs-history-table {
+        min-width: 0;
+    }
+
+    /* Hide table header on mobile */
+    #jobs-history-table thead {
+        display: none;
+    }
+
+    #jobs-history-table,
+    #jobs-history-table tbody {
+        display: block;
+        width: 100%;
+    }
+
+    /* Each row becomes a card */
+    #jobs-history-table tbody tr {
+        display: block;
+        margin-bottom: 16px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    #jobs-history-table tbody tr:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Each cell becomes a row in the card */
+    #jobs-history-table tbody td {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        padding: 10px 12px;
+        border: none;
+        border-bottom: 1px solid #eee;
+        text-align: left;
+        min-height: 44px;
+        word-break: break-word;
+    }
+
+    #jobs-history-table tbody td:last-child {
+        border-bottom: none;
+    }
+
+    /* Label before each cell value */
+    #jobs-history-table tbody td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #555;
+        flex: 0 0 120px;
+        min-width: 120px;
+        padding-right: 10px;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    /* Cell content wrapper */
+    #jobs-history-table tbody td .jobs-cell-text,
+    #jobs-history-table tbody td .jobs-status,
+    #jobs-history-table tbody td .jobs-package-list {
+        flex: 1;
+        min-width: 0;
+    }
+
+    /* Package list adjustments for mobile */
+    #jobs-history-table tbody td.jobs-packages-cell {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #jobs-history-table tbody td.jobs-packages-cell::before {
+        flex: none;
+        margin-bottom: 8px;
+    }
+
+    #jobs-history-table .jobs-package-list {
+        max-height: none;
+        overflow: visible;
+    }
+
+    /* Status cell highlight */
+    #jobs-history-table tbody td:nth-child(3) {
+        background-color: #f9f9f9;
+    }
+
+    /* DataTables controls mobile adjustments */
+    .dataTables_wrapper .dataTables_length,
+    .dataTables_wrapper .dataTables_filter {
+        float: none;
+        text-align: left;
+        margin-bottom: 10px;
+    }
+
+    .dataTables_wrapper .dataTables_filter input {
+        width: 100%;
+        margin-left: 0;
+        margin-top: 5px;
+    }
+
+    .dataTables_wrapper .dataTables_info,
+    .dataTables_wrapper .dataTables_paginate {
+        float: none;
+        text-align: center;
+        margin-top: 10px;
+    }
+
+    .dataTables_wrapper .dataTables_paginate .paginate_button {
+        padding: 8px 12px;
+        margin: 2px;
+    }
+}
+
+/* Extra small devices */
+@media (max-width: 480px) {
+    #jobs-history-table tbody td {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    #jobs-history-table tbody td::before {
+        flex: none;
+        margin-bottom: 4px;
+    }
+
+    #jobs-history-table tbody td .jobs-cell-text {
+        width: 100%;
+    }
+
+    .page-title .title_left h1 {
+        font-size: 1.5em;
+    }
+}
+
+/* Package list styling - shared across breakpoints */
 #jobs-history-table .jobs-package-list {
     list-style: none;
     margin: 0;
@@ -524,22 +781,30 @@ table.no-margin .progress {
 }
 
 #jobs-history-table .jobs-package-list li {
-    padding: 2px 0;
+    padding: 3px 0;
     font-size: 12px;
-    line-height: 1.3;
+    line-height: 1.4;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
+@media (max-width: 767px) {
+    #jobs-history-table .jobs-package-list li {
+        white-space: normal;
+        word-break: break-word;
+    }
+}
+
 /* Status badge styles */
 #jobs-history-table .jobs-status {
     display: inline-block;
-    padding: 3px 8px;
-    border-radius: 3px;
+    padding: 4px 10px;
+    border-radius: 4px;
     font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 #jobs-history-table .jobs-status-pending {
@@ -568,7 +833,14 @@ table.no-margin .progress {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 12px;
+    font-size: 13px;
+}
+
+@media (max-width: 767px) {
+    #jobs-history-table .jobs-cell-text {
+        white-space: normal;
+        word-break: break-word;
+    }
 }
 
 /* DataTables integration adjustments */
@@ -581,31 +853,71 @@ table.no-margin .progress {
     border-bottom: 2px solid #ddd;
 }
 
-/* Responsive adjustments */
-@media (max-width: 1200px) {
-    #jobs-history-table thead th,
-    #jobs-history-table tbody td {
-        padding: 6px 8px;
-        font-size: 12px;
-    }
+/* DataTables responsive wrapper */
+.dataTables_wrapper {
+    padding: 0;
+}
 
-    #jobs-history-table .jobs-package-list li {
-        font-size: 11px;
+@media (max-width: 767px) {
+    .dataTables_wrapper {
+        padding: 10px 0;
     }
 }
 
-@media (max-width: 992px) {
+/* Ensure proper display when table becomes visible */
+#jobs-history-table[style*="visible"] {
+    display: table;
+}
+
+@media (max-width: 767px) {
+    #jobs-history-table[style*="visible"] {
+        display: block;
+    }
+}
+
+/* Loading and message states */
+#message .alert {
+    margin-bottom: 15px;
+}
+
+@media (max-width: 767px) {
+    #message .alert {
+        font-size: 14px;
+        padding: 12px 15px;
+    }
+}
+
+/* Touch-friendly tap targets */
+@media (max-width: 767px) {
+    #jobs-history-table tbody tr {
+        cursor: pointer;
+    }
+
+    #jobs-history-table tbody tr:active {
+        background-color: #f5f5f5;
+    }
+}
+
+/* Print styles */
+@media print {
     #jobs-history-table {
-        font-size: 11px;
+        table-layout: auto;
     }
 
-    #jobs-history-table thead th,
+    #jobs-history-table thead {
+        display: table-header-group;
+    }
+
+    #jobs-history-table tbody tr {
+        display: table-row;
+        page-break-inside: avoid;
+    }
+
     #jobs-history-table tbody td {
-        padding: 5px 6px;
+        display: table-cell;
     }
 
-    #jobs-history-table .jobs-status {
-        padding: 2px 5px;
-        font-size: 10px;
+    #jobs-history-table tbody td::before {
+        display: none;
     }
 }

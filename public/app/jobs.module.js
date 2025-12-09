@@ -45,6 +45,20 @@ const jobsModule = (function () {
         2: 'jobs-status-failed'
     });
 
+    /**
+     * Column labels for mobile card view
+     * @type {Array<string>}
+     */
+    const COLUMN_LABELS = Object.freeze([
+        'Job ID',
+        'Job Type',
+        'Status',
+        'Collection',
+        'Packages',
+        'Run By',
+        'Date'
+    ]);
+
     // =========================================================================
     // Utility Functions (Centralized)
     // =========================================================================
@@ -412,9 +426,7 @@ const jobsModule = (function () {
      * @throws {Error} When job data or API key is missing, or request fails
      */
     obj.update_job = async function (job) {
-
         try {
-
             if (!job || typeof job !== 'object' || Array.isArray(job)) {
                 throw new Error('Valid job data is required');
             }
@@ -454,9 +466,7 @@ const jobsModule = (function () {
      * @returns {Promise<Object>} Kaltura entry IDs data
      */
     obj.get_ks_entry_ids = async function () {
-
         try {
-
             const encoded_api_key = get_encoded_api_key();
 
             const response = await httpModule.req({
@@ -485,9 +495,7 @@ const jobsModule = (function () {
      * @throws {Error} When API key is missing or request fails
      */
     obj.clear_ks_queue = async function () {
-
         try {
-
             const encoded_api_key = get_encoded_api_key();
 
             const response = await httpModule.req({
@@ -551,18 +559,21 @@ const jobsModule = (function () {
     }
 
     /**
-     * Creates a table cell with text content
+     * Creates a table cell with text content and data-label for mobile
      * @param {string} content - Cell text content
+     * @param {string} label - Label for mobile view (data-label attribute)
      * @param {string} [additional_class] - Additional CSS class
      * @returns {HTMLTableCellElement} Table cell element
      */
-    function create_text_cell(content, additional_class) {
+    function create_text_cell(content, label, additional_class) {
         const span = create_element('span', {
             className: 'jobs-cell-text',
             title: content || ''
         }, [content || '']);
 
-        const td = create_element('td');
+        const td = create_element('td', {
+            dataset: { label: label }
+        });
 
         if (additional_class) {
             td.className = additional_class;
@@ -574,48 +585,60 @@ const jobsModule = (function () {
 
     /**
      * Builds table row element for a single job record using DOM methods
+     * Includes data-label attributes for mobile card view
      * @param {Object} record - Job record object
      * @returns {HTMLTableRowElement} Table row element
      */
     function build_table_row_element(record) {
         const tr = create_element('tr');
 
-        // Job ID
-        tr.appendChild(create_text_cell(record.uuid));
+        // Job ID (column 0)
+        tr.appendChild(create_text_cell(record.uuid, COLUMN_LABELS[0]));
 
-        // Job Type
-        tr.appendChild(create_text_cell(record.job_type));
+        // Job Type (column 1)
+        tr.appendChild(create_text_cell(record.job_type, COLUMN_LABELS[1]));
 
-        // Status (with badge)
-        const status_td = create_element('td');
+        // Status with badge (column 2)
+        const status_td = create_element('td', {
+            dataset: { label: COLUMN_LABELS[2] }
+        });
         status_td.appendChild(create_status_badge(record.is_complete));
         tr.appendChild(status_td);
 
-        // Collection Folder
-        tr.appendChild(create_text_cell(record.batch_name));
+        // Collection Folder (column 3)
+        tr.appendChild(create_text_cell(record.batch_name, COLUMN_LABELS[3]));
 
-        // Packages
-        const packages_td = create_element('td', { className: 'jobs-packages-cell' });
+        // Packages (column 4)
+        const packages_td = create_element('td', {
+            className: 'jobs-packages-cell',
+            dataset: { label: COLUMN_LABELS[4] }
+        });
         packages_td.appendChild(build_package_list_element(record.packages));
         tr.appendChild(packages_td);
 
-        // Job Run By
-        tr.appendChild(create_text_cell(record.job_run_by));
+        // Job Run By (column 5)
+        tr.appendChild(create_text_cell(record.job_run_by, COLUMN_LABELS[5]));
 
-        // Date
-        tr.appendChild(create_text_cell(record.job_date));
+        // Date (column 6)
+        tr.appendChild(create_text_cell(record.job_date, COLUMN_LABELS[6]));
 
         return tr;
     }
 
     /**
-     * Displays job history in a DataTable
+     * Checks if device is mobile based on viewport width
+     * @returns {boolean} True if mobile viewport
+     */
+    function is_mobile_viewport() {
+        return window.innerWidth < 768;
+    }
+
+    /**
+     * Displays job history in a DataTable with responsive support
      * @returns {Promise<boolean>} False if no records found, true otherwise
      */
     obj.display_jobs_history = async function () {
-
         try {
-
             const records = await jobsModule.get_jobs_history();
 
             if (!records || !Array.isArray(records.data)) {
@@ -643,23 +666,35 @@ const jobsModule = (function () {
 
             tbody.appendChild(fragment);
 
-            // Initialize DataTable with optimized configuration
-            new DataTable('#jobs-history-table', {
+            // DataTable configuration with responsive considerations
+            const datatable_config = {
                 paging: true,
-                pageLength: 25,
+                pageLength: is_mobile_viewport() ? 10 : 25,
                 lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
-                ordering: true,
+                ordering: !is_mobile_viewport(), // Disable ordering on mobile (cards)
                 order: [[6, 'desc']], // Sort by date descending
                 searching: true,
                 info: true,
                 autoWidth: false, // Respect CSS column widths
-                responsive: false,
+                scrollX: !is_mobile_viewport(), // Enable horizontal scrolling only on desktop/tablet
+                scrollCollapse: true,
+                responsive: false, // We handle responsiveness via CSS
                 language: {
                     emptyTable: 'No jobs available',
                     loadingRecords: 'Loading...',
                     processing: 'Processing...',
                     search: 'Filter:',
-                    zeroRecords: 'No matching jobs found'
+                    zeroRecords: 'No matching jobs found',
+                    lengthMenu: 'Show _MENU_',
+                    info: '_START_-_END_ of _TOTAL_',
+                    infoEmpty: '0 records',
+                    infoFiltered: '(filtered from _MAX_)',
+                    paginate: {
+                        first: '«',
+                        last: '»',
+                        next: '›',
+                        previous: '‹'
+                    }
                 },
                 columnDefs: [
                     {
@@ -671,8 +706,19 @@ const jobsModule = (function () {
                         orderable: false,
                         className: 'dt-head-left dt-body-left'
                     }
-                ]
-            });
+                ],
+                drawCallback: function() {
+                    // Ensure visibility after each draw
+                    const table_element = document.querySelector('#jobs-history-table');
+
+                    if (table_element) {
+                        table_element.style.visibility = 'visible';
+                    }
+                }
+            };
+
+            // Initialize DataTable
+            new DataTable('#jobs-history-table', datatable_config);
 
             // Show table after DataTable initialization
             const table_element = document.querySelector('#jobs-history-table');
@@ -681,8 +727,38 @@ const jobsModule = (function () {
                 table_element.style.visibility = 'visible';
             }
 
+            // Add scroll indicator class if content overflows
+            const table_container = document.querySelector('.jobs-table-container');
+
+            if (table_container) {
+                function update_scroll_indicator() {
+                    if (table_container.scrollWidth > table_container.clientWidth) {
+                        table_container.classList.add('has-scroll');
+                    } else {
+                        table_container.classList.remove('has-scroll');
+                    }
+                }
+
+                update_scroll_indicator();
+                window.addEventListener('resize', update_scroll_indicator);
+            }
+
             // Clear any loading messages
             clear_element('#message');
+
+            // Handle window resize for responsive adjustments
+            let resize_timeout;
+            window.addEventListener('resize', function() {
+                clearTimeout(resize_timeout);
+                resize_timeout = setTimeout(function() {
+                    // Force redraw on significant viewport changes
+                    const dt = window.jQuery && window.jQuery('#jobs-history-table').DataTable();
+
+                    if (dt && typeof dt.draw === 'function') {
+                        dt.columns.adjust().draw();
+                    }
+                }, 250);
+            });
 
             return true;
 
@@ -693,11 +769,14 @@ const jobsModule = (function () {
         }
     };
 
-    // delete job
+    /**
+     * Deletes a job by UUID
+     * @param {string} uuid - Job UUID to delete
+     * @returns {Promise<{success: boolean}>} Deletion result
+     * @throws {Error} When UUID is missing or request fails
+     */
     obj.delete_job = async function (uuid) {
-
         try {
-
             if (!uuid) {
                 throw new Error('Job must have a uuid or id');
             }
@@ -730,9 +809,7 @@ const jobsModule = (function () {
      * @throws {Error} When initialization fails
      */
     obj.init = async function () {
-
         try {
-
             display_message('#message', 'info', 'Loading...', 'fa-spinner fa-spin');
             await astoolsModule.display_workspace_packages();
             clear_element('#message');
