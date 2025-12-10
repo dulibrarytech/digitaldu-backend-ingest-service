@@ -497,8 +497,7 @@ const check_metadata_parts = async function(batch, ingest_package, job_uuid, res
 
         const errors = [];
         const part_files = [];
-        console.log('PARTS data ', response.metadata);
-        console.log('PARTS check ', response.metadata.parts);
+
         // Validate metadata parts
         if (!Array.isArray(response.metadata.parts) || response.metadata.parts.length === 0) {
             return ['Metadata parts array is missing or empty'];

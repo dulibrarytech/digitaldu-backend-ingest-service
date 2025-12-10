@@ -514,7 +514,9 @@ function promisify_get_package_files(package_name) {
  * Processes a single batch.
  */
 async function process_single_batch(batch_name) {
+
     try {
+
         if (!batch_name || typeof batch_name !== 'string' || batch_name.trim().length === 0) {
             LOGGER.module().warn('WARN: [/astools/service (process_single_batch)] Invalid batch name');
             return { errors: ['Invalid batch name'], result: null };
@@ -591,7 +593,9 @@ async function process_batches_parallel(batches) {
  * Retrieves and validates metadata URIs for a specific package.
  */
 async function get_metadata_uri(folder_name, archival_package) {
+
     try {
+
         if (!folder_name || typeof folder_name !== 'string' || folder_name.trim().length === 0) {
             LOGGER.module().error('ERROR: [/astools/service (get_metadata_uri)] Invalid folder_name parameter');
             return { errors: ['Invalid folder_name parameter'], result: null };
@@ -619,7 +623,7 @@ async function get_metadata_uri(folder_name, archival_package) {
         const encoded_package = encodeURIComponent(safe_package_name);
         const encoded_api_key = encodeURIComponent(CONFIG.astools_service_api_key);
         const astools_url = `${CONFIG.astools_service}workspace/uri?folder=${encoded_folder}&package=${encoded_package}&api_key=${encoded_api_key}`;
-
+        console.log('URI ENDPOINT ', url);
         const response = await HTTP.get(astools_url, {
             headers: {
                 'Content-Type': 'application/json',
@@ -627,7 +631,7 @@ async function get_metadata_uri(folder_name, archival_package) {
             },
             timeout: DEFAULT_TIMEOUT
         });
-
+        console.log('URI RESPONSE ', response);
         if (!response || response.status !== 200) {
             LOGGER.module().error('ERROR: [/astools/service (get_metadata_uri)] Invalid response from API', {
                 status: response?.status,
@@ -691,7 +695,9 @@ async function get_metadata_uri(folder_name, archival_package) {
  * Processes metadata for a URI.
  */
 async function process_metadata(uri) {
+
     try {
+
         if (!uri || typeof uri !== 'string' || uri.trim().length === 0) {
             return { errors: ['Invalid URI parameter'] };
         }
@@ -743,7 +749,9 @@ async function process_metadata(uri) {
  * Retrieves workspace packages.
  */
 exports.get_workspace_packages = async function () {
+
     try {
+
         LOGGER.module().info('INFO: [/astools/service (get_workspace_packages)] Retrieving workspace packages');
 
         if (!CONFIG.astools_service || !CONFIG.astools_service_api_key) {
@@ -809,7 +817,9 @@ exports.get_workspace_packages = async function () {
  * Creates digital objects in ArchivesSpace via the ASTools web service.
  */
 exports.make_digital_objects = async function (args) {
+
     try {
+
         if (!args || typeof args !== 'object') {
             LOGGER.module().error('ERROR: [/astools/service (make_digital_objects)] Invalid args parameter');
             return { result: null, errors: ['Invalid arguments provided'] };
@@ -975,7 +985,9 @@ exports.make_digital_objects = async function (args) {
  * Checks URI text files via ASTools service.
  */
 exports.check_uri_txt = async function (batch) {
+
     try {
+
         if (!batch || typeof batch !== 'string' || batch.trim().length === 0) {
             LOGGER.module().error('ERROR: [/astools/service (check_uri_txt)] Invalid batch parameter');
             return { success: false, exists: false, errors: ['Invalid batch parameter'] };
@@ -1061,7 +1073,9 @@ exports.check_uri_txt = async function (batch) {
  * Gets packages for a batch.
  */
 exports.get_packages = async function (batch) {
+
     try {
+
         if (!batch || typeof batch !== 'string' || batch.trim().length === 0) {
             LOGGER.module().error('ERROR: [/astools/service (get_packages)] Invalid batch parameter');
             return [];
@@ -1161,7 +1175,9 @@ exports.get_packages = async function (batch) {
  * }
  */
 exports.check_metadata = async function (batch, archival_package) {
+
     try {
+
         if (!batch || typeof batch !== 'string' || batch.trim().length === 0) {
             LOGGER.module().warn('WARN: [/astools/service (check_metadata)] Invalid batch parameter');
             return { errors: ['Invalid batch parameter'], metadata: null };
@@ -1180,7 +1196,11 @@ exports.check_metadata = async function (batch, archival_package) {
             archival_package: safe_package
         });
 
+        console.log('BATCH', safe_batch);
+        console.log('PACKAGE ', safe_package);
+
         const uri_data = await get_metadata_uri(safe_batch, safe_package);
+        console.log('URI DATA ', uri_data);
 
         if (!uri_data || typeof uri_data !== 'object') {
             LOGGER.module().error('ERROR: [/astools/service (check_metadata)] Invalid response from get_metadata_uri');

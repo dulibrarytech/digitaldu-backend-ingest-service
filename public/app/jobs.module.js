@@ -638,7 +638,9 @@ const jobsModule = (function () {
      * @returns {Promise<boolean>} False if no records found, true otherwise
      */
     obj.display_jobs_history = async function () {
+
         try {
+
             const records = await jobsModule.get_jobs_history();
 
             if (!records || !Array.isArray(records.data)) {
@@ -776,7 +778,9 @@ const jobsModule = (function () {
      * @throws {Error} When UUID is missing or request fails
      */
     obj.delete_job = async function (uuid) {
+
         try {
+
             if (!uuid) {
                 throw new Error('Job must have a uuid or id');
             }

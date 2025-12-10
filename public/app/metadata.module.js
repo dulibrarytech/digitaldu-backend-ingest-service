@@ -955,7 +955,9 @@ const metadataModule = (function () {
     };
 
     const get_metadata_records = function(storage_key) {
+
         try {
+
             if (!helpers.is_local_storage_available()) return null;
 
             const records_string = window.localStorage.getItem(storage_key);
