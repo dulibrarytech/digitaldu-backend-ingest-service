@@ -623,7 +623,7 @@ async function get_metadata_uri(folder_name, archival_package) {
         const encoded_package = encodeURIComponent(safe_package_name);
         const encoded_api_key = encodeURIComponent(CONFIG.astools_service_api_key);
         const astools_url = `${CONFIG.astools_service}workspace/uri?folder=${encoded_folder}&package=${encoded_package}&api_key=${encoded_api_key}`;
-        console.log('URI ENDPOINT ', astools_url);
+
         const response = await HTTP.get(astools_url, {
             headers: {
                 'Content-Type': 'application/json',
@@ -631,7 +631,7 @@ async function get_metadata_uri(folder_name, archival_package) {
             },
             timeout: DEFAULT_TIMEOUT
         });
-        console.log('URI RESPONSE ', response);
+
         if (!response || response.status !== 200) {
             LOGGER.module().error('ERROR: [/astools/service (get_metadata_uri)] Invalid response from API', {
                 status: response?.status,
@@ -1196,11 +1196,7 @@ exports.check_metadata = async function (batch, archival_package) {
             archival_package: safe_package
         });
 
-        console.log('BATCH', safe_batch);
-        console.log('PACKAGE ', safe_package);
-
         const uri_data = await get_metadata_uri(safe_batch, safe_package);
-        console.log('URI DATA ', uri_data);
 
         if (!uri_data || typeof uri_data !== 'object') {
             LOGGER.module().error('ERROR: [/astools/service (check_metadata)] Invalid response from get_metadata_uri');
