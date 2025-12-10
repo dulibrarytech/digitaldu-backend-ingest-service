@@ -623,7 +623,7 @@ async function get_metadata_uri(folder_name, archival_package) {
         const encoded_package = encodeURIComponent(safe_package_name);
         const encoded_api_key = encodeURIComponent(CONFIG.astools_service_api_key);
         const astools_url = `${CONFIG.astools_service}workspace/uri?folder=${encoded_folder}&package=${encoded_package}&api_key=${encoded_api_key}`;
-        console.log('URI ENDPOINT ', url);
+        console.log('URI ENDPOINT ', astools_url);
         const response = await HTTP.get(astools_url, {
             headers: {
                 'Content-Type': 'application/json',
