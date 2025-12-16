@@ -562,7 +562,7 @@ const astoolsModule = (function () {
         remove_module_before_unload_handler();
 
         await helpers.delay(helpers.get_config('COMPLETION_DELAY'));
-        helpers.show_success_with_reload('ArchivesSpace Description QA - Job complete.');
+        helpers.show_success_with_reload('Make Digital Objects - Job complete.');
     };
 
     return obj;
