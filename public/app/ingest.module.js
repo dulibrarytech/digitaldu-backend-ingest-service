@@ -337,7 +337,7 @@ const ingestModule = (function () {
                         } else if (item.error === null && item.is_complete === 0) {
                             ingest_in_progress = 1;
                             document.querySelector('#import-table').style.visibility = 'hidden';
-                            message = '<div class="alert alert-info">' +
+                            message = '&nbsp;&nbsp;<div class="alert alert-info">' +
                                 '<strong><i class="fa fa-info-circle"></i>&nbsp;&nbsp; ' +
                                 'An ingest is in progress.</strong>' +
                                 '<button id="stop-ingest" class="btn btn-default" type="button">' +
@@ -347,6 +347,30 @@ const ingestModule = (function () {
                     }
 
                     if (message) {
+
+                        domModule.html('#message', message);
+
+                        // Add event listener to stop button if it exists
+                        const stop_button = get_element('#stop-ingest');
+
+                        if (stop_button) {
+                            // Remove existing listeners to prevent duplicates
+                            const new_stop_button = stop_button.cloneNode(true);
+                            stop_button.parentNode.replaceChild(new_stop_button, stop_button);
+
+                            new_stop_button.addEventListener('click', () => {
+                                const is_confirmed = confirm('Are you sure you want to stop the ingest and clear the queue? Stopping the Ingest will require you to restart the digital preservation workflow in it\'s entirety.');
+
+                                if (is_confirmed) {
+                                    ingestModule.clear_ingest_queue();
+                                }
+                            });
+                        }
+                    }
+
+                    /*
+                    if (message) {
+
                         domModule.html('#message', message);
 
                         // Add event listener to stop button if it exists
@@ -362,6 +386,8 @@ const ingestModule = (function () {
                             });
                         }
                     }
+
+                     */
 
                     const status_table = get_element('#ingest-status-table');
                     if (status_table) {
@@ -511,7 +537,9 @@ const ingestModule = (function () {
      * Handles halted ingest status
      */
     async function handle_halted_ingest() {
+
         try {
+
             const job_uuid = typeof window.localStorage !== 'undefined'
                 ? window.localStorage.getItem('job_uuid')
                 : null;
