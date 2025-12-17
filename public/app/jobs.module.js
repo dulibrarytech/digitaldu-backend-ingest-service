@@ -475,7 +475,7 @@ const jobsModule = (function () {
                 headers: { 'Content-Type': 'application/json' },
                 timeout: REQUEST_TIMEOUT_MS
             });
-
+            console.log('get_ks_entry_ids ', response);
             if (response.status === 200) {
                 return response.data;
             }
@@ -488,6 +488,96 @@ const jobsModule = (function () {
             throw error;
         }
     };
+
+    /**
+     * Checks the Kaltura queue for digital objects
+     * @param {string} batch - Batch identifier (reserved for future use)
+     * @returns {Promise<Object>} Queue data response
+     * @throws {Error} When API key is missing or request fails
+     */
+    obj.check_make_digital_objects_ks_queue = async function () {
+        const REQUEST_TIMEOUT_MS = 600000;
+
+        /**
+         * Sanitizes a string for safe HTML insertion
+         * @param {*} value - Value to sanitize
+         * @returns {string} Sanitized string
+         */
+        function sanitize_html(value) {
+            const string_value = value === null || value === undefined ? '' : String(value);
+            return string_value
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        /**
+         * Safely sets innerHTML of an element
+         * @param {string} selector - CSS selector
+         * @param {string} html - HTML content to set
+         * @returns {boolean} True if element found and updated, false otherwise
+         */
+        function set_element_html(selector, html) {
+            const element = document.querySelector(selector);
+
+            if (!element) {
+                console.warn('Element not found: ' + selector);
+                return false;
+            }
+
+            element.innerHTML = html;
+            return true;
+        }
+
+        try {
+            const api_key = helperModule.getParameterByName('api_key');
+
+            // Validate API key exists and has expected format
+            if (!api_key || typeof api_key !== 'string' || api_key.trim() === '') {
+                throw new Error('API key is required');
+            }
+
+            // URL-encode API key to prevent injection and handle special characters
+            const encoded_api_key = encodeURIComponent(api_key.trim());
+
+            const response = await httpModule.req({
+                method: 'GET',
+                url: NGINX_PATH + '/api/v1/kaltura/queue?api_key=' + encoded_api_key,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                timeout: REQUEST_TIMEOUT_MS
+            });
+
+            // Handle non-success status codes
+            if (response.status !== 200) {
+                throw new Error('Request failed with status ' + response.status);
+            }
+
+            // Validate response has data
+            if (!response.data) {
+                throw new Error('Invalid response format');
+            }
+
+            return response.data;
+
+        } catch (error) {
+            const error_message = error instanceof Error ? error.message : 'An unexpected error occurred';
+
+            set_element_html(
+                '#message',
+                '<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> ' +
+                sanitize_html(error_message) +
+                '</div>'
+            );
+
+            // Re-throw for upstream error handling
+            throw error;
+        }
+    };
+
 
     /**
      * Clears the Kaltura queue

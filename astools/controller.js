@@ -82,6 +82,7 @@ exports.make_digital_objects = async function (req, res) {
 
         // Validate batch/folder parameter
         const batch = req.body.batch;
+
         if (!batch || typeof batch !== 'string' || batch.trim().length === 0) {
             LOGGER.module().warn('WARN: [/astools/controller (make_digital_objects)] Missing or invalid batch parameter');
             res.status(400).send({
@@ -116,6 +117,7 @@ exports.make_digital_objects = async function (req, res) {
         // Validate is_kaltura parameter (can be boolean, number, or string)
         const is_kaltura = req.body.is_kaltura;
         let is_kaltura_boolean = false;
+        console.log('IS KALTURA ', is_kaltura);
 
         if (is_kaltura !== undefined && is_kaltura !== null) {
             if (typeof is_kaltura === 'boolean') {

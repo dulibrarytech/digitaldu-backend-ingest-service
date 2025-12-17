@@ -150,52 +150,28 @@ function build_search_params(search_term) {
     return search_params;
 }
 
-/**
- * Get Kaltura metadata - Express route handler
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- */
-exports.get_ks_metadata = async function (req, res) {
+exports.get_ks_metadata = async function (identifier, session) {
 
     try {
 
-        const identifier = typeof req.query.identifier === 'string'
-            ? req.query.identifier.trim()
-            : null;
+        client.setKs(session);
+        const searchParams = new kaltura.objects.ESearchEntryParams();
+        searchParams.orderBy = new kaltura.objects.ESearchOrderBy();
+        searchParams.searchOperator = new kaltura.objects.ESearchEntryOperator();
+        searchParams.searchOperator.searchItems = [];
+        searchParams.searchOperator.searchItems[0] = new kaltura.objects.ESearchUnifiedItem();
+        searchParams.searchOperator.searchItems[0].itemType = kaltura.enums.ESearchItemType.EXACT_MATCH;
+        // searchParams.searchOperator.searchItems[0].fieldName = kaltura.enums.ESearchEntryFieldName.NAME;
+        searchParams.searchOperator.searchItems[0].searchTerm = identifier;
+        searchParams.aggregations = new kaltura.objects.ESearchAggregation();
+        const pager = new kaltura.objects.Pager();
 
-        const session = typeof req.query.session === 'string'
-            ? req.query.session.trim()
-            : null;
-
-        if (!identifier) {
-            res.status(400).send({
-                error: true,
-                message: 'Bad request. Identifier is required.'
-            });
-            return;
-        }
-
-        if (!session) {
-            res.status(400).send({
-                error: true,
-                message: 'Bad request. Session is required.'
-            });
-            return;
-        }
-
-        const result = await get_ks_metadata(identifier, session);
-
-        res.status(200).send({
-            error: false,
-            data: result
-        });
+        return await kaltura.services.eSearch.searchEntry(searchParams, pager)
+            .execute(client);
 
     } catch (error) {
-        console.error('get_ks_metadata error:', error.message);
-        res.status(500).send({
-            error: true,
-            message: 'Unable to retrieve metadata.'
-        });
+        console.log(error);
+        // callback(error);
     }
 };
 
