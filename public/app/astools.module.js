@@ -940,30 +940,6 @@ const astoolsModule = (function () {
     };
 
     /**
-     * Gets Kaltura status for a batch
-     * @param {string} batch_name - The batch name
-     * @returns {number} - 1 for Kaltura, 0 for non-Kaltura
-     */
-    /*
-    const get_kaltura_status = function(batch_name) {
-        try {
-            const element = document.getElementById(sanitize_batch_name(batch_name));
-
-            if (!element || !element.value) {
-                return 0;
-            }
-
-            return element.value === 'true' ? 1 : 0;
-
-        } catch (error) {
-            console.error('Failed to get Kaltura status:', error.message);
-            return 0;
-        }
-    };
-
-     */
-
-    /**
      * Creates a job object
      * @param {string} job_uuid - Job UUID
      * @param {string} batch_name - Batch name

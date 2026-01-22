@@ -325,7 +325,7 @@ function validate_required_array(errors, field, error_message) {
  */
 function validate_notes(errors, notes) {
     if (!notes) {
-        errors.push('Notes field is missing - The notes field contains the abstract and rights statement');
+        errors.push('Notes field is missing - The notes field contains the Abstract and Conditions Governing Use');
         return;
     }
 
@@ -345,7 +345,7 @@ function validate_notes(errors, notes) {
     }
 
     if (!Array.isArray(notes_array) || notes_array.length === 0) {
-        errors.push('Notes field is missing - The notes field contains the abstract and rights statement');
+        errors.push('Notes field is missing - The notes field contains the Abstract and Conditions Governing Use');
         return;
     }
 
@@ -387,7 +387,7 @@ function validate_notes(errors, notes) {
     }
 
     if (has_rights && rights_is_empty) {
-        errors.push('Rights statement field is missing');
+        errors.push('Conditions Governing Use field is missing');
     }
 }
 
